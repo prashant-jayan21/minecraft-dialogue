@@ -1,0 +1,11 @@
+{
+    "parent": "block/cube",
+    "textures": {
+        "down": "cwcmod:blocks/blue",
+        "up": "cwcmod:blocks/blue",
+        "north": "cwcmod:blocks/blue",
+        "east": "cwcmod:blocks/blue",
+        "south": "cwcmod:blocks/blue",
+        "west": "cwcmod:blocks/blue"
+    }
+}
