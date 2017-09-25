@@ -7,7 +7,7 @@ built on top of Minecraft.
 
 ## Installation ##
 
-*** Disclaimer: these instructions have been tested with OSX + Intellij only
+** Disclaimer: these instructions have been tested with OSX + Intellij only.
 
 1) Clone cwc-minecraft: ``` git clone https://gitlab.engr.illinois.edu/hockenmaier/cwc-minecraft.git ```
 
