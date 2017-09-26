@@ -15,10 +15,12 @@ built on top of Minecraft.
 you may run into a particular error involving copying the file `libMalmoNETNative.so`. There are a couple of solutions:
 
     1. From the project directory,
+    
     ```
     cp build/Malmo/src/CSharpWrapper/MalmoNETNative.so build/Malmo/src/CSharpWrapper/libMalmoNETNative.so
     ```
     I'm assuming that the library is the same, but somehow had a slight change of name that the build script wasn't expecting.
+    
     
     2. *** Prashant, add your solution here ***
 
