@@ -21,7 +21,7 @@ When running `make install`, you may run into a particular error involving copyi
     ii. *** Prashant, add your solution here ***
 
 
-3. Set up a workspace in IntelliJ by following [these instructions](https://bedrockminer.jimdo.com/modding-tutorials/set-up-minecraft-forge/set-up-fast-setup/), or do the following:
+3. Set up a workspace in IntelliJ by following [these instructions](https://bedrockminer.jimdo.com/modding-tutorials/set-up-minecraft-forge/set-up-fast-setup/), or by doing the following:
 ```
 cd Minecraft
 ./gradlew setupDecompWorkspace
