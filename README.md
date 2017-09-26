@@ -15,7 +15,6 @@ built on top of Minecraft.
 When running `make install`, you may run into a particular error involving copying the file `libMalmoNETNative.so`. There are a couple of solutions:
 
     i. From the project directory, ``` cp build/Malmo/src/CSharpWrapper/MalmoNETNative.so build/Malmo/src/CSharpWrapper/libMalmoNETNative.so ```
-    
     The assumption is that the library is the same, but somehow had a slight change of name that the build script wasn't expecting.
     
     
