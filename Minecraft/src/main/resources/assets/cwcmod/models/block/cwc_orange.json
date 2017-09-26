@@ -6,6 +6,7 @@
         "north": "cwcmod:blocks/orange",
         "east": "cwcmod:blocks/orange",
         "south": "cwcmod:blocks/orange",
-        "west": "cwcmod:blocks/orange"
+        "west": "cwcmod:blocks/orange",
+        "particle": "cwcmod:blocks/orange"
     }
 }

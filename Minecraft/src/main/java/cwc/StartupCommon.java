@@ -1,11 +1,18 @@
 package cwc;
 
+import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.init.Items;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
+import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class StartupCommon {
 	public static CwCBlock red, orange, yellow, green, blue, purple;
 	public static ItemBlock ired, iorange, iyellow, igreen, iblue, ipurple;
+	public static CwCCreativeTab cwctab;
 	
 	public static void preInitCommon() {
 		red = (CwCBlock)(new CwCBlock().setUnlocalizedName("cwc_red_un"));
@@ -49,6 +56,13 @@ public class StartupCommon {
 		ipurple = new ItemBlock(purple);
 		ipurple.setRegistryName(purple.getRegistryName());
 		GameRegistry.register(ipurple);
+
+		CreativeTabs.CREATIVE_TAB_ARRAY = new CreativeTabs[1];
+		cwctab = new CwCCreativeTab(0, "cwc_creative_tab") {
+			@Override
+			@SideOnly(Side.CLIENT)
+			public ItemStack getTabIconItem() { return new ItemStack(Item.getItemFromBlock(red)); }
+		};
 	}
 	
 	public static void initCommon() {}

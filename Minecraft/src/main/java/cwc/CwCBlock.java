@@ -1,21 +1,21 @@
 package cwc;
 
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockFalling;
-import net.minecraft.block.BlockSand;
-import net.minecraft.block.material.MapColor;
-import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.BlockRenderLayer;
 import net.minecraft.util.EnumBlockRenderType;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class CwCBlock extends BlockFalling {
 	public CwCBlock() {
 		super();
-		this.setCreativeTab(CreativeTabs.BUILDING_BLOCKS);
+		this.setBlockUnbreakable();
+		this.setResistance(6000000.0F);
 	}
 	
 	@SideOnly(Side.CLIENT)
