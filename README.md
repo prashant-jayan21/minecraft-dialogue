@@ -11,14 +11,10 @@ built on top of Minecraft.
 
 1. Clone cwc-minecraft: ``` git clone https://gitlab.engr.illinois.edu/hockenmaier/cwc-minecraft.git ```
 
-2. Follow the instructions to build Malmö from source for your OS, skipping the cloning step: [Windows](doc/build_windows.md), [Linux](doc/build_linux.md), [MacOSX](doc/build_macosx.md). When running `make install`,
-you may run into a particular error involving copying the file `libMalmoNETNative.so`. There are a couple of solutions:
+2. Follow the instructions to build Malmö from source for your OS, skipping the cloning step: [Windows](doc/build_windows.md), [Linux](doc/build_linux.md), [MacOSX](doc/build_macosx.md). 
+When running `make install`, you may run into a particular error involving copying the file `libMalmoNETNative.so`. There are a couple of solutions:
 
-    1. From the project directory,
-    
-    ```
-    cp build/Malmo/src/CSharpWrapper/MalmoNETNative.so build/Malmo/src/CSharpWrapper/libMalmoNETNative.so
-    ```
+    1. From the project directory, ``` cp build/Malmo/src/CSharpWrapper/MalmoNETNative.so build/Malmo/src/CSharpWrapper/libMalmoNETNative.so ```
     I'm assuming that the library is the same, but somehow had a slight change of name that the build script wasn't expecting.
     
     
