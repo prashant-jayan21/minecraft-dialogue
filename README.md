@@ -28,7 +28,7 @@ cd Minecraft
 ./gradlew idea
 ```
 
-4. Import the ``` Minecraft ``` directory as a project into IntelliJ. IntelliJ should automatically recognize that this is a Gradle project and ask if you want to import it as such; follow the directions to do so.
+4. Open the ``` Minecraft ``` directory as a project in IntelliJ. IntelliJ should automatically recognize that this is a Gradle project; if it asks if you want to import it as such, follow the directions to do so.
 
 
 
