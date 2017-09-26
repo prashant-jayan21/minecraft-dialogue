@@ -14,13 +14,13 @@ built on top of Minecraft.
 2) Follow the instructions to build Malmö from source for your OS, skipping the cloning step: [Windows](doc/build_windows.md), [Linux](doc/build_linux.md), [MacOSX](doc/build_macosx.md). When running `make install`,
 you may run into a particular error involving copying the file `libMalmoNETNative.so`. There are a couple of solutions:
 
-i) From the project directory,
-```
-cp build/Malmo/src/CSharpWrapper/MalmoNETNative.so build/Malmo/src/CSharpWrapper/libMalmoNETNative.so
-```
-I'm assuming that the library is the same, but somehow had a slight change of name that the build script wasn't expecting.
+    1) From the project directory,
+    ```
+    cp build/Malmo/src/CSharpWrapper/MalmoNETNative.so build/Malmo/src/CSharpWrapper/libMalmoNETNative.so
+    ```
+    I'm assuming that the library is the same, but somehow had a slight change of name that the build script wasn't expecting.
     
-ii) *** Prashant, add your solution here ***
+    2) *** Prashant, add your solution here ***
 
 
 3) Set up a workspace in IntelliJ by following [these instructions](https://bedrockminer.jimdo.com/modding-tutorials/set-up-minecraft-forge/set-up-fast-setup/), or do the following:
