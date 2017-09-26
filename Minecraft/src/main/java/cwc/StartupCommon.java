@@ -1,13 +1,9 @@
 package cwc;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.settings.GameSettings;
-import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -15,10 +11,12 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 public class StartupCommon {
 	public static CwCBlock red, orange, yellow, green, blue, purple;		 // colored blocks
 	public static ItemBlock ired, iorange, iyellow, igreen, iblue, ipurple;  // colored item blocks
+	public static ItemBlock iunbgrey, iunbwhite;							 // FIXME: remove
+	public static CwCUnbreakableBlock unb_grey, unb_white;					 // unbreakable blocks
 	public static CwCCreativeTab cwctab;									 // cwc blocks creative tab
 	
 	public static void preInitCommon() {
-		/* Register blocks & corresponding items */
+		/* Register colored blocks & corresponding items */
 		// red
 		red = (CwCBlock)(new CwCBlock().setUnlocalizedName("cwc_red_un"));
 		red.setRegistryName("cwc_red_rn");
@@ -66,6 +64,19 @@ public class StartupCommon {
 		ipurple = new ItemBlock(purple);
 		ipurple.setRegistryName(purple.getRegistryName());
 		GameRegistry.register(ipurple);
+
+
+		/* Register unbreakable blocks */
+		// grey
+		unb_grey = (CwCUnbreakableBlock)(new CwCUnbreakableBlock().setUnlocalizedName("cwc_unbreakable_grey_un"));
+		unb_grey.setRegistryName("cwc_unbreakable_grey_rn");
+		GameRegistry.register(unb_grey);
+
+		// white
+		unb_white = (CwCUnbreakableBlock)(new CwCUnbreakableBlock().setUnlocalizedName("cwc_unbreakable_white_un"));
+		unb_white.setRegistryName("cwc_unbreakable_white_rn");
+		GameRegistry.register(unb_white);
+
 
 		/* Initialize creative tab(s) */
 		// NOTE: this piece of code effectively overwrites the rest of the creative tabs.

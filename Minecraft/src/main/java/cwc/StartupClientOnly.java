@@ -8,6 +8,7 @@ public class StartupClientOnly {
 		final int DEFAULT_ITEM_SUBTYPE = 0;
 
 		// cookie loves jelly!
+		// required to register item resources
 		ModelLoader.setCustomModelResourceLocation(StartupCommon.ired, DEFAULT_ITEM_SUBTYPE, new ModelResourceLocation("cwcmod:cwc_red","inventory"));
 		ModelLoader.setCustomModelResourceLocation(StartupCommon.iorange, DEFAULT_ITEM_SUBTYPE, new ModelResourceLocation("cwcmod:cwc_orange","inventory"));
 		ModelLoader.setCustomModelResourceLocation(StartupCommon.iyellow, DEFAULT_ITEM_SUBTYPE, new ModelResourceLocation("cwcmod:cwc_yellow","inventory"));

@@ -3,7 +3,7 @@ package cwc;
 import net.minecraftforge.common.MinecraftForge;
 
 public abstract class CommonProxy {
-	public void preInit()  { StartupCommon.preInitCommon(); }
+	public void preInit() {	StartupCommon.preInitCommon(); }
 
 	public void init() {
 		StartupCommon.initCommon();
