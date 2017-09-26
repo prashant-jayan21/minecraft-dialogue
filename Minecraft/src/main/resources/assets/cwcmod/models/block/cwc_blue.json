@@ -1,12 +1,12 @@
 {
     "parent": "block/cube",
     "textures": {
-        "down": "cwcmod:blocks/blue",
-        "up": "cwcmod:blocks/blue",
-        "north": "cwcmod:blocks/blue",
-        "east": "cwcmod:blocks/blue",
-        "south": "cwcmod:blocks/blue",
-        "west": "cwcmod:blocks/blue",
+        "down": "cwcmod:blocks/blue-border",
+        "up": "cwcmod:blocks/blue-border",
+        "north": "cwcmod:blocks/blue-border",
+        "east": "cwcmod:blocks/blue-border",
+        "south": "cwcmod:blocks/blue-border",
+        "west": "cwcmod:blocks/blue-border",
         "particle": "cwcmod:blocks/blue"
     }
 }
