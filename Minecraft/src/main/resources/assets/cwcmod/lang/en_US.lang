@@ -5,4 +5,6 @@ tile.cwc_yellow_un.name=cwc-yellow
 tile.cwc_green_un.name=cwc-green
 tile.cwc_blue_un.name=cwc-blue
 tile.cwc_purple_un.name=cwc-purple
+tile.cwc_unbreakable_grey_un.name=cwc-unbreakable-grey
+tile.cwc_unbreakable_white_un.name=cwc-unbreakable-white
 itemGroup.cwc_creative_tab=CwC Blocks
