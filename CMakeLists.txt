@@ -1,15 +1,15 @@
 # ------------------------------------------------------------------------------------------------
 # Copyright (c) 2016 Microsoft Corporation
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 # associated documentation files (the "Software"), to deal in the Software without restriction,
 # including without limitation the rights to use, copy, modify, merge, publish, distribute,
 # sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all copies or
 # substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
 # NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
 # NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
@@ -41,7 +41,7 @@ set( STATIC_BOOST_DESC        "Specifies whether to link Malmo statically agains
 set( BUILD_MOD           ON  CACHE BOOL ${BUILD_MOD_DESC} )
 set( BUILD_DOCUMENTATION ON  CACHE BOOL ${BUILD_DOCUMENTATION_DESC} )
 set( INCLUDE_ALE         OFF CACHE BOOL ${INCLUDE_ALE_DESC} )
-set( INCLUDE_CSHARP      ON  CACHE BOOL ${INCLUDE_CSHARP_DESC} )
+set( INCLUDE_CSHARP      OFF )
 set( INCLUDE_JAVA        ON  CACHE BOOL ${INCLUDE_JAVA_DESC} )
 set( INCLUDE_PYTHON      ON  CACHE BOOL ${INCLUDE_PYTHON_DESC} )
 set( STATIC_BOOST        OFF CACHE BOOL ${STATIC_BOOST_DESC} )
@@ -126,11 +126,11 @@ if( BUILD_DOCUMENTATION )
 endif()
 
 find_package( Git REQUIRED )
-find_package( Java REQUIRED COMPONENTS Runtime Development ) 
+find_package( Java REQUIRED COMPONENTS Runtime Development )
 find_package( ZLIB REQUIRED )
 
 if( INCLUDE_JAVA )
-  find_package( JNI REQUIRED) 
+  find_package( JNI REQUIRED)
 endif()
 
 if( INCLUDE_PYTHON )
@@ -150,7 +150,7 @@ else()
 endif()
 
 if( INCLUDE_TORCH )
-  find_package( Torch QUIET HINTS ~/torch/install/share/cmake/torch ) 
+  find_package( Torch QUIET HINTS ~/torch/install/share/cmake/torch )
   if( NOT Torch_FOUND )
     # for now Torch is only available on Ubuntu and a few other platforms, so we warn but continue
     message( "" )
@@ -184,7 +184,7 @@ if (CMAKE_VERSION VERSION_LESS "3.1")
 else ()
   set (CMAKE_CXX_STANDARD 11)
 endif ()
- 
+
 if( MSVC )
   set( MALMO_PYTHON_DIR ${CMAKE_BINARY_DIR}/Malmo/src/PythonWrapper/$<CONFIG> )
   set( MALMO_LUA_DIR ${CMAKE_BINARY_DIR}/Malmo/src/LuaWrapper/$<CONFIG> )
@@ -204,7 +204,7 @@ else()
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror" )
   else()
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations" ) # get a lot of warnings from Boost about auto_ptr
-  endif()  
+  endif()
 endif()
 
 if( APPLE )
