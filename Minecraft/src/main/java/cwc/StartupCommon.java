@@ -1,5 +1,6 @@
 package cwc;
 
+import net.minecraft.block.Block;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
@@ -11,7 +12,6 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 public class StartupCommon {
 	public static CwCBlock red, orange, yellow, green, blue, purple;		 // colored blocks
 	public static ItemBlock ired, iorange, iyellow, igreen, iblue, ipurple;  // colored item blocks
-	public static ItemBlock iunbgrey, iunbwhite;							 // FIXME: remove
 	public static CwCUnbreakableBlock unb_grey, unb_white;					 // unbreakable blocks
 	public static CwCCreativeTab cwctab;									 // cwc blocks creative tab
 	
@@ -87,6 +87,10 @@ public class StartupCommon {
 			@SideOnly(Side.CLIENT)
 			public ItemStack getTabIconItem() { return new ItemStack(Item.getItemFromBlock(red)); }
 		};
+
+		// show block IDs of custom blocks -- add statements as needed
+		System.out.println("Unbreakable grey block ID: "+Block.getIdFromBlock(unb_grey));
+		System.out.println("Unbreakable white block ID: "+Block.getIdFromBlock(unb_white));
 	}
 	
 	public static void initCommon() {}
