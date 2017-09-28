@@ -7,6 +7,6 @@
         "east": "cwcmod:blocks/green-border",
         "south": "cwcmod:blocks/green-border",
         "west": "cwcmod:blocks/green-border",
-        "particle": "cwcmod:blocks/green"
+        "particle": "cwcmod:blocks/blank"
     }
 }

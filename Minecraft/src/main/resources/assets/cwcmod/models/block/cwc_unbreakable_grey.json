@@ -1,12 +1,12 @@
 {
   "parent": "block/cube",
   "textures": {
-    "down": "cwcmod:blocks/face0",
-    "up": "cwcmod:blocks/face0",
-    "north": "cwcmod:blocks/face0",
-    "east": "cwcmod:blocks/face0",
-    "south": "cwcmod:blocks/face0",
-    "west": "cwcmod:blocks/face0",
+    "down": "cwcmod:blocks/unbreakable-grey",
+    "up": "cwcmod:blocks/unbreakable-grey",
+    "north": "cwcmod:blocks/unbreakable-grey",
+    "east": "cwcmod:blocks/unbreakable-grey",
+    "south": "cwcmod:blocks/unbreakable-grey",
+    "west": "cwcmod:blocks/unbreakable-grey",
     "particle": "cwcmod:blocks/blank"
   }
 }
