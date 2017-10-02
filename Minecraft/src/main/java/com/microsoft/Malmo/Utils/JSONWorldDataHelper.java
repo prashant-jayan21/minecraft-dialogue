@@ -159,12 +159,18 @@ public class JSONWorldDataHelper
      * @param environmentDimensions object which specifies the required dimensions of the grid to be returned.
      * @param jsonName name to use for identifying the returned JSON array.
      */
+
+    /**
+     * CWC changes:
+     * Also returns a more comprehensive 1D array of all of the block information (types as well as world coordinates)
+     */
     public static void buildGridData(JsonObject json, GridDimensions environmentDimensions, EntityPlayerMP player, String jsonName)
     {
         if (player == null || json == null)
             return;
 
         JsonArray arr = new JsonArray();
+        JsonArray blockInfoArr = new JsonArray();
         BlockPos pos = new BlockPos(player.posX, player.posY, player.posZ);
         for (int y = environmentDimensions.yMin; y <= environmentDimensions.yMax; y++)
         {
@@ -186,9 +192,17 @@ public class JSONWorldDataHelper
                     }
                     JsonElement element = new JsonPrimitive(name);
                     arr.add(element);
+
+                    JsonObject blockObj = new JsonObject();
+                    blockObj.addProperty("type", name);
+                    blockObj.addProperty("x", p.getX());
+                    blockObj.addProperty("y", p.getY());
+                    blockObj.addProperty("z", p.getZ());
+                    blockInfoArr.add(blockObj);
                 }
             }
         }
         json.add(jsonName, arr);
+        json.add(jsonName + "_block_info", blockInfoArr);
     }
 }
