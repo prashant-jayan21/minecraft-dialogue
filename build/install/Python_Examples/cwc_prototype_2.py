@@ -62,7 +62,7 @@ def safeWaitForStart(agent_hosts):
             print("Bailing now.")
             exit(1)
         time.sleep(0.1)
-        print "."
+        sys.stdout.write('.')
     if time.time() - start_time >= time_out:
         print("Timed out while waiting for mission to start - bailing.")
         exit(1)
@@ -108,7 +108,7 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 </ServerHandlers>
               </ServerSection>
 
-              <AgentSection mode="Creative">
+              <AgentSection mode="Survival">
                 <Name>CWCDummyBot1</Name>
                 <AgentStart>
                   <Placement x = "0" y = "10" z = "10"/>
@@ -119,7 +119,7 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 </AgentHandlers>
               </AgentSection>
 
-              <AgentSection mode="Creative">
+              <AgentSection mode="Survival">
                 <Name>CWCDummyBot2</Name>
                 <AgentStart>
                   <Placement x = "0" y = "10" z = "0"/>
@@ -166,7 +166,7 @@ print "Waiting for mission to end..."
 hasEnded = False
 while not hasEnded:
     hasEnded = True # assume all good
-    print "."
+    sys.stdout.write('.')
     time.sleep(0.1)
     for ah in agent_hosts:
         world_state = ah.getWorldState()

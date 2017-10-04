@@ -44,6 +44,7 @@ public class CwCEventHandler {
 
         if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
             EntityPlayer player = (EntityPlayer) event.getEntity();
+            System.out.println("onEntitySpawn: "+player.getName());
             if (player.inventory.getStackInSlot(0).isEmpty()) {
                 player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.red, DEFAULT_STACK_SIZE));
                 player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.orange, DEFAULT_STACK_SIZE));
@@ -51,12 +52,13 @@ public class CwCEventHandler {
                 player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.green, DEFAULT_STACK_SIZE));
                 player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.blue, DEFAULT_STACK_SIZE));
                 player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.purple, DEFAULT_STACK_SIZE));
+                System.out.println("\t-- inventory INITIALIZED");
             }
 
             player.capabilities.allowFlying = true;
             player.capabilities.disableDamage = true;
             player.sendPlayerAbilities();
-            System.out.println("Player created -- flying capabilities ON");
+            System.out.println("\t-- flying capabilities ON, damage OFF");
         }
     }
 
@@ -68,10 +70,11 @@ public class CwCEventHandler {
     public void onPlayerClone(PlayerEvent.Clone event) {
         if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
             EntityPlayer player = (EntityPlayer) event.getEntity();
+            System.out.println("onPlayerClone: "+player.getName());
             player.capabilities.allowFlying = true;
             player.capabilities.disableDamage = true;
             player.sendPlayerAbilities();
-            System.out.println("Player respawned -- flying capabilities ON");
+            System.out.println("\t-- flying capabilities ON, damage OFF");
         }
     }
 
