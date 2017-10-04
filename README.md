@@ -49,8 +49,8 @@ cd Minecraft
 
 ## Running the Python prototype missions ##
 
-[The Python_Examples directory](https://gitlab-beta.engr.illinois.edu/hockenmaier/cwc-minecraft/tree/master/build/install/Python_Examples) contains sample missions prototyping features required as part of the CWC project.
-These are written in Python using the Malmo API and borrow ideas from the tutorial examples in [the original Malmo project](https://github.com/Microsoft/malmo/tree/master/Malmo/samples/Python_examples).
+The [Python_Examples directory](https://gitlab-beta.engr.illinois.edu/hockenmaier/cwc-minecraft/tree/master/build/install/Python_Examples) contains sample missions prototyping features required as part of the CWC project.
+These are written in Python using the Malmo API and borrow ideas from the [tutorial examples](https://github.com/Microsoft/malmo/tree/master/Malmo/samples/Python_examples) in the original Malmo project.
 Running a mission involves 2 steps: 
 
 1. Run the Minecraft client as mentioned above. You may need to run another one for 2 agent missions.
