@@ -90,7 +90,7 @@ public class ServerStateMachine extends StateMachine
     private MissionInit queuedMissionInit = null;		// The MissionInit requested from elsewhere - dormant episode will check for its presence.
     private MissionBehaviour missionHandlers = null;	// The Mission handlers for the mission currently being loaded/run.
     protected String quitCode = "";						// Code detailing the reason for quitting this mission.
-    
+
     // agentConnectionWatchList is used to keep track of the clients in a multi-agent mission. If, at any point, a username appears in
     // this list, but can't be found in the MinecraftServer.getServer().getAllUsernames(), that constitutes an error, and the mission will exit.
     private ArrayList<String> userConnectionWatchList = new ArrayList<String>();
@@ -765,6 +765,8 @@ public class ServerStateMachine extends StateMachine
                             player.setGameType(GameType.getByName(as.getMode().name().toLowerCase()));
                             // Also make sure we haven't accidentally left the player flying:
                             player.capabilities.isFlying = false;
+                            player.capabilities.allowFlying = true;     // FIXME: enabled flight -- should do this conditionally
+                            player.capabilities.disableDamage = true;   // FIXME: enabled invulnerability f-- should do this conditionally
                             player.sendPlayerAbilities();
                             player.onUpdate();
                         }
@@ -903,6 +905,8 @@ public class ServerStateMachine extends StateMachine
                     player.setGameType(GameType.getByName(as.getMode().name().toLowerCase()));
                     // Also make sure we haven't accidentally left the player flying:
                     player.capabilities.isFlying = false;
+                    player.capabilities.allowFlying = true;     // FIXME: enabled flight -- should do this conditionally
+                    player.capabilities.disableDamage = true;   // FIXME: enabled invulnerability -- should do this conditionally
                     player.sendPlayerAbilities();
                 }
             }
