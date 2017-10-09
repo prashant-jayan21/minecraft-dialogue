@@ -9,7 +9,7 @@ built on top of Minecraft.
 
 ** Disclaimer: these instructions have been tested with OSX + IntelliJ only. **
 
-1. Clone cwc-minecraft: ``` git clone https://gitlab.engr.illinois.edu/hockenmaier/cwc-minecraft.git ```
+1. Clone cwc-minecraft: ``` git clone https://github.com/CogComp/cwc-minecraft.git ```
 
 2. Follow the instructions to build Malmö from source for your OS, skipping the cloning step: [Windows](doc/build_windows.md), [Linux](doc/build_linux.md), [MacOSX](doc/build_macosx.md). 
 When running `make install`, you may run into a particular error involving copying the file `libMalmoNETNative.so`. There are a couple of solutions:
