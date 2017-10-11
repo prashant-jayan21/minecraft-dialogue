@@ -12,7 +12,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.SPacketHeldItemChange;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
+import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -32,6 +34,7 @@ public class CwCEventHandler {
     /**
      * Ignore keybindings: drop, use item, swap hands, open inventory, player list, commands, screenshots, toggle perspective,
      * smooth camera, and spectator outlines.
+     * Keeps Architect in third-person view, even in mob-view.
      * @param event
      */
     @SideOnly(Side.CLIENT)
@@ -41,6 +44,10 @@ public class CwCEventHandler {
         if (gs.keyBindDrop.isPressed() || gs.keyBindSwapHands.isPressed() || gs.keyBindUseItem.isPressed() || gs.keyBindInventory.isPressed() ||
                 gs.keyBindPlayerList.isPressed() || gs.keyBindCommand.isPressed() || gs.keyBindScreenshot.isPressed() ||
                 gs.keyBindTogglePerspective.isPressed() || gs.keyBindSmoothCamera.isPressed() || gs.keyBindSpectatorOutlines.isPressed());
+
+        // switches architect to (or, rather, keeps architect in) third person view when assuming mob-view of other players
+        if (Minecraft.getMinecraft().player.getName().equals("Architect") && gs.keyBindAttack.isPressed())
+            gs.thirdPersonView = 1;
     }
 
     /**
@@ -55,6 +62,10 @@ public class CwCEventHandler {
         // only allow player, falling blocks, and items to spawn
         if (!(event.getEntity() instanceof EntityPlayer || event.getEntity() instanceof EntityFallingBlock || event.getEntity() instanceof EntityItem))
             event.setCanceled(true);
+
+        // initialize Architect with third person view
+        if (event.getEntity().getEntityWorld().isRemote && event.getEntity().getName().equals("Architect"))
+            Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
 
         if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
             EntityPlayerMP player = (EntityPlayerMP) event.getEntity();
@@ -106,6 +117,10 @@ public class CwCEventHandler {
      */
     @SubscribeEvent
     public void onPlayerClone(PlayerEvent.Clone event) {
+        // initialize Architect with third person view
+        if (event.getEntity().getEntityWorld().isRemote && event.getEntity().getName().equals("Architect"))
+            Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
+
         if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
             EntityPlayerMP player = (EntityPlayerMP) event.getEntityPlayer();
             System.out.println("onPlayerClone: "+player.getName());
@@ -169,6 +184,14 @@ public class CwCEventHandler {
         if (event.getEntity() instanceof EntityPlayer) event.setDistance(0.0F);
     }
 
+//    @SubscribeEvent
+//    public void playerMove(LivingEvent.LivingUpdateEvent event) {
+//        if (event.getEntity().posZ < 0) {
+//            event.getEntity().posZ = event.getEntity().lastTickPosZ;
+//            event.setCanceled(true);
+//        }
+//    }
+
     /**
      * Hides health, hunger, and experience bars.
      * @param event
@@ -179,10 +202,16 @@ public class CwCEventHandler {
         if (event.getType().equals(ElementType.HEALTH) || event.getType().equals(ElementType.FOOD) || event.getType().equals(ElementType.EXPERIENCE))
             event.setCanceled(true);
 
-        if (Minecraft.getMinecraft().player.getName().equals("Architect") && event.getType().equals(ElementType.HOTBAR)) {
-            GameSettings gs = Minecraft.getMinecraft().gameSettings;
-            gs.thirdPersonView = 1;
+        if (Minecraft.getMinecraft().player.getName().equals("Architect") && event.getType().equals(ElementType.HOTBAR))
             event.setCanceled(true);
-        }
     }
+
+    /**
+     * Hides a player.
+     * @param event
+     */
+//    @SubscribeEvent
+//    public void hidePlayer(RenderLivingEvent.Pre event) {
+//        if (event.getEntity().getName().equals("Architect")) event.setCanceled(true);
+//    }
 }
