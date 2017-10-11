@@ -10,6 +10,8 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.SPacketHeldItemChange;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
@@ -28,7 +30,8 @@ public class CwCEventHandler {
     private static int DEFAULT_STACK_SIZE = 10;
 
     /**
-     * Ignore some keybindings.
+     * Ignore keybindings: drop, use item, swap hands, open inventory, player list, commands, screenshots, toggle perspective,
+     * smooth camera, and spectator outlines.
      * @param event
      */
     @SideOnly(Side.CLIENT)
@@ -48,6 +51,7 @@ public class CwCEventHandler {
      */
     @SubscribeEvent
     public void onEntitySpawn(EntityJoinWorldEvent event) {
+        // only allow player, falling blocks, and items to spawn
         if (!(event.getEntity() instanceof EntityPlayer || event.getEntity() instanceof EntityFallingBlock || event.getEntity() instanceof EntityItem))
             event.setCanceled(true);
 
@@ -55,6 +59,7 @@ public class CwCEventHandler {
             EntityPlayer player = (EntityPlayer) event.getEntity();
             System.out.println("onEntitySpawn: "+player.getName());
 
+            // check for empty inventory
             boolean empty = true;
             for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++) {
                 if (!player.inventory.getStackInSlot(i).isEmpty()) {
@@ -63,6 +68,7 @@ public class CwCEventHandler {
                 }
             }
 
+            // initialize the inventory
             if (empty) {
                 player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.red, DEFAULT_STACK_SIZE));
                 player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.orange, DEFAULT_STACK_SIZE));
@@ -73,6 +79,7 @@ public class CwCEventHandler {
                 System.out.println("\t-- inventory INITIALIZED");
             }
 
+            // enable flying and damage immunity
             player.capabilities.allowFlying = true;
             player.capabilities.disableDamage = true;
             player.sendPlayerAbilities();
@@ -142,4 +149,13 @@ public class CwCEventHandler {
         if (event.getEntity() instanceof EntityPlayer) event.setDistance(0.0F);
     }
 
+    /**
+     * Hides health, hunger, and experience bars.
+     * @param event
+     */
+    @SubscribeEvent
+    public void hideHUD(RenderGameOverlayEvent event) {
+        if (event.getType().equals(ElementType.HEALTH) || event.getType().equals(ElementType.FOOD) || event.getType().equals(ElementType.EXPERIENCE))
+            event.setCanceled(true);
+    }
 }
