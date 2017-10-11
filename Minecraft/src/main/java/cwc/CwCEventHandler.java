@@ -45,7 +45,8 @@ public class CwCEventHandler {
 
     /**
      * Only allows players, falling blocks, and items to spawn.
-     * If the player has an empty inventory, initialize it with default stack sizes of all colored blocks.
+     * Initializes the Architect with an empty inventory.
+     * If the Builder has an empty inventory, initialize it with default stack sizes of all colored blocks.
      * Allows the player to fly and be immune to damage.
      * @param event
      */
@@ -56,8 +57,15 @@ public class CwCEventHandler {
             event.setCanceled(true);
 
         if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
-            EntityPlayer player = (EntityPlayer) event.getEntity();
+            EntityPlayerMP player = (EntityPlayerMP) event.getEntity();
             System.out.println("onEntitySpawn: "+player.getName());
+
+            // initialize Architect with empty inventory
+            if (player.getName().equals("Architect")) {
+                for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++)
+                    player.inventory.setInventorySlotContents(i, ItemStack.EMPTY);
+                return;
+            }
 
             // check for empty inventory
             boolean empty = true;
@@ -84,6 +92,11 @@ public class CwCEventHandler {
             player.capabilities.disableDamage = true;
             player.sendPlayerAbilities();
             System.out.println("\t-- flying capabilities ON, damage OFF");
+
+            // spawn with empty hand (if possible)
+            int es = player.inventory.getFirstEmptyStack();
+            player.inventory.currentItem = es < 0 ? 0 : es;
+            player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
         }
     }
 
@@ -94,12 +107,19 @@ public class CwCEventHandler {
     @SubscribeEvent
     public void onPlayerClone(PlayerEvent.Clone event) {
         if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
-            EntityPlayer player = event.getEntityPlayer();
+            EntityPlayerMP player = (EntityPlayerMP) event.getEntityPlayer();
             System.out.println("onPlayerClone: "+player.getName());
+
+            // enable flying and damage immunity
             player.capabilities.allowFlying = true;
             player.capabilities.disableDamage = true;
             player.sendPlayerAbilities();
             System.out.println("\t-- flying capabilities ON, damage OFF");
+
+            // spawn with empty hand (if possible)
+            int es = player.inventory.getFirstEmptyStack();
+            player.inventory.currentItem = es < 0 ? 0 : es;
+            player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
         }
     }
 
@@ -153,9 +173,16 @@ public class CwCEventHandler {
      * Hides health, hunger, and experience bars.
      * @param event
      */
+    @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void hideHUD(RenderGameOverlayEvent event) {
         if (event.getType().equals(ElementType.HEALTH) || event.getType().equals(ElementType.FOOD) || event.getType().equals(ElementType.EXPERIENCE))
             event.setCanceled(true);
+
+        if (Minecraft.getMinecraft().player.getName().equals("Architect") && event.getType().equals(ElementType.HOTBAR)) {
+            GameSettings gs = Minecraft.getMinecraft().gameSettings;
+            gs.thirdPersonView = 1;
+            event.setCanceled(true);
+        }
     }
 }
