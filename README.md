@@ -18,7 +18,7 @@ When running `make install`, you may run into a particular error involving copyi
     The assumption is that the library is the same, but somehow had a slight change of name that the build script wasn't expecting.
     
     
-    ii. Disable the C# part of the build by setting `INCLUDE_CSHARP` to `OFF` in `CMakeLists.txt` as done in https://gitlab.engr.illinois.edu/hockenmaier/cwc-minecraft/commit/a02b5722576f9d78f8886ba6ca038e6cb047be57
+    ii. Disable the C# part of the build by setting `INCLUDE_CSHARP` to `OFF` in `CMakeLists.txt` as done in https://github.com/CogComp/cwc-minecraft/commit/a02b5722576f9d78f8886ba6ca038e6cb047be57
 
 
 3. Set up a workspace in IntelliJ by following [these instructions](https://bedrockminer.jimdo.com/modding-tutorials/set-up-minecraft-forge/set-up-fast-setup/), or by doing the following:
