@@ -1,6 +1,8 @@
 package cwc;
 
+import com.microsoft.Malmo.MissionHandlers.AbsoluteMovementCommandsImplementation;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.entity.item.EntityFallingBlock;
 import net.minecraft.entity.item.EntityItem;
@@ -10,9 +12,9 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.SPacketHeldItemChange;
+import net.minecraft.world.GameType;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
-import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
@@ -21,33 +23,62 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent.*;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
-import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class CwCEventHandler {
 
-    public static SimpleNetworkWrapper network = NetworkRegistry.INSTANCE.newSimpleChannel("cwc");
     private static int DEFAULT_STACK_SIZE = 10;
+    private static boolean spectating = false;
 
     /**
      * Ignore keybindings: drop, use item, swap hands, open inventory, player list, commands, screenshots, toggle perspective,
      * smooth camera, and spectator outlines.
-     * Keeps Architect in third-person view, even in mob-view.
+     * Upon pressing E, the Architect can assume mob-view of the Builder. While in this mode, the Architect can switch between
+     * first- and third-person views by pressing F.
+     *
      * @param event
      */
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onKeyInput(KeyInputEvent event) {
-        GameSettings gs = Minecraft.getMinecraft().gameSettings;
-        if (gs.keyBindDrop.isPressed() || gs.keyBindSwapHands.isPressed() || gs.keyBindUseItem.isPressed() || gs.keyBindInventory.isPressed() ||
-                gs.keyBindPlayerList.isPressed() || gs.keyBindCommand.isPressed() || gs.keyBindScreenshot.isPressed() ||
-                gs.keyBindTogglePerspective.isPressed() || gs.keyBindSmoothCamera.isPressed() || gs.keyBindSpectatorOutlines.isPressed());
+        Minecraft minecraft = Minecraft.getMinecraft();
+        GameSettings gs = minecraft.gameSettings;
+        EntityPlayerSP player = minecraft.player;
 
-        // switches architect to (or, rather, keeps architect in) third person view when assuming mob-view of other players
-        if (Minecraft.getMinecraft().player.getName().equals("Architect") && gs.keyBindAttack.isPressed())
-            gs.thirdPersonView = 1;
+        // press E as Architect to instantly assume the point of view of the builder
+        if (player.getName().equals("Architect") && minecraft.playerController.getCurrentGameType() == GameType.SPECTATOR && gs.keyBindInventory.isPressed()) {
+            if (!spectating) {
+                EntityPlayer builder = null;
+                for (EntityPlayer ep : Minecraft.getMinecraft().world.playerEntities)
+                    if (ep.getName().equals("Builder")) builder = ep;
+
+                if (builder != null) {
+                    CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(builder.posX, builder.posY, builder.posZ, 0, 0, true, true, true, true, true));
+                    minecraft.playerController.attackEntity(Minecraft.getMinecraft().player, builder);
+                    spectating = true;
+                } else System.out.println("ERROR: Builder not found (null)");
+            } else {
+                // TODO: can we send a packet to the server to enable sneaking and get out of mob-view?
+//                gs.thirdPersonView = 0;
+//                spectating = false;
+            }
+        }
+
+        // FIXME: because "E" to stop spectating isn't implemented yet
+        else if (player.getName().equals("Architect") && minecraft.playerController.getCurrentGameType() == GameType.SPECTATOR && gs.keyBindSneak.isPressed()) {
+            gs.thirdPersonView = 0;
+            spectating = false;
+        }
+
+        // press F to switch between first- and third-person views (TODO: should this only be available to architect?)
+        else if (gs.keyBindSwapHands.isPressed() && (player.getName().equals("Builder") || (player.getName().equals("Architect") && spectating)))
+            gs.thirdPersonView = gs.thirdPersonView == 1 ? 0 : 1;
+
+        else if (gs.keyBindDrop.isPressed() || gs.keyBindSwapHands.isPressed() || gs.keyBindUseItem.isPressed() ||
+                gs.keyBindInventory.isPressed() || gs.keyBindPlayerList.isPressed() || gs.keyBindCommand.isPressed() ||
+                gs.keyBindScreenshot.isPressed() || gs.keyBindTogglePerspective.isPressed() ||
+                gs.keyBindSmoothCamera.isPressed() || gs.keyBindSpectatorOutlines.isPressed());
     }
 
     /**
@@ -55,6 +86,7 @@ public class CwCEventHandler {
      * Initializes the Architect with an empty inventory.
      * If the Builder has an empty inventory, initialize it with default stack sizes of all colored blocks.
      * Allows the player to fly and be immune to damage.
+     *
      * @param event
      */
     @SubscribeEvent
@@ -63,13 +95,9 @@ public class CwCEventHandler {
         if (!(event.getEntity() instanceof EntityPlayer || event.getEntity() instanceof EntityFallingBlock || event.getEntity() instanceof EntityItem))
             event.setCanceled(true);
 
-        // initialize Architect with third person view
-        if (event.getEntity().getEntityWorld().isRemote && event.getEntity().getName().equals("Architect"))
-            Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
-
         if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
             EntityPlayerMP player = (EntityPlayerMP) event.getEntity();
-            System.out.println("onEntitySpawn: "+player.getName());
+            System.out.println("onEntitySpawn: " + player.getName());
 
             // initialize Architect with empty inventory
             if (player.getName().equals("Architect")) {
@@ -113,17 +141,14 @@ public class CwCEventHandler {
 
     /**
      * Re-enables flying and damage immunity should the player respawn (hopefully shouldn't be called).
+     *
      * @param event
      */
     @SubscribeEvent
     public void onPlayerClone(PlayerEvent.Clone event) {
-        // initialize Architect with third person view
-        if (event.getEntity().getEntityWorld().isRemote && event.getEntity().getName().equals("Architect"))
-            Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
-
         if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
             EntityPlayerMP player = (EntityPlayerMP) event.getEntityPlayer();
-            System.out.println("onPlayerClone: "+player.getName());
+            System.out.println("onPlayerClone: " + player.getName());
 
             // enable flying and damage immunity
             player.capabilities.allowFlying = true;
@@ -141,6 +166,7 @@ public class CwCEventHandler {
     /**
      * Switches active hotbar slot to the item just picked up, or first empty slot if the item doesn't exist in hotbar.
      * If, for some reason, the hotbar is full and the item doesn't exist in hotbar already, the currently held item isn't changed.
+     *
      * @param event
      */
     @SubscribeEvent
@@ -161,13 +187,14 @@ public class CwCEventHandler {
     /**
      * Sets held item to first empty slot upon placing a block. If, for some reason, no hotbar slots are empty, then
      * this does nothing.
+     *
      * @param event
      */
     @SubscribeEvent
     public void onBlockPlace(BlockEvent.PlaceEvent event) {
         if (!event.getPlayer().getEntityWorld().isRemote && event.getPlayer() instanceof EntityPlayerMP) {
             EntityPlayerMP player = (EntityPlayerMP) event.getPlayer();
-            System.out.println("Block "+event.getPlacedBlock().getBlock().getUnlocalizedName()+" placed by "+player.getName());
+            System.out.println("Block " + event.getPlacedBlock().getBlock().getUnlocalizedName() + " placed by " + player.getName());
 
             int empty = player.inventory.getFirstEmptyStack();
             player.inventory.currentItem = empty < 0 ? player.inventory.currentItem : empty;
@@ -177,6 +204,7 @@ public class CwCEventHandler {
 
     /**
      * Disables falling damage.
+     *
      * @param event
      */
     @SubscribeEvent
@@ -184,16 +212,23 @@ public class CwCEventHandler {
         if (event.getEntity() instanceof EntityPlayer) event.setDistance(0.0F);
     }
 
-//    @SubscribeEvent
-//    public void playerMove(LivingEvent.LivingUpdateEvent event) {
-//        if (event.getEntity().posZ < 0) {
-//            event.getEntity().posZ = event.getEntity().lastTickPosZ;
-//            event.setCanceled(true);
-//        }
-//    }
+    /**
+     * Prevents noclipping through floor.
+     *
+     * @param event
+     */
+    @SubscribeEvent
+    public void playerMove(LivingEvent.LivingUpdateEvent event) {
+        EntityPlayer player = (EntityPlayer) event.getEntity();
+        if (player.posY < 0) {
+            event.setCanceled(true);
+            player.setPositionAndUpdate(player.posX, 0, player.posZ);
+        }
+    }
 
     /**
      * Hides health, hunger, and experience bars.
+     *
      * @param event
      */
     @SideOnly(Side.CLIENT)
@@ -205,13 +240,4 @@ public class CwCEventHandler {
         if (Minecraft.getMinecraft().player.getName().equals("Architect") && event.getType().equals(ElementType.HOTBAR))
             event.setCanceled(true);
     }
-
-    /**
-     * Hides a player.
-     * @param event
-     */
-//    @SubscribeEvent
-//    public void hidePlayer(RenderLivingEvent.Pre event) {
-//        if (event.getEntity().getName().equals("Architect")) event.setCanceled(true);
-//    }
 }
