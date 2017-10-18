@@ -1,9 +1,12 @@
 package cwc;
 
+import com.microsoft.Malmo.Client.MalmoModClient;
+import com.microsoft.Malmo.MalmoMod;
 import com.microsoft.Malmo.MissionHandlers.AbsoluteMovementCommandsImplementation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.settings.GameSettings;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.item.EntityFallingBlock;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
@@ -25,18 +28,16 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent.*;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.lwjgl.input.Mouse;
 
 public class CwCEventHandler {
 
-    private static int DEFAULT_STACK_SIZE = 10;
-    private static boolean spectating = false;
+    public static CwCState state = CwCState.INSPECTING; // initialized to the "Inspecting" state
+    public static boolean reset = false;                // used for resetting the Architect to free-fly inspection
+    private static boolean unpressed = true;            // used for resetting the Architect to free-fly inspection
+    private static int DEFAULT_STACK_SIZE = 50;
 
     /**
-     * Ignore keybindings: drop, use item, swap hands, open inventory, player list, commands, screenshots, toggle perspective,
-     * smooth camera, and spectator outlines.
-     * Upon pressing E, the Architect can assume mob-view of the Builder. While in this mode, the Architect can switch between
-     * first- and third-person views by pressing F.
-     *
      * @param event
      */
     @SideOnly(Side.CLIENT)
@@ -46,39 +47,107 @@ public class CwCEventHandler {
         GameSettings gs = minecraft.gameSettings;
         EntityPlayerSP player = minecraft.player;
 
-        // press E as Architect to instantly assume the point of view of the builder
-        if (player.getName().equals("Architect") && minecraft.playerController.getCurrentGameType() == GameType.SPECTATOR && gs.keyBindInventory.isPressed()) {
-            if (!spectating) {
+        // Handles turn-switching logic when the TAB key is pressed by either Architect or Builder.
+        if (gs.keyBindPlayerList.isPressed()) {
+            System.out.println("On turn-switch, Player: " + player.getName() + "\tState: " + state);
+
+            // Architect switches from Inspecting to Thinking mode
+            if (player.getName().equals(MalmoMod.ARCHITECT) && minecraft.playerController.getCurrentGameType() == GameType.SPECTATOR && state == CwCState.INSPECTING) {
+                CwCMod.network.sendToServer(new CwCStateMessage(CwCState.THINKING));
+
+                // Find the Builder, teleport to his position and attack him (to enable third-person mob-view of Builder)
                 EntityPlayer builder = null;
                 for (EntityPlayer ep : Minecraft.getMinecraft().world.playerEntities)
-                    if (ep.getName().equals("Builder")) builder = ep;
+                    if (ep.getName().equals(MalmoMod.BUILDER)) builder = ep;
 
                 if (builder != null) {
                     CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(builder.posX, builder.posY, builder.posZ, 0, 0, true, true, true, true, true));
                     minecraft.playerController.attackEntity(Minecraft.getMinecraft().player, builder);
-                    spectating = true;
-                } else System.out.println("ERROR: Builder not found (null)");
-            } else {
-                // TODO: can we send a packet to the server to enable sneaking and get out of mob-view?
-//                gs.thirdPersonView = 0;
-//                spectating = false;
+                    gs.thirdPersonView = 1;
+                }
             }
+
+            // Architect switches from Thinking to Building mode
+            else if (player.getName().equals(MalmoMod.ARCHITECT) && minecraft.playerController.getCurrentGameType() == GameType.SPECTATOR && state == CwCState.THINKING)
+                CwCMod.network.sendToServer(new CwCStateMessage(CwCState.BUILDING));
+
+                // Builder switches from Building to Inspecting mode
+            else if (player.getName().equals(MalmoMod.BUILDER) && state == CwCState.BUILDING)
+                CwCMod.network.sendToServer(new CwCStateMessage(CwCState.INSPECTING));
+
+            // Unpress the key
+            KeyBinding.unPressAllKeys();
         }
 
-        // FIXME: because "E" to stop spectating isn't implemented yet
-        else if (player.getName().equals("Architect") && minecraft.playerController.getCurrentGameType() == GameType.SPECTATOR && gs.keyBindSneak.isPressed()) {
-            gs.thirdPersonView = 0;
-            spectating = false;
+        // Builder keybinds
+        else if (player.getName().equals(MalmoMod.BUILDER)) {
+            // ignore all keypresses if not in Building mode
+            if (state != CwCState.BUILDING) KeyBinding.unPressAllKeys();
+
+                // ignore regular set of keypresses while building (e.g. dropping items, swapping hands, inventory, etc.)
+            else if (gs.keyBindDrop.isPressed() || gs.keyBindSwapHands.isPressed() || gs.keyBindUseItem.isPressed() ||
+                    gs.keyBindInventory.isPressed() || gs.keyBindPlayerList.isPressed() || gs.keyBindCommand.isPressed() ||
+                    gs.keyBindScreenshot.isPressed() || gs.keyBindTogglePerspective.isPressed() || gs.keyBindSmoothCamera.isPressed() ||
+                    gs.keyBindSpectatorOutlines.isPressed()) ;
         }
 
-        // press F to switch between first- and third-person views (TODO: should this only be available to architect?)
-        else if (gs.keyBindSwapHands.isPressed() && (player.getName().equals("Builder") || (player.getName().equals("Architect") && spectating)))
-            gs.thirdPersonView = gs.thirdPersonView == 1 ? 0 : 1;
+        // Architect keybinds
+        else if (player.getName().equals(MalmoMod.ARCHITECT)) {
+            // disable opening chatbox while Inspecting
+            if (state == CwCState.INSPECTING && (gs.keyBindChat.isPressed() || gs.keyBindCommand.isPressed())) ;
+            if (gs.keyBindDrop.isPressed() || gs.keyBindSwapHands.isPressed() || gs.keyBindUseItem.isPressed() ||
+                    gs.keyBindInventory.isPressed() || gs.keyBindPlayerList.isPressed() || gs.keyBindCommand.isPressed() ||
+                    gs.keyBindScreenshot.isPressed() || gs.keyBindTogglePerspective.isPressed() || gs.keyBindSmoothCamera.isPressed() ||
+                    gs.keyBindSpectatorOutlines.isPressed()) ;
+        }
 
-        else if (gs.keyBindDrop.isPressed() || gs.keyBindSwapHands.isPressed() || gs.keyBindUseItem.isPressed() ||
-                gs.keyBindInventory.isPressed() || gs.keyBindPlayerList.isPressed() || gs.keyBindCommand.isPressed() ||
-                gs.keyBindScreenshot.isPressed() || gs.keyBindTogglePerspective.isPressed() ||
-                gs.keyBindSmoothCamera.isPressed() || gs.keyBindSpectatorOutlines.isPressed());
+    }
+
+    /**
+     * Prevents noclipping through floor.
+     * Resets the Architect from mob-view to free camera when the Builder ends his Building turn by simulating a "sneak" keypress.
+     * Initializes Builder with an overridden mouse.
+     *
+     * @param event
+     */
+    @SubscribeEvent
+    public void onPlayerUpdate(LivingEvent.LivingUpdateEvent event) {
+        EntityPlayer player = (EntityPlayer) event.getEntity();
+        if (player.posY < 0) {
+            event.setCanceled(true);
+            player.setPositionAndUpdate(player.posX, 0, player.posZ);
+        }
+
+        if (player.getEntityWorld().isRemote) {
+            Minecraft minecraft = Minecraft.getMinecraft();
+            if (player.getName().equals(MalmoMod.ARCHITECT)) {
+                if (state == CwCState.INSPECTING && reset) {
+                    KeyBinding.setKeyBindState(Minecraft.getMinecraft().gameSettings.keyBindSneak.getKeyCode(), true);
+                    Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
+                    reset = false;
+                    unpressed = false;
+                } else if (Minecraft.getMinecraft().gameSettings.keyBindSneak.isKeyDown() && !unpressed) {
+                    KeyBinding.unPressAllKeys();
+                    unpressed = true;
+
+                    EntityPlayer builder = null;
+                    for (EntityPlayer ep : Minecraft.getMinecraft().world.playerEntities)
+                        if (ep.getName().equals(MalmoMod.BUILDER)) builder = ep;
+
+                    if (builder != null)
+                        CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(builder.posX, builder.posY + 5, builder.posZ - 3, 0, 45, true, true, true, true, true));
+                }
+            } else if (player.getName().equals(MalmoMod.BUILDER) && minecraft.player.getName().equals(MalmoMod.BUILDER) && state != CwCState.BUILDING &&
+                    minecraft.mouseHelper instanceof MalmoModClient.MouseHook && ((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding == false)
+                ((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding = true;
+        }
+
+        //TODO: calculations of visible entities goes here
+//        if (player.getEntityWorld().isRemote) {
+//            ICamera icamera = new Frustum();
+//            Entity entity = Minecraft.getMinecraft().getRenderViewEntity();;
+//            icamera.setPosition(entity.lastTickPosX, entity.lastTickPosY, entity.lastTickPosZ);
+//        }
     }
 
     /**
@@ -100,7 +169,7 @@ public class CwCEventHandler {
             System.out.println("onEntitySpawn: " + player.getName());
 
             // initialize Architect with empty inventory
-            if (player.getName().equals("Architect")) {
+            if (player.getName().equals(MalmoMod.ARCHITECT)) {
                 for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++)
                     player.inventory.setInventorySlotContents(i, ItemStack.EMPTY);
                 return;
@@ -213,20 +282,6 @@ public class CwCEventHandler {
     }
 
     /**
-     * Prevents noclipping through floor.
-     *
-     * @param event
-     */
-    @SubscribeEvent
-    public void playerMove(LivingEvent.LivingUpdateEvent event) {
-        EntityPlayer player = (EntityPlayer) event.getEntity();
-        if (player.posY < 0) {
-            event.setCanceled(true);
-            player.setPositionAndUpdate(player.posX, 0, player.posZ);
-        }
-    }
-
-    /**
      * Hides health, hunger, and experience bars.
      *
      * @param event
@@ -237,7 +292,7 @@ public class CwCEventHandler {
         if (event.getType().equals(ElementType.HEALTH) || event.getType().equals(ElementType.FOOD) || event.getType().equals(ElementType.EXPERIENCE))
             event.setCanceled(true);
 
-        if (Minecraft.getMinecraft().player.getName().equals("Architect") && event.getType().equals(ElementType.HOTBAR))
+        if (Minecraft.getMinecraft().player.getName().equals(MalmoMod.ARCHITECT) && event.getType().equals(ElementType.HOTBAR))
             event.setCanceled(true);
     }
 }

@@ -1,5 +1,7 @@
 package cwc;
 
+import com.microsoft.Malmo.Client.MalmoModClient;
+import com.microsoft.Malmo.MalmoMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraftforge.client.model.ModelLoader;
@@ -9,7 +11,7 @@ public class StartupClientOnly {
 		final int DEFAULT_ITEM_SUBTYPE = 0;
 
 		// cookie loves jelly!
-		// register item resource locations of our custom blocks
+		// Registers item resource locations of our custom blocks.
 		ModelLoader.setCustomModelResourceLocation(StartupCommon.ired, DEFAULT_ITEM_SUBTYPE, new ModelResourceLocation("cwcmod:cwc_red","inventory"));
 		ModelLoader.setCustomModelResourceLocation(StartupCommon.iorange, DEFAULT_ITEM_SUBTYPE, new ModelResourceLocation("cwcmod:cwc_orange","inventory"));
 		ModelLoader.setCustomModelResourceLocation(StartupCommon.iyellow, DEFAULT_ITEM_SUBTYPE, new ModelResourceLocation("cwcmod:cwc_yellow","inventory"));

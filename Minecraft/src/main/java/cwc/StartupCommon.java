@@ -14,9 +14,19 @@ public class StartupCommon {
 	public static ItemBlock ired, iorange, iyellow, igreen, iblue, ipurple;  // colored item blocks
 	public static CwCUnbreakableBlock unb_grey, unb_white;					 // unbreakable blocks
 	public static CwCCreativeTab cwctab;									 // cwc blocks creative tab
-	
+
 	public static void preInitCommon() {
-		/* Register colored blocks & corresponding items */
+		registerBlocks();
+		initializeCreativeTabs();
+	}
+	
+	public static void initCommon() {}
+	public static void postInitCommon() {}
+
+	/**
+	 * Registers colored blocks, unbreakable blocks and their corresponding item registries.
+	 */
+	private static void registerBlocks() {
 		// red
 		red = (CwCBlock)(new CwCBlock().setUnlocalizedName("cwc_red_un"));
 		red.setRegistryName("cwc_red_rn");
@@ -65,34 +75,32 @@ public class StartupCommon {
 		ipurple.setRegistryName(purple.getRegistryName());
 		GameRegistry.register(ipurple);
 
-
-		/* Register unbreakable blocks */
-		// grey
+		// grey, unbreakable
 		unb_grey = (CwCUnbreakableBlock)(new CwCUnbreakableBlock().setUnlocalizedName("cwc_unbreakable_grey_un"));
 		unb_grey.setRegistryName("cwc_unbreakable_grey_rn");
 		GameRegistry.register(unb_grey);
 
-		// white
+		// white, unbreakable
 		unb_white = (CwCUnbreakableBlock)(new CwCUnbreakableBlock().setUnlocalizedName("cwc_unbreakable_white_un"));
 		unb_white.setRegistryName("cwc_unbreakable_white_rn");
 		GameRegistry.register(unb_white);
 
+		// show block IDs of custom blocks -- add statements as needed
+		System.out.println("Unbreakable grey block ID: "+Block.getIdFromBlock(unb_grey));
+		System.out.println("Unbreakable white block ID: "+Block.getIdFromBlock(unb_white));
+	}
 
-		/* Initialize creative tab(s) */
-		// NOTE: this piece of code effectively overwrites the rest of the creative tabs.
-		// If we want them back, will need to initialize this differently.
+	/**
+	 * Initializes creative tab(s).
+	 * This piece of code effectively overwrites the rest of the creative tabs.
+	 * If we want them back, will need to initialize this differently.
+	 */
+	private static void initializeCreativeTabs() {
 		CreativeTabs.CREATIVE_TAB_ARRAY = new CreativeTabs[1];
 		cwctab = new CwCCreativeTab(0, "cwc_creative_tab") {
 			@Override
 			@SideOnly(Side.CLIENT)
 			public ItemStack getTabIconItem() { return new ItemStack(Item.getItemFromBlock(red)); }
 		};
-
-		// show block IDs of custom blocks -- add statements as needed
-		System.out.println("Unbreakable grey block ID: "+Block.getIdFromBlock(unb_grey));
-		System.out.println("Unbreakable white block ID: "+Block.getIdFromBlock(unb_white));
 	}
-	
-	public static void initCommon() {}
-	public static void postInitCommon() {}
 }
