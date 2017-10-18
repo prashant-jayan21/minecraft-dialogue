@@ -171,6 +171,7 @@ public class JSONWorldDataHelper
 
         JsonArray arr = new JsonArray();
         JsonArray blockInfoArr = new JsonArray();
+        JsonArray blockInfoArr2 = new JsonArray();
         BlockPos pos = new BlockPos(player.posX, player.posY, player.posZ);
         for (int y = environmentDimensions.yMin; y <= environmentDimensions.yMax; y++)
         {
@@ -199,10 +200,25 @@ public class JSONWorldDataHelper
                     blockObj.addProperty("y", p.getY());
                     blockObj.addProperty("z", p.getZ());
                     blockInfoArr.add(blockObj);
+
+                    BlockPos p_relative;
+                    if( environmentDimensions.absoluteCoords )
+                        p_relative = new BlockPos(x, y, z).subtract(pos);
+                    else
+                        p_relative = new BlockPos(x, y, z);
+
+                    JsonObject blockObj2 = new JsonObject();
+                    blockObj2.addProperty("type", name);
+                    blockObj2.addProperty("x", p_relative.getX());
+                    blockObj2.addProperty("y", p_relative.getY());
+                    blockObj2.addProperty("z", p_relative.getZ());
+                    blockInfoArr2.add(blockObj2);
+
                 }
             }
         }
         json.add(jsonName, arr);
         json.add(jsonName + "_block_info", blockInfoArr);
+        json.add(jsonName + "_block_info_relative", blockInfoArr2);
     }
 }
