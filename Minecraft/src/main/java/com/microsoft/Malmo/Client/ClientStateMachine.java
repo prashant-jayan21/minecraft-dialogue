@@ -1587,7 +1587,7 @@ public class ClientStateMachine extends StateMachine implements IMalmoMessageLis
             this.videoHook.start(currentMissionInit(), currentMissionBehaviour().videoProducer);
 
             // Make sure we have mouse control:
-            ClientStateMachine.this.inputController.setInputType(InputType.AI);
+            ClientStateMachine.this.inputController.setInputType(InputType.HUMAN); // FIXME: now initiates missions with human control -- modified from original Malmo code
             Minecraft.getMinecraft().inGameHasFocus = true; // Otherwise auto-repeat won't work for mouse clicks.
 
             // Overclocking:

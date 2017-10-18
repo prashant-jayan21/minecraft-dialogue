@@ -22,6 +22,7 @@ package com.microsoft.Malmo.Client;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import cwc.CwCMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.util.MouseHelper;
@@ -35,7 +36,7 @@ import com.microsoft.Malmo.Utils.ScreenHelper.TextCategory;
 
 public class MalmoModClient
 {
-    private class MouseHook extends MouseHelper
+    public class MouseHook extends MouseHelper
     {
         public boolean isOverriding = true;
         /* (non-Javadoc)
@@ -129,18 +130,20 @@ public class MalmoModClient
     {
         // Create extra key bindings here and pass them to the KeyManager.
         ArrayList<InternalKey> extraKeys = new ArrayList<InternalKey>();
-        // Create a key binding to toggle between player and Malmo control:
-        extraKeys.add(new InternalKey("key.toggleMalmo", 28, "key.categories.malmo")	// 28 is the keycode for enter.
-        {
-            @Override
-            public void onPressed()
+
+        if (CwCMod.enableAIToggle) { // FIXME: now only enables toggle if enabled in CwCMod
+            // Create a key binding to toggle between player and Malmo control:
+            extraKeys.add(new InternalKey("key.toggleMalmo", 28, "key.categories.malmo")    // 28 is the keycode for enter.
             {
-                InputType it = (inputType != InputType.AI) ? InputType.AI : InputType.HUMAN;
-                System.out.println("Toggling control between human and AI - now " + it);
-                setInputType(it);
-                super.onPressed();
-            }
-        });
+                @Override
+                public void onPressed() {
+                    InputType it = (inputType != InputType.AI) ? InputType.AI : InputType.HUMAN;
+                    System.out.println("Toggling control between human and AI - now " + it);
+                    setInputType(it);
+                    super.onPressed();
+                }
+            });
+        }
 
         extraKeys.add(new InternalKey("key.handyTestHook", 22, "key.categories.malmo")
         {
