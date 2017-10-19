@@ -69,15 +69,15 @@ def safeWaitForStart(agent_hosts):
 # Create one agent host for parsing:
 agent_hosts = [MalmoPython.AgentHost()]
 
-try:
-    agent_hosts[0].parse( sys.argv )
-except RuntimeError as e:
-    print('ERROR:',e)
-    print(agent_hosts[0].getUsage())
-    exit(1)
-if agent_hosts[0].receivedArgument("help"):
-    print(agent_hosts[0].getUsage())
-    exit(0)
+# try:
+#     agent_hosts[0].parse( sys.argv )
+# except RuntimeError as e:
+#     print('ERROR:',e)
+#     print(agent_hosts[0].getUsage())
+#     exit(1)
+# if agent_hosts[0].receivedArgument("help"):
+#     print(agent_hosts[0].getUsage())
+#     exit(0)
 
 # Set observation policy
 agent_hosts[0].setObservationsPolicy(MalmoPython.ObservationsPolicy.KEEP_ALL_OBSERVATIONS)
@@ -86,13 +86,21 @@ agent_hosts[0].setObservationsPolicy(MalmoPython.ObservationsPolicy.KEEP_ALL_OBS
 agent_hosts += [MalmoPython.AgentHost()]
 
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
+lan = False
+
+if len(sys.argv) > 1 and sys.argv[1].lower() == 'lan':
+	lan = True
 
 # Set up a client pool
 client_pool = MalmoPython.ClientPool()
-client_pool.add( MalmoPython.ClientInfo('127.0.0.1', 10000) )
-client_pool.add( MalmoPython.ClientInfo('127.0.0.1', 10001) )
-# client_pool.add( MalmoPython.ClientInfo('10.192.95.32', 10000) )
-# client_pool.add( MalmoPython.ClientInfo('10.195.220.132', 10000) )
+
+if not lan:
+	client_pool.add( MalmoPython.ClientInfo('127.0.0.1', 10000) )
+	client_pool.add( MalmoPython.ClientInfo('127.0.0.1', 10001) )
+
+else:
+	client_pool.add( MalmoPython.ClientInfo('10.192.95.32', 10000) )
+	client_pool.add( MalmoPython.ClientInfo('10.195.220.132', 10000) )
 
 
 # Create mission xml
@@ -203,36 +211,28 @@ def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, pr
     if current_blocks_state_abs != prev_blocks_state_abs or chat_observation != [] or current_game_state != prev_game_state:
         print
         print "-"*20
-        print "STATE:"
+        print "[STATE]", current_game_state
 
-        print "timestamp"
-        print msg_timestamp
+        print "[timestamp]", msg_timestamp
         print
 
-        print "builder abs position"
-        print "(x, y, z): " + str((builder_x_pos, builder_y_pos, builder_z_pos))
-        print "(yaw, pitch): " + str((builder_yaw, builder_pitch))
+        print "[builder absolute position] (x, y, z): " + str((builder_x_pos, builder_y_pos, builder_z_pos)), "(yaw, pitch): " + str((builder_yaw, builder_pitch))
+        print
 
         for block in current_blocks_state_rel:
             perspective_coords = getPerspectiveCoordinates(block["x"], block["y"], block["z"], builder_yaw, builder_pitch)
             absolute_coords = (block["x"], block["y"], block["z"])
-            print
-            print block["type"]
-            print "absolute coordinates"
-            print absolute_coords
-            print "perspective coordinates"
-            print perspective_coords
+            print "["+block["type"]+"]", "absolute coordinates:", absolute_coords, " | perspective coordinates:", perspective_coords
+
         prev_blocks_state_abs = current_blocks_state_abs
-
         current_dialog_state = prev_dialog_state + chat_observation
-        print
-        print "chat"
-        print current_dialog_state
-        prev_dialog_state = current_dialog_state
 
         print
-        print "game state"
-        print current_game_state
+        print "[chat]"
+        for utterance in current_dialog_state:
+        	print utterance
+
+        prev_dialog_state = current_dialog_state
         prev_game_state = current_game_state
 
         print "-"*20
