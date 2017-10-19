@@ -19,7 +19,7 @@
 
 package com.microsoft.Malmo.Utils;
 
-import cwc.CwCEventHandler;
+import cwc.CwCMod;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -229,7 +229,7 @@ public class JSONWorldDataHelper
      */
     public static void buildGameState(JsonObject json)
     {
-        json.addProperty("GameState", CwCEventHandler.state.name());
+        json.addProperty("GameState", CwCMod.state.name());
     }
 
 }
