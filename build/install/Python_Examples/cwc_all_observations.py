@@ -159,16 +159,22 @@ import numpy as np
 def getPerspectiveCoordinates(x, y, z, yaw, pitch):
     # construct vector
     v = np.matrix('{}; {}; {}'.format(x, y, z))
-    # construct rotation matrix
-    theta = np.radians(-1 * yaw)
-    c, s = np.cos(theta), np.sin(theta)
-    R = np.matrix('{} {} {}; {} {} {}; {} {} {}'.format(c, 0, -s, 0, 1, 0, s, 0, c))
+    # construct yaw rotation matrix
+    theta_yaw = np.radians(-1 * yaw)
+    c, s = np.cos(theta_yaw), np.sin(theta_yaw)
+    R_yaw = np.matrix('{} {} {}; {} {} {}; {} {} {}'.format(c, 0, -s, 0, 1, 0, s, 0, c))
     # multiply
-    v_new = R * v
-    x_new = v_new.item(0)
-    y_new = v_new.item(1)
-    z_new = v_new.item(2)
-    return (x_new, y_new, z_new)
+    v_new = R_yaw * v
+    # construct pitch rotation matrix
+    theta_pitch = np.radians(pitch)
+    c, s = np.cos(theta_pitch), np.sin(theta_pitch)
+    R_pitch = np.matrix('{} {} {}; {} {} {}; {} {} {}'.format(1, 0, 0, 0, c, s, 0, -s, c))
+    # multiply
+    v_final = R_pitch * v_new
+    x_final = v_final.item(0)
+    y_final = v_final.item(1)
+    z_final = v_final.item(2)
+    return (x_final, y_final, z_final)
 
 def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, prev_game_state):
     msg_timestamp = observation.timestamp
