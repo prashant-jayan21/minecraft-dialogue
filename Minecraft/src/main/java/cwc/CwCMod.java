@@ -27,7 +27,9 @@ public class CwCMod {
 	public static CommonProxy proxy;
 
 	public static boolean enableAIToggle = false;
-	
+	public static CwCState state = CwCState.INSPECTING; // initialized to the "Inspecting" state
+	public static String[] statusOverlay = {"Architect is inspecting...", "Architect is thinking...", "Builder is building..."};
+
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
 		network = NetworkRegistry.INSTANCE.newSimpleChannel("cwc");

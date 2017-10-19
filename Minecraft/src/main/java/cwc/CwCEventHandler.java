@@ -28,11 +28,9 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent.*;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.lwjgl.input.Mouse;
 
 public class CwCEventHandler {
 
-    public static CwCState state = CwCState.INSPECTING; // initialized to the "Inspecting" state
     public static boolean reset = false;                // used for resetting the Architect to free-fly inspection
     private static boolean unpressed = true;            // used for resetting the Architect to free-fly inspection
     private static int DEFAULT_STACK_SIZE = 50;
@@ -49,10 +47,10 @@ public class CwCEventHandler {
 
         // Handles turn-switching logic when the TAB key is pressed by either Architect or Builder.
         if (gs.keyBindPlayerList.isPressed()) {
-            System.out.println("On turn-switch, Player: " + player.getName() + "\tState: " + state);
+            System.out.println("Player: " + player.getName() + "\tState: " + CwCMod.state);
 
             // Architect switches from Inspecting to Thinking mode
-            if (player.getName().equals(MalmoMod.ARCHITECT) && minecraft.playerController.getCurrentGameType() == GameType.SPECTATOR && state == CwCState.INSPECTING) {
+            if (player.getName().equals(MalmoMod.ARCHITECT) && minecraft.playerController.getCurrentGameType() == GameType.SPECTATOR && CwCMod.state == CwCState.INSPECTING) {
                 CwCMod.network.sendToServer(new CwCStateMessage(CwCState.THINKING));
 
                 // Find the Builder, teleport to his position and attack him (to enable third-person mob-view of Builder)
@@ -68,11 +66,11 @@ public class CwCEventHandler {
             }
 
             // Architect switches from Thinking to Building mode
-            else if (player.getName().equals(MalmoMod.ARCHITECT) && minecraft.playerController.getCurrentGameType() == GameType.SPECTATOR && state == CwCState.THINKING)
+            else if (player.getName().equals(MalmoMod.ARCHITECT) && minecraft.playerController.getCurrentGameType() == GameType.SPECTATOR && CwCMod.state == CwCState.THINKING)
                 CwCMod.network.sendToServer(new CwCStateMessage(CwCState.BUILDING));
 
                 // Builder switches from Building to Inspecting mode
-            else if (player.getName().equals(MalmoMod.BUILDER) && state == CwCState.BUILDING)
+            else if (player.getName().equals(MalmoMod.BUILDER) && CwCMod.state == CwCState.BUILDING)
                 CwCMod.network.sendToServer(new CwCStateMessage(CwCState.INSPECTING));
 
             // Unpress the key
@@ -82,23 +80,25 @@ public class CwCEventHandler {
         // Builder keybinds
         else if (player.getName().equals(MalmoMod.BUILDER)) {
             // ignore all keypresses if not in Building mode
-            if (state != CwCState.BUILDING) KeyBinding.unPressAllKeys();
+            if (CwCMod.state != CwCState.BUILDING) KeyBinding.unPressAllKeys();
 
-                // ignore regular set of keypresses while building (e.g. dropping items, swapping hands, inventory, etc.)
+            // ignore regular set of keypresses while building (e.g. dropping items, swapping hands, inventory, etc.)
             else if (gs.keyBindDrop.isPressed() || gs.keyBindSwapHands.isPressed() || gs.keyBindUseItem.isPressed() ||
                     gs.keyBindInventory.isPressed() || gs.keyBindPlayerList.isPressed() || gs.keyBindCommand.isPressed() ||
                     gs.keyBindScreenshot.isPressed() || gs.keyBindTogglePerspective.isPressed() || gs.keyBindSmoothCamera.isPressed() ||
-                    gs.keyBindSpectatorOutlines.isPressed()) ;
+                    gs.keyBindSpectatorOutlines.isPressed());
         }
 
         // Architect keybinds
         else if (player.getName().equals(MalmoMod.ARCHITECT)) {
             // disable opening chatbox while Inspecting
-            if (state == CwCState.INSPECTING && (gs.keyBindChat.isPressed() || gs.keyBindCommand.isPressed())) ;
+            if (CwCMod.state == CwCState.INSPECTING && (gs.keyBindChat.isPressed() || gs.keyBindCommand.isPressed()));
+            if (CwCMod.state != CwCState.INSPECTING && gs.keyBindSneak.isPressed()) KeyBinding.unPressAllKeys();
             if (gs.keyBindDrop.isPressed() || gs.keyBindSwapHands.isPressed() || gs.keyBindUseItem.isPressed() ||
                     gs.keyBindInventory.isPressed() || gs.keyBindPlayerList.isPressed() || gs.keyBindCommand.isPressed() ||
                     gs.keyBindScreenshot.isPressed() || gs.keyBindTogglePerspective.isPressed() || gs.keyBindSmoothCamera.isPressed() ||
-                    gs.keyBindSpectatorOutlines.isPressed()) ;
+                    gs.keyBindSpectatorOutlines.isPressed());
+            for (KeyBinding kb : gs.keyBindsHotbar) if (kb.isPressed());
         }
 
     }
@@ -121,7 +121,7 @@ public class CwCEventHandler {
         if (player.getEntityWorld().isRemote) {
             Minecraft minecraft = Minecraft.getMinecraft();
             if (player.getName().equals(MalmoMod.ARCHITECT)) {
-                if (state == CwCState.INSPECTING && reset) {
+                if (CwCMod.state == CwCState.INSPECTING && reset) {
                     KeyBinding.setKeyBindState(Minecraft.getMinecraft().gameSettings.keyBindSneak.getKeyCode(), true);
                     Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
                     reset = false;
@@ -135,11 +135,19 @@ public class CwCEventHandler {
                         if (ep.getName().equals(MalmoMod.BUILDER)) builder = ep;
 
                     if (builder != null)
-                        CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(builder.posX, builder.posY + 5, builder.posZ - 3, 0, 45, true, true, true, true, true));
+                        CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(builder.posX, builder.posY + 3, builder.posZ - 3, 0, 45, true, true, true, true, true));
                 }
-            } else if (player.getName().equals(MalmoMod.BUILDER) && minecraft.player.getName().equals(MalmoMod.BUILDER) && state != CwCState.BUILDING &&
-                    minecraft.mouseHelper instanceof MalmoModClient.MouseHook && ((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding == false)
-                ((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding = true;
+
+                if (minecraft.player.getName().equals(MalmoMod.ARCHITECT))
+                    minecraft.ingameGUI.setOverlayMessage(CwCMod.statusOverlay[CwCMod.state.ordinal()], false);
+
+            } else if (player.getName().equals(MalmoMod.BUILDER) && minecraft.player.getName().equals(MalmoMod.BUILDER)) {
+                minecraft.ingameGUI.setOverlayMessage(CwCMod.statusOverlay[CwCMod.state.ordinal()], false);
+
+                if (CwCMod.state != CwCState.BUILDING && minecraft.mouseHelper instanceof MalmoModClient.MouseHook &&
+                        ((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding == false)
+                    ((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding = true;
+            }
         }
 
         //TODO: calculations of visible entities goes here

@@ -43,16 +43,16 @@ public class CwCMessageHandler implements IMessageHandler<CwCStateMessage, IMess
     }
 
     void processMessageOnClient(CwCStateMessage message, Minecraft mc) {
-        CwCEventHandler.state = CwCState.valueOf(message.getState());
+        CwCMod.state = CwCState.valueOf(message.getState());
         EntityPlayer player = mc.player;
 
-        if (CwCEventHandler.state == CwCState.INSPECTING) {
+        if (CwCMod.state == CwCState.INSPECTING) {
             CwCEventHandler.reset = true;
             if (player.getName().equals(MalmoMod.BUILDER) && mc.mouseHelper instanceof MalmoModClient.MouseHook)
                 ((MalmoModClient.MouseHook) mc.mouseHelper).isOverriding = true;
         }
 
-        else if (CwCEventHandler.state == CwCState.BUILDING && player.getName().equals(MalmoMod.BUILDER) && mc.mouseHelper instanceof MalmoModClient.MouseHook)
+        else if (CwCMod.state == CwCState.BUILDING && player.getName().equals(MalmoMod.BUILDER) && mc.mouseHelper instanceof MalmoModClient.MouseHook)
             ((MalmoModClient.MouseHook) mc.mouseHelper).isOverriding = false;
 
     }
