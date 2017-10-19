@@ -102,7 +102,6 @@ else:
 	client_pool.add( MalmoPython.ClientInfo('10.192.95.32', 10000) )
 	client_pool.add( MalmoPython.ClientInfo('10.195.220.132', 10000) )
 
-
 # Create mission xml
 missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -133,9 +132,9 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <AgentHandlers>
                   <ObservationFromFullStats/>
                    <ObservationFromGrid>
-                     <Grid name="builder_grid" absoluteCoords="false">
-                       <min x="-10" y="0" z="-10"/>
-                       <max x="10" y="3" z="10"/>
+                     <Grid name="builder_grid" absoluteCoords="true">
+                       <min x="-10" y="1" z="-10"/>
+                       <max x="10" y="9" z="10"/>
                      </Grid>
                    </ObservationFromGrid>
                    <ObservationFromChat/>
