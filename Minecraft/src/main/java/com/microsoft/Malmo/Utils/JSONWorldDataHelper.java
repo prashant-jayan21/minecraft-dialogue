@@ -19,6 +19,7 @@
 
 package com.microsoft.Malmo.Utils;
 
+import cwc.CwCEventHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -221,4 +222,14 @@ public class JSONWorldDataHelper
         json.add(jsonName + "_block_info", blockInfoArr);
         json.add(jsonName + "_block_info_relative", blockInfoArr2);
     }
+
+    /**
+     * Builds the basic game state data to be used as observation signals by the listener.
+     * @param json a JSON object into which the game state will be added.
+     */
+    public static void buildGameState(JsonObject json)
+    {
+        json.addProperty("GameState", CwCEventHandler.state.name());
+    }
+
 }

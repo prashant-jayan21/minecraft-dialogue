@@ -91,6 +91,9 @@ sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immedi
 client_pool = MalmoPython.ClientPool()
 client_pool.add( MalmoPython.ClientInfo('127.0.0.1', 10000) )
 client_pool.add( MalmoPython.ClientInfo('127.0.0.1', 10001) )
+# client_pool.add( MalmoPython.ClientInfo('10.192.95.32', 10000) )
+# client_pool.add( MalmoPython.ClientInfo('10.195.220.132', 10000) )
+
 
 # Create mission xml
 missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
@@ -123,8 +126,8 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                   <ObservationFromFullStats/>
                    <ObservationFromGrid>
                      <Grid name="builder_grid" absoluteCoords="false">
-                       <min x="-1" y="0" z="-1"/>
-                       <max x="1" y="2" z="1"/>
+                       <min x="-10" y="0" z="-10"/>
+                       <max x="10" y="3" z="10"/>
                      </Grid>
                    </ObservationFromGrid>
                    <ObservationFromChat/>
@@ -167,7 +170,7 @@ def getPerspectiveCoordinates(x, y, z, yaw, pitch):
     z_new = v_new.item(2)
     return (x_new, y_new, z_new)
 
-def processObservation(observation, prev_blocks_state_abs, prev_dialog_state):
+def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, prev_game_state):
     msg_timestamp = observation.timestamp
     msg = observation.text
     json_obj = json.loads(msg)
@@ -190,7 +193,8 @@ def processObservation(observation, prev_blocks_state_abs, prev_dialog_state):
     # # print yaw
     # # print pitch
     chat_observation = json_obj.get(u'Chat', [])
-    if current_blocks_state_abs != prev_blocks_state_abs or chat_observation != []:
+    current_game_state = json_obj.get(u'GameState', 0)
+    if current_blocks_state_abs != prev_blocks_state_abs or chat_observation != [] or current_game_state != prev_game_state:
         print
         print "-"*20
         print "STATE:"
@@ -220,12 +224,18 @@ def processObservation(observation, prev_blocks_state_abs, prev_dialog_state):
         print current_dialog_state
         prev_dialog_state = current_dialog_state
 
+        print
+        print "game state"
+        print current_game_state
+        prev_game_state = current_game_state
+
         print "-"*20
 
-    return (prev_blocks_state_abs, prev_dialog_state)
+    return (prev_blocks_state_abs, prev_dialog_state, prev_game_state)
 
 prev_blocks_state_abs = []
 prev_dialog_state = []
+prev_game_state = ""
 while not timed_out:
 
     for i in range(2):
@@ -238,7 +248,7 @@ while not timed_out:
 
         if i == 0 and world_state.is_mission_running and world_state.number_of_observations_since_last_state > 0:
             for observation in world_state.observations:
-                (prev_blocks_state_abs, prev_dialog_state) = processObservation(observation, prev_blocks_state_abs, prev_dialog_state)
+                (prev_blocks_state_abs, prev_dialog_state, prev_game_state) = processObservation(observation, prev_blocks_state_abs, prev_dialog_state, prev_game_state)
             # processObservation(world_state.observations[-1])
 
     time.sleep(1)

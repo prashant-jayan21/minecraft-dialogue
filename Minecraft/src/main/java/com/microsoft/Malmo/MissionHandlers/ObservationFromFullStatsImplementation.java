@@ -57,6 +57,7 @@ public class ObservationFromFullStatsImplementation extends ObservationFromServe
             JSONWorldDataHelper.buildLifeStats(json, player);
             JSONWorldDataHelper.buildPositionStats(json, player);
             JSONWorldDataHelper.buildEnvironmentStats(json, player);
+            JSONWorldDataHelper.buildGameState(json); // TODO: Make this a separate observation
         }
 
         @Override
