@@ -218,10 +218,12 @@ def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, pr
         print "[builder absolute position] (x, y, z): " + str((builder_x_pos, builder_y_pos, builder_z_pos)), "(yaw, pitch): " + str((builder_yaw, builder_pitch))
         print
 
-        for block in current_blocks_state_rel:
-            perspective_coords = getPerspectiveCoordinates(block["x"], block["y"], block["z"], builder_yaw, builder_pitch)
-            absolute_coords = (block["x"], block["y"], block["z"])
-            print "["+block["type"]+"]", "absolute coordinates:", absolute_coords, "\tperspective coordinates:", perspective_coords
+        for i in range(len(current_blocks_state_rel)):
+            block_rel = current_blocks_state_rel[i]
+            block_abs = current_blocks_state_abs[i]
+            perspective_coords = getPerspectiveCoordinates(block_rel["x"], block_rel["y"], block_rel["z"], builder_yaw, builder_pitch)
+            absolute_coords = (block_abs["x"], block_abs["y"], block_abs["z"])
+            print "["+block_rel["type"]+"]", "absolute coordinates:", absolute_coords, "\tperspective coordinates:", perspective_coords
 
         prev_blocks_state_abs = current_blocks_state_abs
         current_dialog_state = prev_dialog_state + chat_observation
