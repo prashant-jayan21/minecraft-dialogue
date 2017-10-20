@@ -3,15 +3,17 @@ package cwc;
 import com.microsoft.Malmo.Client.MalmoModClient;
 import com.microsoft.Malmo.MalmoMod;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.util.ScreenShotHelper;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
-import org.lwjgl.input.Mouse;
+
+import java.io.File;
+import java.util.Date;
 
 public class CwCMessageHandler implements IMessageHandler<CwCStateMessage, IMessage> {
     public IMessage onMessage(final CwCStateMessage message, MessageContext ctx) {
@@ -55,5 +57,24 @@ public class CwCMessageHandler implements IMessageHandler<CwCStateMessage, IMess
         else if (CwCMod.state == CwCState.BUILDING && player.getName().equals(MalmoMod.BUILDER) && mc.mouseHelper instanceof MalmoModClient.MouseHook)
             ((MalmoModClient.MouseHook) mc.mouseHelper).isOverriding = false;
 
+        ScreenShotHelper.saveScreenshot(CwCMod.loggingDir, (getTimestampedPNGFileForDirectory(CwCMod.screenshotDir)+"-"+player.getName())
+                .replace(CwCMod.screenshotDir.getAbsolutePath(),""), mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
+    }
+
+    /**
+     * Creates a unique PNG file in the given directory named by a timestamp.  Handles cases where the timestamp alone
+     * is not enough to create a uniquely named file, though it still might suffer from an unlikely race condition where
+     * the filename was unique when this method was called, but another process or thread created a file at the same
+     * path immediately after this method returned.
+     */
+    private static File getTimestampedPNGFileForDirectory(File gameDirectory) {
+        String s = CwCMod.DATE_FORMAT.format(new Date()).toString();
+        int i = 1;
+
+        while (true) {
+            File file1 = new File(gameDirectory, s + (i == 1 ? "" : "_" + i) + ".png");
+            if (!file1.exists()) return file1;
+            ++i;
+        }
     }
 }

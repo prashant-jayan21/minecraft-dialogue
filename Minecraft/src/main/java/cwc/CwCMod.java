@@ -14,6 +14,10 @@ import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
 import org.lwjgl.input.Mouse;
 
+import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+
 @Mod(modid = CwCMod.MODID, name = "CwC Blocks Mod", version = CwCMod.VERSION)
 public class CwCMod {
 	public static final String MODID = "cwcmod";
@@ -29,6 +33,15 @@ public class CwCMod {
 	public static boolean enableAIToggle = false;
 	public static CwCState state = CwCState.INSPECTING; // initialized to the "Inspecting" state
 	public static String[] statusOverlay = {"Architect is inspecting...", "Architect is thinking...", "Builder is building..."};
+	public static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
+	public static File loggingDir;
+	public static File screenshotDir;
+	static {
+		loggingDir = new File("/Users/Anjali/Documents/UIUC/research/CwC/BlocksWorld/Minecraft/cwc-minecraft/");
+		if (!loggingDir.exists()) loggingDir.mkdir();
+		screenshotDir = new File(loggingDir, "screenshots");
+		if (!screenshotDir.exists()) screenshotDir.mkdir();
+	}
 
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
