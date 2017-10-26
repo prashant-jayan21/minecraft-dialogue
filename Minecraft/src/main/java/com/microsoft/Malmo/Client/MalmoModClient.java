@@ -33,6 +33,7 @@ import org.lwjgl.input.Mouse;
 
 import com.microsoft.Malmo.Utils.CraftingHelper;
 import com.microsoft.Malmo.Utils.ScreenHelper.TextCategory;
+import org.lwjgl.opengl.Display;
 
 public class MalmoModClient
 {
@@ -48,6 +49,7 @@ public class MalmoModClient
         {
             if (this.isOverriding)
             {
+                Mouse.setCursorPosition(Display.getWidth() / 2, Display.getHeight() / 2);
                 this.deltaX = 0;
                 this.deltaY = 0;
             }
