@@ -16,6 +16,8 @@ import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.SPacketHeldItemChange;
 import net.minecraft.world.GameType;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
+import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
@@ -59,17 +61,13 @@ public class CwCEventHandler {
                     if (ep.getName().equals(MalmoMod.BUILDER)) builder = ep;
 
                 if (builder != null) {
+                    gs.thirdPersonView = 1;
                     CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(builder.posX, builder.posY, builder.posZ, 0, 0, true, true, true, true, true));
                     minecraft.playerController.attackEntity(Minecraft.getMinecraft().player, builder);
-                    gs.thirdPersonView = 1;
                 }
             }
 
-            // Architect switches from Thinking to Building mode
-            else if (player.getName().equals(MalmoMod.ARCHITECT) && minecraft.playerController.getCurrentGameType() == GameType.SPECTATOR && CwCMod.state == CwCState.THINKING)
-                CwCMod.network.sendToServer(new CwCStateMessage(CwCState.BUILDING));
-
-                // Builder switches from Building to Inspecting mode
+            // Builder switches from Building to Inspecting mode
             else if (player.getName().equals(MalmoMod.BUILDER) && CwCMod.state == CwCState.BUILDING)
                 CwCMod.network.sendToServer(new CwCStateMessage(CwCState.INSPECTING));
 
@@ -101,6 +99,26 @@ public class CwCEventHandler {
             for (KeyBinding kb : gs.keyBindsHotbar) if (kb.isPressed());
         }
 
+        else if (player.getName().equals(MalmoMod.ORACLE)) {
+            //TODO: also disable attacking/interacting here!
+            if (gs.keyBindDrop.isPressed() || gs.keyBindSwapHands.isPressed() || gs.keyBindUseItem.isPressed() ||
+                    gs.keyBindInventory.isPressed() || gs.keyBindPlayerList.isPressed() || gs.keyBindCommand.isPressed() ||
+                    gs.keyBindScreenshot.isPressed() || gs.keyBindTogglePerspective.isPressed() || gs.keyBindSmoothCamera.isPressed() ||
+                    gs.keyBindSpectatorOutlines.isPressed());
+            for (KeyBinding kb : gs.keyBindsHotbar) if (kb.isPressed());
+        }
+
+    }
+
+
+    /**
+     * Disable Builder's mouse unless in the Building state.
+     * @param event
+     */
+    @SubscribeEvent
+    public void onMouseInput(MouseEvent event) {
+        if (Minecraft.getMinecraft().player.getName().equals(MalmoMod.BUILDER) && CwCMod.state != CwCState.BUILDING)
+            event.setCanceled(true);
     }
 
     /**
@@ -139,10 +157,10 @@ public class CwCEventHandler {
                 }
 
                 if (minecraft.player.getName().equals(MalmoMod.ARCHITECT))
-                    minecraft.ingameGUI.setOverlayMessage(CwCMod.statusOverlay[CwCMod.state.ordinal()], false);
+                    minecraft.ingameGUI.setOverlayMessage(CwCUtils.statusOverlay[CwCMod.state.ordinal()], false);
 
             } else if (player.getName().equals(MalmoMod.BUILDER) && minecraft.player.getName().equals(MalmoMod.BUILDER)) {
-                minecraft.ingameGUI.setOverlayMessage(CwCMod.statusOverlay[CwCMod.state.ordinal()], false);
+                minecraft.ingameGUI.setOverlayMessage(CwCUtils.statusOverlay[CwCMod.state.ordinal()], false);
 
                 if (CwCMod.state != CwCState.BUILDING && minecraft.mouseHelper instanceof MalmoModClient.MouseHook &&
                         ((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding == false)
@@ -150,12 +168,32 @@ public class CwCEventHandler {
             }
         }
 
-        //TODO: calculations of visible entities goes here
+        //TODO: calculations of visible entities
 //        if (player.getEntityWorld().isRemote) {
 //            ICamera icamera = new Frustum();
 //            Entity entity = Minecraft.getMinecraft().getRenderViewEntity();;
 //            icamera.setPosition(entity.lastTickPosX, entity.lastTickPosY, entity.lastTickPosZ);
 //        }
+    }
+
+    /**
+     * Immediately switches to Building mode upon receiving the first utterance from the Architect in Thinking mode.
+     * Takes a screenshot (on both clients) for all regular chat events.
+     *
+     * @param event
+     */
+    @SideOnly(Side.CLIENT)
+    @SubscribeEvent
+    public void onClientChatReceived(ClientChatReceivedEvent event) {
+        Minecraft minecraft = Minecraft.getMinecraft();
+        EntityPlayer player = minecraft.player;
+        if (player.getName().equals(MalmoMod.ARCHITECT) && minecraft.playerController.getCurrentGameType() == GameType.SPECTATOR && CwCMod.state == CwCState.THINKING)
+            CwCMod.network.sendToServer(new CwCStateMessage(CwCState.BUILDING));
+
+        if (event.getType() == 0) {
+            System.out.println("Chat received, type: " + event.getType() + ", message: " + event.getMessage().getUnformattedText() + "; taking screenshot...");
+            CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT, false); //FIXME
+        }
     }
 
     /**
@@ -177,7 +215,7 @@ public class CwCEventHandler {
             System.out.println("onEntitySpawn: " + player.getName());
 
             // initialize Architect with empty inventory
-            if (player.getName().equals(MalmoMod.ARCHITECT)) {
+            if (player.getName().equals(MalmoMod.ARCHITECT) || player.getName().equals(MalmoMod.ORACLE)) {
                 for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++)
                     player.inventory.setInventorySlotContents(i, ItemStack.EMPTY);
                 return;
@@ -300,7 +338,8 @@ public class CwCEventHandler {
         if (event.getType().equals(ElementType.HEALTH) || event.getType().equals(ElementType.FOOD) || event.getType().equals(ElementType.EXPERIENCE))
             event.setCanceled(true);
 
-        if (Minecraft.getMinecraft().player.getName().equals(MalmoMod.ARCHITECT) && event.getType().equals(ElementType.HOTBAR))
+        Minecraft minecraft = Minecraft.getMinecraft();
+        if ((minecraft.player.getName().equals(MalmoMod.ARCHITECT) || minecraft.player.getName().equals(MalmoMod.ORACLE)) && event.getType().equals(ElementType.HOTBAR))
             event.setCanceled(true);
     }
 }
