@@ -17,6 +17,10 @@ import org.lwjgl.input.Mouse;
 import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Mod(modid = CwCMod.MODID, name = "CwC Blocks Mod", version = CwCMod.VERSION)
 public class CwCMod {
@@ -32,16 +36,8 @@ public class CwCMod {
 
 	public static boolean enableAIToggle = false;
 	public static CwCState state = CwCState.INSPECTING; // initialized to the "Inspecting" state
-	public static String[] statusOverlay = {"Architect is inspecting...", "Architect is thinking...", "Builder is building..."};
-	public static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
-	public static File loggingDir;
-	public static File screenshotDir;
-	static {
-		loggingDir = new File("/Users/Anjali/Documents/UIUC/research/CwC/BlocksWorld/Minecraft/cwc-minecraft/");
-		if (!loggingDir.exists()) loggingDir.mkdir();
-		screenshotDir = new File(loggingDir, "screenshots");
-		if (!screenshotDir.exists()) screenshotDir.mkdir();
-	}
+
+	public static ArrayList<String> screenshots = new ArrayList<String>();
 
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
