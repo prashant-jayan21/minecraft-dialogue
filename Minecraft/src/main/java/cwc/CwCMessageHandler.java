@@ -56,25 +56,5 @@ public class CwCMessageHandler implements IMessageHandler<CwCStateMessage, IMess
 
         else if (CwCMod.state == CwCState.BUILDING && player.getName().equals(MalmoMod.BUILDER) && mc.mouseHelper instanceof MalmoModClient.MouseHook)
             ((MalmoModClient.MouseHook) mc.mouseHelper).isOverriding = false;
-
-        ScreenShotHelper.saveScreenshot(CwCMod.loggingDir, (getTimestampedPNGFileForDirectory(CwCMod.screenshotDir)+"-"+player.getName())
-                .replace(CwCMod.screenshotDir.getAbsolutePath(),""), mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
-    }
-
-    /**
-     * Creates a unique PNG file in the given directory named by a timestamp.  Handles cases where the timestamp alone
-     * is not enough to create a uniquely named file, though it still might suffer from an unlikely race condition where
-     * the filename was unique when this method was called, but another process or thread created a file at the same
-     * path immediately after this method returned.
-     */
-    private static File getTimestampedPNGFileForDirectory(File gameDirectory) {
-        String s = CwCMod.DATE_FORMAT.format(new Date()).toString();
-        int i = 1;
-
-        while (true) {
-            File file1 = new File(gameDirectory, s + (i == 1 ? "" : "_" + i) + ".png");
-            if (!file1.exists()) return file1;
-            ++i;
-        }
     }
 }
