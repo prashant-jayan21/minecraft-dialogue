@@ -86,6 +86,12 @@ public class StartupCommon {
 		GameRegistry.register(unb_white);
 
 		// show block IDs of custom blocks -- add statements as needed
+		System.out.println("Red block ID: "+Block.getIdFromBlock(red));
+		System.out.println("Orange block ID: "+Block.getIdFromBlock(orange));
+		System.out.println("Yellow block ID: "+Block.getIdFromBlock(yellow));
+		System.out.println("Green block ID: "+Block.getIdFromBlock(green));
+		System.out.println("Blue block ID: "+Block.getIdFromBlock(blue));
+		System.out.println("Purple block ID: "+Block.getIdFromBlock(purple));
 		System.out.println("Unbreakable grey block ID: "+Block.getIdFromBlock(unb_grey));
 		System.out.println("Unbreakable white block ID: "+Block.getIdFromBlock(unb_white));
 	}
