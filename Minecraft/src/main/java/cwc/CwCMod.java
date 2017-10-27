@@ -26,7 +26,7 @@ public class CwCMod {
 	public static CommonProxy proxy;
 
 	public static boolean enableAIToggle = false;
-	public static boolean unlimitedInventory = true;
+	public static boolean unlimitedInventory = false;
 	public static final int MAX_INVENTORY_SIZE = 5;
 	public static CwCState state = CwCState.INSPECTING; // initialized to the "Inspecting" state
 
