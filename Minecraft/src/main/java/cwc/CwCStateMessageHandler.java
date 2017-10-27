@@ -15,7 +15,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import java.io.File;
 import java.util.Date;
 
-public class CwCMessageHandler implements IMessageHandler<CwCStateMessage, IMessage> {
+public class CwCStateMessageHandler implements IMessageHandler<CwCStateMessage, IMessage> {
     public IMessage onMessage(final CwCStateMessage message, MessageContext ctx) {
         if (ctx.side == Side.SERVER) {
             final EntityPlayerMP sender = ctx.getServerHandler().playerEntity;
