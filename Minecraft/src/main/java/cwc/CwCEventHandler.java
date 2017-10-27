@@ -25,6 +25,7 @@ import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent.*;
@@ -35,7 +36,7 @@ public class CwCEventHandler {
 
     public static boolean reset = false;                // used for resetting the Architect to free-fly inspection
     private static boolean unpressed = true;            // used for resetting the Architect to free-fly inspection
-    private static int DEFAULT_STACK_SIZE = 50;
+    private static int DEFAULT_STACK_SIZE = 2;
     private static boolean receivedChat = false, renderedChat = false;
     private static boolean placedBlock = false, removedBlock = false, renderedBlock = false;
 
@@ -119,7 +120,8 @@ public class CwCEventHandler {
      */
     @SubscribeEvent
     public void onMouseInput(MouseEvent event) {
-        if (Minecraft.getMinecraft().player.getName().equals(MalmoMod.BUILDER) && CwCMod.state != CwCState.BUILDING)
+        EntityPlayer player = Minecraft.getMinecraft().player;
+        if (player.getName().equals(MalmoMod.BUILDER) && CwCMod.state != CwCState.BUILDING)
             event.setCanceled(true);
     }
 
@@ -178,7 +180,7 @@ public class CwCEventHandler {
 
             if (placedBlock && renderedBlock) {
                 System.out.println("Block placed & rendered: taking screenshot...");
-                CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PUTDOWN, true));
+//                CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PUTDOWN.name(), "true"));
                 placedBlock = false;
                 renderedBlock = false;
             }
@@ -338,7 +340,23 @@ public class CwCEventHandler {
             player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
 
             placedBlock = true;
-            CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PUTDOWN, false));
+//            CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PUTDOWN.name(), "false"));
+        }
+    }
+
+    @SideOnly(Side.CLIENT)
+    @SubscribeEvent
+    public void onBlockClicked(PlayerInteractEvent.LeftClickBlock event) {
+        System.out.println("On BreakEvent:");
+        if (event.getEntity() instanceof EntityPlayer && event.getEntity().getName().equals(MalmoMod.BUILDER) &&
+                CwCMod.state == CwCState.BUILDING) {
+            EntityPlayer player = (EntityPlayer) event.getEntity();
+
+            int items = 0;
+            for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++)
+                items += player.inventory.getStackInSlot(i).getCount();
+
+            if (items >= CwCMod.MAX_INVENTORY_SIZE) event.setCanceled(true);
         }
     }
 

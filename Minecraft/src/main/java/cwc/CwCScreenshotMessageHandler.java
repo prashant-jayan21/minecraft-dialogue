@@ -45,8 +45,8 @@ public class CwCScreenshotMessageHandler implements IMessageHandler<CwCScreensho
     }
 
     void processMessageOnClient(CwCScreenshotMessage message, Minecraft mc) {
-        CwCScreenshotEventType type = message.getType();
-        boolean onUpdate = message.onUpdate();
+        CwCScreenshotEventType type = CwCScreenshotEventType.valueOf(message.getType());
+        boolean onUpdate = Boolean.parseBoolean(message.onUpdate());
         CwCUtils.takeScreenshot(mc, CwCUtils.useTimestamps, type, onUpdate);
     }
 }
