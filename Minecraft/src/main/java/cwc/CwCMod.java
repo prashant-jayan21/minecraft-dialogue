@@ -28,6 +28,8 @@ public class CwCMod {
 	public static boolean enableAIToggle = false;
 	public static boolean unlimitedInventory = false;
 	public static final int MAX_INVENTORY_SIZE = 5;
+	protected static int DEFAULT_STACK_SIZE = 1;
+
 	public static CwCState state = CwCState.INSPECTING; // initialized to the "Inspecting" state
 
 	public static ArrayList<String> screenshots = new ArrayList<String>();
@@ -38,6 +40,8 @@ public class CwCMod {
 		network.registerMessage(AbsoluteMovementCommandsImplementation.TeleportMessageHandler.class, AbsoluteMovementCommandsImplementation.TeleportMessage.class, 0, Side.SERVER);
 		network.registerMessage(CwCStateMessageHandler.class, CwCStateMessage.class, 1, Side.CLIENT);
 		network.registerMessage(CwCStateMessageHandler.class, CwCStateMessage.class, 2, Side.SERVER);
+		network.registerMessage(CwCScreenshotMessageHandler.class, CwCScreenshotMessage.class, 3, Side.CLIENT);
+		network.registerMessage(CwCScreenshotMessageHandler.class, CwCScreenshotMessage.class, 4, Side.SERVER);
 		proxy.preInit();
 	}
 	
