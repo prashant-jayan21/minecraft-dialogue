@@ -142,8 +142,8 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                   <ObservationFromFullStats/>
                    <ObservationFromGrid>
                      <Grid name="builder_grid" absoluteCoords="true">
-                       <min x="-10" y="1" z="-10"/>
-                       <max x="10" y="9" z="10"/>
+                       <min x="-5" y="1" z="-5"/>
+                       <max x="5" y="14" z="5"/>
                      </Grid>
                    </ObservationFromGrid>
                    <ObservationFromChat/>
