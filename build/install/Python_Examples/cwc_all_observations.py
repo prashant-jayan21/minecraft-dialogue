@@ -120,6 +120,14 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 </ServerInitialConditions>
                 <ServerHandlers>
                   <FlatWorldGenerator generatorString="3;241;1;"/>
+                  <DrawingDecorator>
+                    <DrawCuboid type="cwcmod:cwc_red_rn" x1="9" y1="1" z1="11" x2="9" y2="5" z2="11"/>
+                    <DrawCuboid type="cwcmod:cwc_orange_rn" x1="7" y1="1" z1="11" x2="7" y2="5" z2="11"/>
+                    <DrawCuboid type="cwcmod:cwc_yellow_rn" x1="5" y1="1" z1="11" x2="5" y2="5" z2="11"/>
+                    <DrawCuboid type="cwcmod:cwc_green_rn" x1="3" y1="1" z1="11" x2="3" y2="5" z2="11"/>
+                    <DrawCuboid type="cwcmod:cwc_blue_rn" x1="1" y1="1" z1="11" x2="1" y2="5" z2="11"/>
+                    <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-1" y1="1" z1="11" x2="-1" y2="5" z2="11"/>
+                  </DrawingDecorator>
                   <ServerQuitWhenAnyAgentFinishes/>
                 </ServerHandlers>
               </ServerSection>
