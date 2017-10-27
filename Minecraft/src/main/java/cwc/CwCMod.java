@@ -1,8 +1,6 @@
 package cwc;
 
 import com.microsoft.Malmo.MissionHandlers.AbsoluteMovementCommandsImplementation;
-import net.minecraft.client.Minecraft;
-import net.minecraft.util.MouseHelper;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.SidedProxy;
@@ -12,15 +10,8 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
-import org.lwjgl.input.Mouse;
 
-import java.io.File;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Mod(modid = CwCMod.MODID, name = "CwC Blocks Mod", version = CwCMod.VERSION)
 public class CwCMod {
@@ -35,6 +26,7 @@ public class CwCMod {
 	public static CommonProxy proxy;
 
 	public static boolean enableAIToggle = false;
+	public static boolean unlimitedInventory = true;
 	public static CwCState state = CwCState.INSPECTING; // initialized to the "Inspecting" state
 
 	public static ArrayList<String> screenshots = new ArrayList<String>();
@@ -43,8 +35,8 @@ public class CwCMod {
 	public void preInit(FMLPreInitializationEvent event) {
 		network = NetworkRegistry.INSTANCE.newSimpleChannel("cwc");
 		network.registerMessage(AbsoluteMovementCommandsImplementation.TeleportMessageHandler.class, AbsoluteMovementCommandsImplementation.TeleportMessage.class, 0, Side.SERVER);
-		network.registerMessage(CwCMessageHandler.class, CwCStateMessage.class, 1, Side.CLIENT);
-		network.registerMessage(CwCMessageHandler.class, CwCStateMessage.class, 2, Side.SERVER);
+		network.registerMessage(CwCStateMessageHandler.class, CwCStateMessage.class, 1, Side.CLIENT);
+		network.registerMessage(CwCStateMessageHandler.class, CwCStateMessage.class, 2, Side.SERVER);
 		proxy.preInit();
 	}
 	

@@ -42,7 +42,7 @@ public class CwCUtils {
     public static void takeScreenshot(Minecraft mc, boolean timestamp, CwCScreenshotEventType type, boolean onUpdate) {
         //TODO: append mission name, experiment number, architect/builder IDs somewhere to this path!
         String prefix = timestamp ? CwCUtils.getTimestampedFileForDirectory(screenshotDir)+"" : screenshotDir.getAbsolutePath()+index;
-        String suffix = type.name()+"-"+(onUpdate ? "before" : "after");
+        String suffix = type.name().toLowerCase()+(type == CwCScreenshotEventType.CHAT ? "" : onUpdate ? "-before" : "-after");
 
         ScreenShotHelper.saveScreenshot(CwCUtils.loggingDir, (prefix+"-"+mc.player.getName()+"-"+suffix)
                 .replace(screenshotDir.getAbsolutePath(),"")+".png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
@@ -50,7 +50,7 @@ public class CwCUtils {
         CwCMod.screenshots.add(CwCUtils.loggingDir+(prefix+"-"+mc.player.getName()+"-"+suffix)
                 .replace(screenshotDir.getAbsolutePath(),"")+".png");
 
-        System.out.println("Screenshot: "+CwCUtils.loggingDir+(prefix+"-"+mc.player.getName()+"-"+suffix)
+        System.out.println("Screenshot: "+CwCUtils.loggingDir+"/"+(prefix+"-"+mc.player.getName()+"-"+suffix)
                 .replace(screenshotDir.getAbsolutePath(),"")+".png");
         index++;
     }

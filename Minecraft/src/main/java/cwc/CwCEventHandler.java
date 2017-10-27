@@ -36,6 +36,8 @@ public class CwCEventHandler {
     public static boolean reset = false;                // used for resetting the Architect to free-fly inspection
     private static boolean unpressed = true;            // used for resetting the Architect to free-fly inspection
     private static int DEFAULT_STACK_SIZE = 50;
+    private static boolean receivedChat = false, renderedChat = false;
+    private static boolean placedBlock = false, removedBlock = false, renderedBlock = false;
 
     /**
      * @param event
@@ -166,6 +168,20 @@ public class CwCEventHandler {
                         ((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding == false)
                     ((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding = true;
             }
+
+            if (receivedChat && renderedChat) {
+                System.out.println("Chat received & rendered: taking screenshot...");
+                CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT, false);
+                receivedChat = false;
+                renderedChat = false;
+            }
+
+            if (placedBlock && renderedBlock) {
+                System.out.println("Block placed & rendered: taking screenshot...");
+                CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PUTDOWN, true));
+                placedBlock = false;
+                renderedBlock = false;
+            }
         }
 
         //TODO: calculations of visible entities
@@ -192,8 +208,13 @@ public class CwCEventHandler {
 
         if (event.getType() == 0) {
             System.out.println("Chat received, type: " + event.getType() + ", message: " + event.getMessage().getUnformattedText() + "; taking screenshot...");
-            CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT, false); //FIXME
+            receivedChat = true;
         }
+    }
+
+    @SubscribeEvent
+    public void onChatRendered(RenderGameOverlayEvent.Chat event) {
+        if (receivedChat) renderedChat = true;
     }
 
     /**
@@ -214,8 +235,9 @@ public class CwCEventHandler {
             EntityPlayerMP player = (EntityPlayerMP) event.getEntity();
             System.out.println("onEntitySpawn: " + player.getName());
 
-            // initialize Architect with empty inventory
-            if (player.getName().equals(MalmoMod.ARCHITECT) || player.getName().equals(MalmoMod.ORACLE)) {
+            // initialize Architect, Oracle, Builder (if limited inventory) with empty inventory
+            if (player.getName().equals(MalmoMod.ARCHITECT) || player.getName().equals(MalmoMod.ORACLE) ||
+                    (player.getName().equals(MalmoMod.BUILDER) && !CwCMod.unlimitedInventory)) {
                 for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++)
                     player.inventory.setInventorySlotContents(i, ItemStack.EMPTY);
                 return;
@@ -314,6 +336,9 @@ public class CwCEventHandler {
             int empty = player.inventory.getFirstEmptyStack();
             player.inventory.currentItem = empty < 0 ? player.inventory.currentItem : empty;
             player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
+
+            placedBlock = true;
+            CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PUTDOWN, false));
         }
     }
 
@@ -334,12 +359,14 @@ public class CwCEventHandler {
      */
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
-    public void hideHUD(RenderGameOverlayEvent event) {
+    public void renderGameOverlay(RenderGameOverlayEvent event) {
         if (event.getType().equals(ElementType.HEALTH) || event.getType().equals(ElementType.FOOD) || event.getType().equals(ElementType.EXPERIENCE))
             event.setCanceled(true);
 
         Minecraft minecraft = Minecraft.getMinecraft();
         if ((minecraft.player.getName().equals(MalmoMod.ARCHITECT) || minecraft.player.getName().equals(MalmoMod.ORACLE)) && event.getType().equals(ElementType.HOTBAR))
             event.setCanceled(true);
+
+        if (placedBlock || removedBlock) renderedBlock = true;
     }
 }
