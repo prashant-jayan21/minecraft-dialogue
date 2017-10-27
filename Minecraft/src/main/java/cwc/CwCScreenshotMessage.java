@@ -16,16 +16,16 @@ public class CwCScreenshotMessage implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        this.type = CwCScreenshotEventType.values()[ByteBufUtils.readVarInt(buf, 5)];
-        this.onUpdate = ByteBufUtils.readVarInt(buf, 5) > 0 ? true : false;
+//        this.type = ByteBufUtils.readUTF8String(buf);
+//        this.onUpdate = ByteBufUtils.readUTF8String(buf);
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        ByteBufUtils.writeVarInt(buf, type.ordinal(), 5);
-        ByteBufUtils.writeVarInt(buf, this.onUpdate ? 1 : 0, 5);
+//        ByteBufUtils.writeUTF8String(buf, type);
+//        ByteBufUtils.writeUTF8String(buf, onUpdate);
     }
 
-    public CwCScreenshotEventType getType() { return this.type; }
+    public CwCScreenshotEventType getType()  { return this.type; }
     public boolean onUpdate() { return this.onUpdate; }
 }

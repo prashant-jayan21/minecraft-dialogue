@@ -27,6 +27,7 @@ public class CwCMod {
 
 	public static boolean enableAIToggle = false;
 	public static boolean unlimitedInventory = true;
+	public static final int MAX_INVENTORY_SIZE = 5;
 	public static CwCState state = CwCState.INSPECTING; // initialized to the "Inspecting" state
 
 	public static ArrayList<String> screenshots = new ArrayList<String>();
