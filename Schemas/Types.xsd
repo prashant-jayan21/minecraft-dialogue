@@ -516,6 +516,14 @@
         <xs:enumeration value="red_shulker_box" />
         <xs:enumeration value="black_shulker_box" />
         <xs:enumeration value="structure_block" />
+        <xs:enumeration value="cwcmod:cwc_red_rn" />
+        <xs:enumeration value="cwcmod:cwc_orange_rn" />
+        <xs:enumeration value="cwcmod:cwc_yellow_rn" />
+        <xs:enumeration value="cwcmod:cwc_green_rn" />
+        <xs:enumeration value="cwcmod:cwc_blue_rn" />
+        <xs:enumeration value="cwcmod:cwc_purple_rn" />
+        <xs:enumeration value="cwcmod:cwc_unbreakable_grey_rn" />
+        <xs:enumeration value="cwcmod:cwc_unbreakable_white_rn" />
     </xs:restriction>
 </xs:simpleType>
 

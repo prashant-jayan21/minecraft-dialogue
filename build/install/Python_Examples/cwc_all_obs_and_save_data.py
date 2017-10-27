@@ -192,7 +192,7 @@ def getPerspectiveCoordinates(x, y, z, yaw, pitch):
     z_final = v_final.item(2)
     return (x_final, y_final, z_final)
 
-def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, prev_game_state):
+def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, prev_game_state, string_to_write):
     msg_timestamp = observation.timestamp
     msg = observation.text
     json_obj = json.loads(msg)
@@ -227,31 +227,44 @@ def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, pr
         print "[builder absolute position] (x, y, z): " + str((builder_x_pos, builder_y_pos, builder_z_pos)), "(yaw, pitch): " + str((builder_yaw, builder_pitch))
         print
 
+        string_to_write += "\n" + "-"*20 + "\n" + "[STATE]" + " " + str(current_game_state) + "\n" + "[timestamp]" + " " + str(msg_timestamp) \
+        + "\n" + "\n" + "[builder absolute position] (x, y, z): " + str((builder_x_pos, builder_y_pos, builder_z_pos)) + " " + \
+        "(yaw, pitch): " + str((builder_yaw, builder_pitch)) + "\n" + "\n"
+
         for i in range(len(current_blocks_state_rel)):
             block_rel = current_blocks_state_rel[i]
             block_abs = current_blocks_state_abs[i]
             perspective_coords = getPerspectiveCoordinates(block_rel["x"], block_rel["y"], block_rel["z"], builder_yaw, builder_pitch)
             absolute_coords = (block_abs["x"], block_abs["y"], block_abs["z"])
-            print "["+block_rel["type"]+"]", "absolute coordinates:", absolute_coords, "\tperspective coordinates:", perspective_coords
+            print "["+block_rel["type"]+"]", "absolute coordinates:", absolute_coords, " | perspective coordinates:", perspective_coords
+            string_to_write += "[" + str(block_rel["type"]) + "]" + " "+ "absolute coordinates:" + " " +  str(absolute_coords) + " " + " | perspective coordinates:" + " " + str(perspective_coords) + "\n"
+
 
         prev_blocks_state_abs = current_blocks_state_abs
         current_dialog_state = prev_dialog_state + chat_observation
 
         print
         print "[chat]"
+        string_to_write += "\n" + "[chat]" + "\n"
         for utterance in current_dialog_state:
-        	print utterance
+            print utterance
+            string_to_write += str(utterance) + "\n"
 
         prev_dialog_state = current_dialog_state
         prev_game_state = current_game_state
 
         print "-"*20
+        string_to_write += "-"*20 + "\n"
 
-    return (prev_blocks_state_abs, prev_dialog_state, prev_game_state)
+
+    return (prev_blocks_state_abs, prev_dialog_state, prev_game_state, string_to_write)
 
 prev_blocks_state_abs = []
 prev_dialog_state = []
 prev_game_state = ""
+
+string_to_write = ""
+
 while not timed_out:
 
     for i in range(2):
@@ -264,12 +277,22 @@ while not timed_out:
 
         if i == 0 and world_state.is_mission_running and world_state.number_of_observations_since_last_state > 0:
             for observation in world_state.observations:
-                (prev_blocks_state_abs, prev_dialog_state, prev_game_state) = processObservation(observation, prev_blocks_state_abs, prev_dialog_state, prev_game_state)
+                (prev_blocks_state_abs, prev_dialog_state, prev_game_state, string_to_write) = processObservation(observation, prev_blocks_state_abs, prev_dialog_state, prev_game_state, string_to_write)
             # processObservation(world_state.observations[-1])
 
     time.sleep(1)
 
-print()
+print
+print "Writing collected data to file..."
+architect_name = "anjali"
+builder_name = "prashant"
+trial_num = 1
+file_name = "cwc_pilot_" + architect_name + "_" + builder_name + "_" + str(trial_num) + ".txt"
+file = open(file_name,"w")
+file.write(string_to_write)
+file.close()
+print "Done!"
+print
 
 print "Waiting for mission to end..."
 # Mission should have ended already, but we want to wait until all the various agent hosts
