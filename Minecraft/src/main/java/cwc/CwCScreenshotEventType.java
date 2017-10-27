@@ -6,6 +6,4 @@ public enum CwCScreenshotEventType {
     CHAT,
     PICKUP,
     PUTDOWN;
-
-    public void toBytes(ByteBuf buf) {  }
 }

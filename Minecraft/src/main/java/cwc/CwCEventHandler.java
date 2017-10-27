@@ -36,9 +36,8 @@ public class CwCEventHandler {
 
     public static boolean reset = false;                // used for resetting the Architect to free-fly inspection
     private static boolean unpressed = true;            // used for resetting the Architect to free-fly inspection
-    private static int DEFAULT_STACK_SIZE = 2;
     private static boolean receivedChat = false, renderedChat = false;
-    private static boolean placedBlock = false, removedBlock = false, renderedBlock = false;
+    protected static boolean placedBlock = false, pickedUpBlock = false, renderedBlock = false;
 
     /**
      * @param event
@@ -180,8 +179,15 @@ public class CwCEventHandler {
 
             if (placedBlock && renderedBlock) {
                 System.out.println("Block placed & rendered: taking screenshot...");
-//                CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PUTDOWN.name(), "true"));
+                CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.PUTDOWN, true);
                 placedBlock = false;
+                renderedBlock = false;
+            }
+
+            if (pickedUpBlock && renderedBlock) {
+                System.out.println("Block removed & picked up: taking screenshot...");
+                CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.PICKUP, true);
+                pickedUpBlock = false;
                 renderedBlock = false;
             }
         }
@@ -256,12 +262,12 @@ public class CwCEventHandler {
 
             // initialize the inventory
             if (empty) {
-                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.red, DEFAULT_STACK_SIZE));
-                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.orange, DEFAULT_STACK_SIZE));
-                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.yellow, DEFAULT_STACK_SIZE));
-                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.green, DEFAULT_STACK_SIZE));
-                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.blue, DEFAULT_STACK_SIZE));
-                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.purple, DEFAULT_STACK_SIZE));
+                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.red, CwCMod.DEFAULT_STACK_SIZE));
+                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.orange, CwCMod.DEFAULT_STACK_SIZE));
+                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.yellow, CwCMod.DEFAULT_STACK_SIZE));
+                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.green, CwCMod.DEFAULT_STACK_SIZE));
+                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.blue, CwCMod.DEFAULT_STACK_SIZE));
+                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.purple, CwCMod.DEFAULT_STACK_SIZE));
                 System.out.println("\t-- inventory INITIALIZED");
             }
 
@@ -319,6 +325,7 @@ public class CwCEventHandler {
                 int empty = player.inventory.getFirstEmptyStack();
                 player.inventory.currentItem = InventoryPlayer.isHotbar(slot) ? slot : empty < 0 ? player.inventory.currentItem : empty;
                 player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
+                CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PICKUP));
             }
         }
     }
@@ -339,15 +346,13 @@ public class CwCEventHandler {
             player.inventory.currentItem = empty < 0 ? player.inventory.currentItem : empty;
             player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
 
-            placedBlock = true;
-//            CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PUTDOWN.name(), "false"));
+            CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PUTDOWN));
         }
     }
 
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onBlockClicked(PlayerInteractEvent.LeftClickBlock event) {
-        System.out.println("On BreakEvent:");
         if (event.getEntity() instanceof EntityPlayer && event.getEntity().getName().equals(MalmoMod.BUILDER) &&
                 CwCMod.state == CwCState.BUILDING) {
             EntityPlayer player = (EntityPlayer) event.getEntity();
@@ -385,6 +390,6 @@ public class CwCEventHandler {
         if ((minecraft.player.getName().equals(MalmoMod.ARCHITECT) || minecraft.player.getName().equals(MalmoMod.ORACLE)) && event.getType().equals(ElementType.HOTBAR))
             event.setCanceled(true);
 
-        if (placedBlock || removedBlock) renderedBlock = true;
+        if (placedBlock || (pickedUpBlock)) renderedBlock = true;
     }
 }
