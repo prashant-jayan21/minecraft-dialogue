@@ -121,12 +121,13 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <ServerHandlers>
                   <FlatWorldGenerator generatorString="3;241;1;"/>
                   <DrawingDecorator>
-                    <DrawCuboid type="cwcmod:cwc_red_rn" x1="9" y1="1" z1="11" x2="9" y2="5" z2="11"/>
-                    <DrawCuboid type="cwcmod:cwc_orange_rn" x1="7" y1="1" z1="11" x2="7" y2="5" z2="11"/>
-                    <DrawCuboid type="cwcmod:cwc_yellow_rn" x1="5" y1="1" z1="11" x2="5" y2="5" z2="11"/>
-                    <DrawCuboid type="cwcmod:cwc_green_rn" x1="3" y1="1" z1="11" x2="3" y2="5" z2="11"/>
-                    <DrawCuboid type="cwcmod:cwc_blue_rn" x1="1" y1="1" z1="11" x2="1" y2="5" z2="11"/>
-                    <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-1" y1="1" z1="11" x2="-1" y2="5" z2="11"/>
+                    <DrawCuboid type="cwcmod:cwc_orange_rn" x1="5" y1="1" z1="8" x2="1" y2="1" z2="8"/>
+                    <DrawCuboid type="cwcmod:cwc_yellow_rn" x1="-1" y1="1" z1="8" x2="-5" y2="1" z2="8"/>
+                    <DrawCuboid type="cwcmod:cwc_green_rn" x1="8" y1="1" z1="6" x2="8" y2="1" z2="2"/>
+                    <DrawCuboid type="cwcmod:cwc_blue_rn" x1="8" y1="1" z1="0" x2="8" y2="1" z2="-4"/>
+                    <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-8" y1="1" z1="6" x2="-8" y2="1" z2="2"/>
+                    <DrawCuboid type="cwcmod:cwc_red_rn" x1="-8" y1="1" z1="0" x2="-8" y2="1" z2="-4"/>
+                    <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="-5" y1="0" z1="-5" x2="5" y2="0" z2="5"/>
                   </DrawingDecorator>
                   <ServerQuitWhenAnyAgentFinishes/>
                 </ServerHandlers>
