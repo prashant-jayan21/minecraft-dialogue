@@ -160,10 +160,10 @@ public class CwCEventHandler {
                 }
 
                 if (minecraft.player.getName().equals(MalmoMod.ARCHITECT))
-                    minecraft.ingameGUI.setOverlayMessage(CwCUtils.statusOverlay[CwCMod.state.ordinal()], false);
+                    minecraft.ingameGUI.setOverlayMessage(CwCUtils.statusOverlay[CwCMod.state.ordinal()], true);
 
             } else if (player.getName().equals(MalmoMod.BUILDER) && minecraft.player.getName().equals(MalmoMod.BUILDER)) {
-                minecraft.ingameGUI.setOverlayMessage(CwCUtils.statusOverlay[CwCMod.state.ordinal()], false);
+                minecraft.ingameGUI.setOverlayMessage(CwCUtils.statusOverlay[CwCMod.state.ordinal()], true);
 
                 if (CwCMod.state != CwCState.BUILDING && minecraft.mouseHelper instanceof MalmoModClient.MouseHook &&
                         ((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding == false)
