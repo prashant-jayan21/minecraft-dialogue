@@ -1,9 +1,11 @@
 package cwc;
 
-import io.netty.buffer.ByteBuf;
-
+/**
+ * Enum for event types that trigger screenshots.
+ * @author nrynchn2
+ */
 public enum CwCScreenshotEventType {
-    CHAT,
-    PICKUP,
-    PUTDOWN;
+    CHAT,       // on chat received
+    PICKUP,     // on item pickup
+    PUTDOWN     // on block putdown
 }

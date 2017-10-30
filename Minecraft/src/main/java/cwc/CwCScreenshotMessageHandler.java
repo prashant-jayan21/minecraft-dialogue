@@ -1,9 +1,6 @@
 package cwc;
 
-import com.microsoft.Malmo.Client.MalmoModClient;
-import com.microsoft.Malmo.MalmoMod;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
@@ -11,8 +8,20 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
+/**
+ * Server- & client-side handler for custom screenshot messages.
+ * @author nrynchn2
+ */
 public class CwCScreenshotMessageHandler implements IMessageHandler<CwCScreenshotMessage, IMessage> {
+
+    /**
+     * Determines if message is received on the server or the client side and calls their respective message handlers.
+     * @param message Screenshot message
+     * @param ctx Message context
+     * @return null
+     */
     public IMessage onMessage(final CwCScreenshotMessage message, MessageContext ctx) {
+        // process message on server
         if (ctx.side == Side.SERVER) {
             System.out.println("A message has been received.");
             final EntityPlayerMP sender = ctx.getServerHandler().playerEntity;
@@ -23,10 +32,10 @@ public class CwCScreenshotMessageHandler implements IMessageHandler<CwCScreensho
             pws.addScheduledTask(new Runnable() {
                 public void run() { processMessageOnServer(message, sender); }
             });
-
             return null;
         }
 
+        // process message on client
         else {
             final Minecraft minecraft = Minecraft.getMinecraft();
             minecraft.addScheduledTask(new Runnable() {
@@ -36,11 +45,21 @@ public class CwCScreenshotMessageHandler implements IMessageHandler<CwCScreensho
         }
     }
 
+    /**
+     * Handles messages received on the server. Processes the message by sending it out to all connected clients.
+     * @param message Screenshot message
+     * @param sender Message sender
+     */
     void processMessageOnServer(CwCScreenshotMessage message, EntityPlayerMP sender) {
         for (EntityPlayerMP player : sender.mcServer.getPlayerList().getPlayers())
             CwCMod.network.sendTo(message, player);
     }
 
+    /**
+     * Handles messages received on the client. Processes the message by setting the appropriate boolean fields responsible for
+     * directing logic for when a screenshot should be taken.
+     * @param message Screenshot message
+     */
     void processMessageOnClient(CwCScreenshotMessage message) {
         if (message.getType() == CwCScreenshotEventType.PICKUP)
             CwCEventHandler.pickedUpBlock = true;

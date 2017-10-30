@@ -13,35 +13,47 @@ import net.minecraftforge.fml.relauncher.Side;
 
 import java.util.ArrayList;
 
+/**
+ * The CwC mod.
+ * @author nrynchn2
+ */
 @Mod(modid = CwCMod.MODID, name = "CwC Blocks Mod", version = CwCMod.VERSION)
 public class CwCMod {
-	public static final String MODID = "cwcmod";
-	public static final String VERSION = "1.00";
-	public static SimpleNetworkWrapper network;
+	public static final String MODID = "cwcmod"; // mod ID: prepends registry names of mod-specific blocks and items
+	public static final String VERSION = "1.00"; // mod version
+	public static SimpleNetworkWrapper network;  // mod network: mod-specific packets sent and received over this channel
 
 	@Mod.Instance(CwCMod.MODID)
-	public static CwCMod instance;
+	public static CwCMod instance;				 // mod instance
 	
 	@SidedProxy(clientSide="cwc.ClientOnlyProxy", serverSide="cwc.DedicatedServerProxy")
-	public static CommonProxy proxy;
+	public static CommonProxy proxy;			 // mod proxy
 
-	public static boolean enableAIToggle = false;
-	public static boolean unlimitedInventory = false;
-	public static final int MAX_INVENTORY_SIZE = 5;
-	protected static int DEFAULT_STACK_SIZE = 1;
+	public static boolean enableAIToggle = false;		// whether or not the original Malmo AI/Human toggle option is enabled
+	public static boolean unlimitedInventory = false;	// whether or not Builder has unlimited inventory of blocks
+	public static final int MAX_INVENTORY_SIZE = 5;		// maximum number of blocks that can be held at a time by the Builder (if limited inventory)
+	protected static int DEFAULT_STACK_SIZE = 1;		// stack sizes of blocks in inventory upon initialization of Builder (if unlimited inventory)
 
-	public static CwCState state = CwCState.INSPECTING; // initialized to the "Inspecting" state
+	public static CwCState state = CwCState.INSPECTING; // mod state: initialized to "Inspecting"
 
-	public static ArrayList<String> screenshots = new ArrayList<String>();
+	public static ArrayList<String> screenshots = new ArrayList<String>();  // list of absolute paths of screenshots taken by the client
 
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
+		// initialize the network channel and register the types of messages that can be sent & received over it
 		network = NetworkRegistry.INSTANCE.newSimpleChannel("cwc");
+
+		// player teleportation
 		network.registerMessage(AbsoluteMovementCommandsImplementation.TeleportMessageHandler.class, AbsoluteMovementCommandsImplementation.TeleportMessage.class, 0, Side.SERVER);
+
+		// mod state change (Inspecting -> Thinking -> Building)
 		network.registerMessage(CwCStateMessageHandler.class, CwCStateMessage.class, 1, Side.CLIENT);
 		network.registerMessage(CwCStateMessageHandler.class, CwCStateMessage.class, 2, Side.SERVER);
+
+		// screenshot triggers
 		network.registerMessage(CwCScreenshotMessageHandler.class, CwCScreenshotMessage.class, 3, Side.CLIENT);
 		network.registerMessage(CwCScreenshotMessageHandler.class, CwCScreenshotMessage.class, 4, Side.SERVER);
+
 		proxy.preInit();
 	}
 	

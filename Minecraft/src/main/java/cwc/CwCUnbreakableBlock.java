@@ -10,6 +10,11 @@ import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+/**
+ * Unbreakable custom CwC block. Does not obey gravity.
+ * This block should not be available as an inventory block to players.
+ * @author nrynchn2
+ */
 public class CwCUnbreakableBlock extends Block {
     public CwCUnbreakableBlock() {
         super(Material.ROCK);

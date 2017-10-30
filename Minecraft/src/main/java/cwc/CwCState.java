@@ -1,7 +1,11 @@
 package cwc;
 
+/**
+ * Enum for mod state.
+ * @author nrynchn2
+ */
 public enum CwCState {
-    INSPECTING,
-    THINKING,
-    BUILDING
+    INSPECTING,     // Inspecting
+    THINKING,       // Thinking
+    BUILDING        // Building
 }
