@@ -41,7 +41,9 @@ public class CwCEventHandler {
     public static boolean reset = false;                // used for resetting the Architect to free-fly inspection
     private static boolean unpressed = true;            // used for resetting the Architect to free-fly inspection
     private static boolean receivedChat = false, renderedChat = false;  // chat is received & rendered
-    protected static boolean placedBlock = false, pickedUpBlock = false, renderedBlock = false; // block is placed/picked up & rendered
+    protected static boolean placedBlock = false, pickedUpBlock = false, renderedBlock = false;  // block is placed/picked up & rendered
+    protected static boolean updatePlayerTick = false, updateRenderTick = false;  // wait for the second update/render tick of a pickup action before taking a screenshot
+    protected static boolean disablePutdown = false, disablePickup = false;  // disallow Builder to putdown/pickup until a screenshot of the last action has been taken
 
     /**
      * Fired when an entity joins the world (spawns). See {@link EntityJoinWorldEvent} for more details.
@@ -107,7 +109,7 @@ public class CwCEventHandler {
     }
 
     /**
-     * Fired when an entity respawns (e.g., after they are killed). Hopefully, this should not be called. See {@link net.minecraftforge.event.entity.player.PlayerEvent.Clone} for more details.
+     * Fired when an entity respawns (e.g., after they are killed). See {@link net.minecraftforge.event.entity.player.PlayerEvent.Clone} for more details.
      * Re-enables flying and damage immunity should the player respawn, and also respawns him with an empty hand.
      *
      * @param event
@@ -255,6 +257,7 @@ public class CwCEventHandler {
         if (player.getEntityWorld().isRemote) {
             Minecraft minecraft = Minecraft.getMinecraft();
             if (player.getName().equals(MalmoMod.ARCHITECT)) {
+
                 // when resetting to Inspecting mode, press the 'sneak' key and set Architect back to first-person view
                 if (CwCMod.state == CwCState.INSPECTING && reset) {
                     KeyBinding.setKeyBindState(Minecraft.getMinecraft().gameSettings.keyBindSneak.getKeyCode(), true);
@@ -308,12 +311,17 @@ public class CwCEventHandler {
                 renderedBlock = false;
             }
 
+            // when a block is broken, force to wait for another tick of player update + rendering before taking the screenshot
+            if (pickedUpBlock && renderedBlock && !updatePlayerTick) updatePlayerTick = true;
+
             // take a screenshot when a block break event has been received and rendered by the client
-            if (pickedUpBlock && renderedBlock) {
-                System.out.println("Block removed & picked up: taking screenshot...");
+            else if (pickedUpBlock && renderedBlock && updatePlayerTick && updateRenderTick) {
+                System.out.println("Block removed, picked up & rendered: taking screenshot...");
                 CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.PICKUP, true);
                 pickedUpBlock = false;
                 renderedBlock = false;
+                updatePlayerTick = false;
+                updateRenderTick = false;
             }
         }
 
@@ -323,6 +331,30 @@ public class CwCEventHandler {
 //            Entity entity = Minecraft.getMinecraft().getRenderViewEntity();;
 //            icamera.setPosition(entity.lastTickPosX, entity.lastTickPosY, entity.lastTickPosZ);
 //        }
+    }
+
+    /**
+     * Fired when the game overlay is rendered for a client. See {@link RenderGameOverlayEvent} for more details.
+     * Hides health, hunger, and experience bars. Also hides the hotbar for the Architect and Oracle spectators.
+     * Also helps manage logic for taking screenshots after an action has been rendered.
+     *
+     * @param event
+     */
+    @SideOnly(Side.CLIENT)
+    @SubscribeEvent
+    public void renderGameOverlay(RenderGameOverlayEvent event) {
+        if (event.getType().equals(ElementType.HEALTH) || event.getType().equals(ElementType.FOOD) || event.getType().equals(ElementType.EXPERIENCE))
+            event.setCanceled(true);
+
+        Minecraft minecraft = Minecraft.getMinecraft();
+        if ((minecraft.player.getName().equals(MalmoMod.ARCHITECT) || minecraft.player.getName().equals(MalmoMod.ORACLE)) && event.getType().equals(ElementType.HOTBAR))
+            event.setCanceled(true);
+
+        // register the rendering of an action after player update
+        if (placedBlock || pickedUpBlock) renderedBlock = true;
+
+        // second render tick after the second player update tick
+        if (pickedUpBlock && renderedBlock && updatePlayerTick) updateRenderTick = true;
     }
 
     /**
@@ -356,32 +388,25 @@ public class CwCEventHandler {
     }
 
     /**
-     * Fired when an item is picked up by an entity. See {@link EntityItemPickupEvent} for more details.
-     * Switches active hotbar slot to the item just picked up, or first empty slot if the item doesn't exist in hotbar.
-     * If, for some reason, the hotbar is full and the item doesn't exist in hotbar already, the currently held item isn't changed.
-     * Also starts the process for taking a screenshot (on both clients) upon item pickup.
+     * Fired when a block is left-clicked by a player. See {@link net.minecraftforge.event.entity.player.PlayerInteractEvent.LeftClickBlock} for more details.
+     * If the Builder has limited inventory and he has already reached the maximum number of allowed items in his inventory, this prevents him from picking up any more items.
      *
      * @param event
      */
+    @SideOnly(Side.CLIENT)
     @SubscribeEvent
-    public void onItemPickup(EntityItemPickupEvent event) {
-        if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayerMP) {
-            EntityPlayerMP player = (EntityPlayerMP) event.getEntityPlayer();
-            System.out.println("Item " + event.getItem().getName() + " picked up by " + player.getName());
+    public void onBlockClicked(PlayerInteractEvent.LeftClickBlock event) {
+        if (event.getEntity() instanceof EntityPlayer && event.getEntity().getName().equals(MalmoMod.BUILDER) &&
+                CwCMod.state == CwCState.BUILDING) {
+            EntityPlayer player = (EntityPlayer) event.getEntity();
 
-            // Due to how mouseclicks are handled, usually a pickup event is also fired for the player attempting to pick up Air. We will ignore this.
-            if (event.getItem().getEntityItem().getItem() != Items.AIR) {
-                int slot = player.inventory.getSlotFor(event.getItem().getEntityItem()); // hotbar slot in which this item already exists
-                int empty = player.inventory.getFirstEmptyStack();                       // first empty hotbar slot
+            // count the number of items currently in his inventory (hotbar)
+            int items = 0;
+            for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++)
+                items += player.inventory.getStackInSlot(i).getCount();
 
-                // switch to item hotbar slot if it exists; otherwise, switch to first empty slot if it exists; otherwise, do nothing
-                player.inventory.currentItem = InventoryPlayer.isHotbar(slot) ? slot : empty < 0 ? player.inventory.currentItem : empty;
-
-                // let the server know that the held item has been changed
-                // (and also notify in order to prepare to take a screenshot)
-                player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
-                CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PICKUP));
-            }
+            // cancel the left-click event if Builder is not allowed to pick up any more blocks at this time
+            if ((!CwCMod.unlimitedInventory && items >= CwCMod.MAX_INVENTORY_SIZE) || disablePickup) event.setCanceled(true);
         }
     }
 
@@ -407,29 +432,47 @@ public class CwCEventHandler {
             // (and also notify in order to prepare to take a screenshot)
             player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
             CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PUTDOWN));
+
+            // don't allow any more blocks to be placed until the screenshot has been taken
+            disablePutdown = true;
         }
     }
 
     /**
-     * Fired when a block is left-clicked by a player. See {@link net.minecraftforge.event.entity.player.PlayerInteractEvent.LeftClickBlock} for more details.
-     * If the Builder has limited inventory and he has already reached the maximum number of allowed items in his inventory, this prevents him from picking up any more items.
+     * Fired when a block is broken by an entity. See {@link net.minecraftforge.event.world.BlockEvent.BreakEvent} for more details.
+     * Does not allow player to break any further blocks until a screenshot of the last break event has been taken.
+     * @param event
+     */
+    @SubscribeEvent
+    public void onBlockBreak(BlockEvent.BreakEvent event) { disablePickup = true; }
+
+    /**
+     * Fired when an item is picked up by an entity. See {@link EntityItemPickupEvent} for more details.
+     * Switches active hotbar slot to the item just picked up, or first empty slot if the item doesn't exist in hotbar.
+     * If, for some reason, the hotbar is full and the item doesn't exist in hotbar already, the currently held item isn't changed.
+     * Also starts the process for taking a screenshot (on both clients) upon item pickup.
      *
      * @param event
      */
-    @SideOnly(Side.CLIENT)
     @SubscribeEvent
-    public void onBlockClicked(PlayerInteractEvent.LeftClickBlock event) {
-        if (event.getEntity() instanceof EntityPlayer && event.getEntity().getName().equals(MalmoMod.BUILDER) &&
-                CwCMod.state == CwCState.BUILDING) {
-            EntityPlayer player = (EntityPlayer) event.getEntity();
+    public void onItemPickup(EntityItemPickupEvent event) {
+        if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayerMP) {
+            EntityPlayerMP player = (EntityPlayerMP) event.getEntityPlayer();
+            System.out.println("Item " + event.getItem().getName() + " picked up by " + player.getName());
 
-            // count the number of items currently in his inventory (hotbar)
-            int items = 0;
-            for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++)
-                items += player.inventory.getStackInSlot(i).getCount();
+            // Due to how mouseclicks are handled, usually a pickup event is also fired for the player attempting to pick up Air. We will ignore this.
+            if (event.getItem().getEntityItem().getItem() != Items.AIR) {
+                int slot = player.inventory.getSlotFor(event.getItem().getEntityItem()); // hotbar slot in which this item already exists
+                int empty = player.inventory.getFirstEmptyStack();                       // first empty hotbar slot
 
-            // cancel the left-click event if Builder is not allowed to pick up any more blocks
-            if (!CwCMod.unlimitedInventory && items >= CwCMod.MAX_INVENTORY_SIZE) event.setCanceled(true);
+                // switch to item hotbar slot if it exists; otherwise, switch to first empty slot if it exists; otherwise, do nothing
+                player.inventory.currentItem = InventoryPlayer.isHotbar(slot) ? slot : empty < 0 ? player.inventory.currentItem : empty;
+
+                // let the server know that the held item has been changed
+                // (and also notify server to inform clients to prepare to take a screenshot)
+                player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
+                CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PICKUP));
+            }
         }
     }
 
@@ -440,27 +483,5 @@ public class CwCEventHandler {
      * @param event
      */
     @SubscribeEvent
-    public void playerFall(LivingFallEvent event) {
-        if (event.getEntity() instanceof EntityPlayer) event.setDistance(0.0F);
-    }
-
-    /**
-     * Fired when the game overlay is rendered for a client. See {@link RenderGameOverlayEvent} for more details.
-     * Hides health, hunger, and experience bars. Also hides the hotbar for the Architect and Oracle spectators.
-     * Also helps manage logic for taking screenshots after an action has been rendered.
-     *
-     * @param event
-     */
-    @SideOnly(Side.CLIENT)
-    @SubscribeEvent
-    public void renderGameOverlay(RenderGameOverlayEvent event) {
-        if (event.getType().equals(ElementType.HEALTH) || event.getType().equals(ElementType.FOOD) || event.getType().equals(ElementType.EXPERIENCE))
-            event.setCanceled(true);
-
-        Minecraft minecraft = Minecraft.getMinecraft();
-        if ((minecraft.player.getName().equals(MalmoMod.ARCHITECT) || minecraft.player.getName().equals(MalmoMod.ORACLE)) && event.getType().equals(ElementType.HOTBAR))
-            event.setCanceled(true);
-
-        if (placedBlock || (pickedUpBlock)) renderedBlock = true;
-    }
+    public void playerFall(LivingFallEvent event) { if (event.getEntity() instanceof EntityPlayer) event.setDistance(0.0F); }
 }

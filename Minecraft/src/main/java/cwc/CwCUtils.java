@@ -70,5 +70,8 @@ public class CwCUtils {
         System.out.println("Screenshot: "+CwCUtils.loggingDir+"/"+(prefix+"-"+mc.player.getName()+"-"+suffix)
                 .replace(screenshotDir.getAbsolutePath(),"")+".png");
         index++;
+
+        if (type == CwCScreenshotEventType.PICKUP && onUpdate) CwCEventHandler.disablePickup = false;
+        if (type == CwCScreenshotEventType.PUTDOWN && onUpdate) CwCEventHandler.disablePutdown = false;
     }
 }
