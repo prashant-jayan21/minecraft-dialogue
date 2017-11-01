@@ -216,20 +216,28 @@ def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, pr
     # # print pitch
     chat_observation = json_obj.get(u'Chat', [])
     current_game_state = json_obj.get(u'GameState', 0)
+    # world state dict
+    current_world_state = {}
     if current_blocks_state_abs != prev_blocks_state_abs or chat_observation != [] or current_game_state != prev_game_state:
         print
         print "-"*20
         print "[STATE]", current_game_state
+        current_world_state["state"] = current_game_state
 
         print "[timestamp]", msg_timestamp
         print
+        current_world_state["timestamp"] = str(msg_timestamp) # FIXME: Use some other encoding of timestamp?
 
         print "[builder absolute position] (x, y, z): " + str((builder_x_pos, builder_y_pos, builder_z_pos)), "(yaw, pitch): " + str((builder_yaw, builder_pitch))
         print
+        builder_position_absolute = {"x": builder_x_pos, "y": builder_y_pos, "z": builder_z_pos, "yaw": builder_yaw, "pitch": builder_pitch}
+        current_world_state["builder_position_absolute"] = builder_position_absolute # TODO: there will be some rounding when encoded to json
 
         string_to_write += "\n" + "-"*20 + "\n" + "[STATE]" + " " + str(current_game_state) + "\n" + "[timestamp]" + " " + str(msg_timestamp) \
         + "\n" + "\n" + "[builder absolute position] (x, y, z): " + str((builder_x_pos, builder_y_pos, builder_z_pos)) + " " + \
         "(yaw, pitch): " + str((builder_yaw, builder_pitch)) + "\n" + "\n"
+
+        blocks = []
 
         for i in range(len(current_blocks_state_rel)):
             block_rel = current_blocks_state_rel[i]
@@ -237,8 +245,25 @@ def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, pr
             perspective_coords = getPerspectiveCoordinates(block_rel["x"], block_rel["y"], block_rel["z"], builder_yaw, builder_pitch)
             absolute_coords = (block_abs["x"], block_abs["y"], block_abs["z"])
             print "["+block_rel["type"]+"]", "absolute coordinates:", absolute_coords, " | perspective coordinates:", perspective_coords
+            coordinates_absolute = {
+                "x": absolute_coords[0],
+                "y": absolute_coords[1],
+                "z": absolute_coords[2]
+            }
+            coordinates_perspective = {
+                "x": perspective_coords[0],
+                "y": perspective_coords[1],
+                "z": perspective_coords[2]
+            }
+            block_info = {
+                "type": block_rel["type"],
+                "coordinates_absolute": coordinates_absolute,
+                "coordinates_perspective": coordinates_perspective
+            }
+            blocks.append(block_info)
             string_to_write += "[" + str(block_rel["type"]) + "]" + " "+ "absolute coordinates:" + " " +  str(absolute_coords) + " " + " | perspective coordinates:" + " " + str(perspective_coords) + "\n"
 
+        current_world_state["blocks"] = blocks
 
         prev_blocks_state_abs = current_blocks_state_abs
         current_dialog_state = prev_dialog_state + chat_observation
@@ -246,9 +271,15 @@ def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, pr
         print
         print "[chat]"
         string_to_write += "\n" + "[chat]" + "\n"
+
+        utterances = []
+
         for utterance in current_dialog_state:
             print utterance
+            utterances.append(utterance)
             string_to_write += str(utterance) + "\n"
+
+        current_world_state["utterances"] = utterances
 
         prev_dialog_state = current_dialog_state
         prev_game_state = current_game_state
@@ -257,13 +288,14 @@ def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, pr
         string_to_write += "-"*20 + "\n"
 
 
-    return (prev_blocks_state_abs, prev_dialog_state, prev_game_state, string_to_write)
+    return (prev_blocks_state_abs, prev_dialog_state, prev_game_state, string_to_write, current_world_state)
 
 prev_blocks_state_abs = []
 prev_dialog_state = []
 prev_game_state = ""
 
 string_to_write = ""
+all_world_states = []
 
 while not timed_out:
 
@@ -277,20 +309,28 @@ while not timed_out:
 
         if i == 0 and world_state.is_mission_running and world_state.number_of_observations_since_last_state > 0:
             for observation in world_state.observations:
-                (prev_blocks_state_abs, prev_dialog_state, prev_game_state, string_to_write) = processObservation(observation, prev_blocks_state_abs, prev_dialog_state, prev_game_state, string_to_write)
-            # processObservation(world_state.observations[-1])
+                (prev_blocks_state_abs, prev_dialog_state, prev_game_state, string_to_write, world_state) = processObservation(observation, prev_blocks_state_abs, prev_dialog_state, prev_game_state, string_to_write)
+                if world_state:
+                    all_world_states.append(world_state)
 
     time.sleep(1)
 
 print
 print "Writing collected data to file..."
+
 architect_name = "anjali"
 builder_name = "prashant"
 trial_num = 1
-file_name = "cwc_pilot_" + architect_name + "_" + builder_name + "_" + str(trial_num) + ".txt"
-file = open(file_name,"w")
+file_name = "cwc_pilot_" + architect_name + "_" + builder_name + "_" + str(trial_num)
+
+file = open(file_name + ".txt", "w")
 file.write(string_to_write)
 file.close()
+
+data_dict = {"all_world_states": all_world_states}
+with open(file_name + ".json", "w") as jsonfile:
+    json.dump(data_dict, jsonfile)
+
 print "Done!"
 print
 
