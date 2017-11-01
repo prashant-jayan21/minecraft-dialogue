@@ -226,7 +226,7 @@ def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, pr
 
         print "[timestamp]", msg_timestamp
         print
-        current_world_state["timestamp"] = str(msg_timestamp) # FIXME: Use some other encoding of timestamp?
+        current_world_state["timestamp"] = msg_timestamp.isoformat()
 
         print "[builder absolute position] (x, y, z): " + str((builder_x_pos, builder_y_pos, builder_z_pos)), "(yaw, pitch): " + str((builder_yaw, builder_pitch))
         print
