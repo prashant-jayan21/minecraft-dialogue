@@ -15,6 +15,9 @@ public class CwCTransparentBlock extends Block {
         this.setBlockUnbreakable();
         this.setResistance(6000000.0F);
     }
+    
+    @Override
+    public int getLightOpacity(IBlockState state, IBlockAccess world, BlockPos pos) { return 0; }
 
     @Override
     public boolean doesSideBlockRendering(IBlockState state, IBlockAccess world, BlockPos pos, EnumFacing face) { return false; }
