@@ -1,0 +1,12 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "cwcmod:blocks/blank",
+    "up": "cwcmod:blocks/blank",
+    "north": "cwcmod:blocks/blank",
+    "east": "cwcmod:blocks/blank",
+    "south": "cwcmod:blocks/blank",
+    "west": "cwcmod:blocks/blank",
+    "particle": "cwcmod:blocks/blank"
+  }
+}

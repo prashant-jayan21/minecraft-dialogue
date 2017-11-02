@@ -12,7 +12,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 public class StartupCommon {
 	public static CwCBlock red, orange, yellow, green, blue, purple;		 // colored blocks
 	public static ItemBlock ired, iorange, iyellow, igreen, iblue, ipurple;  // colored item blocks
-	public static CwCUnbreakableBlock unb_grey, unb_white;					 // unbreakable blocks
+	public static CwCUnbreakableBlock unb_grey, unb_white, unb_transparent;	 // unbreakable blocks
 	public static CwCCreativeTab cwctab;									 // cwc blocks creative tab
 
 	public static void preInitCommon() {
@@ -84,6 +84,11 @@ public class StartupCommon {
 		unb_white = (CwCUnbreakableBlock)(new CwCUnbreakableBlock().setUnlocalizedName("cwc_unbreakable_white_un"));
 		unb_white.setRegistryName("cwc_unbreakable_white_rn");
 		GameRegistry.register(unb_white);
+
+		// transparent, unbreakable (skybox)
+		unb_transparent = (CwCUnbreakableBlock)(new CwCUnbreakableBlock().setUnlocalizedName("cwc_unbreakable_transparent_un"));
+		unb_transparent.setRegistryName("cwc_unbreakable_transparent_rn");
+		GameRegistry.register(unb_transparent);
 
 		// show block IDs of custom blocks -- add statements as needed
 		System.out.println("Red block ID: "+Block.getIdFromBlock(red));

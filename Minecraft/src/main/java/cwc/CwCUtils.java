@@ -19,7 +19,6 @@ public class CwCUtils {
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");  // timestamp date format
     private static int index = 1;        // if not using timestamps, index prefix of screenshots taken
 
-    protected static String date;
     private static File loggingDir;      // directory of observation logs
     private static File screenshotDir;   // directory of screenshots (within logging directory)
     static {
