@@ -17,7 +17,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
  */
 public class CwCUnbreakableBlock extends Block {
     public CwCUnbreakableBlock() {
-        super(Material.GLASS);
+        super(Material.ROCK);
         this.setBlockUnbreakable();
         this.setResistance(6000000.0F);
     }
