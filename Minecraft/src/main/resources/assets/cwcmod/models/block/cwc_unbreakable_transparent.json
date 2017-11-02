@@ -1,12 +1,12 @@
 {
   "parent": "block/cube",
   "textures": {
-    "down": "cwcmod:blocks/blank",
-    "up": "cwcmod:blocks/blank",
-    "north": "cwcmod:blocks/blank",
-    "east": "cwcmod:blocks/blank",
-    "south": "cwcmod:blocks/blank",
-    "west": "cwcmod:blocks/blank",
-    "particle": "cwcmod:blocks/blank"
+    "down": "cwcmod:blocks/blank-resized",
+    "up": "cwcmod:blocks/blank-resized",
+    "north": "cwcmod:blocks/blank-resized",
+    "east": "cwcmod:blocks/blank-resized",
+    "south": "cwcmod:blocks/blank-resized",
+    "west": "cwcmod:blocks/blank-resized",
+    "particle": "cwcmod:blocks/blank-resized"
   }
 }
