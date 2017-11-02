@@ -128,6 +128,8 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                     <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-8" y1="1" z1="6" x2="-8" y2="1" z2="2"/>
                     <DrawCuboid type="cwcmod:cwc_red_rn" x1="-8" y1="1" z1="0" x2="-8" y2="1" z2="-4"/>
                     <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="-5" y1="0" z1="-5" x2="5" y2="0" z2="5"/>
+                    <DrawBlock type="cwcmod:cwc_unbreakable_transparent_rn" x="0" y="1" z="1"/>
+                    <DrawBlock type="cwcmod:cwc_unbreakable_transparent_rn" x="1" y="1" z="0"/>
                   </DrawingDecorator>
                   <ServerQuitWhenAnyAgentFinishes/>
                 </ServerHandlers>
