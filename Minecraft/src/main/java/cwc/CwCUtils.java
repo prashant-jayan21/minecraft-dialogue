@@ -14,14 +14,16 @@ import java.util.Date;
  */
 public class CwCUtils {
     public static String[] statusOverlay = {"Architect is inspecting...", "Architect is thinking...", "Builder is building..."};  // status overlay strings (for indicating current game state)
+
     public static boolean useTimestamps = false;    // whether or not to include timestamps as part of screenshot names
-    public static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");  // timestamp date format
-    public static int index = 1;        // if not using timestamps, index prefix of screenshots taken
-    public static File loggingDir;      // directory of observation logs
-    public static File screenshotDir;   // directory of screenshots (within logging directory)
+    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");  // timestamp date format
+    private static int index = 1;        // if not using timestamps, index prefix of screenshots taken
+
+    protected static String date;
+    private static File loggingDir;      // directory of observation logs
+    private static File screenshotDir;   // directory of screenshots (within logging directory)
     static {
-        loggingDir = new File("/Users/Anjali/Documents/UIUC/research/CwC/BlocksWorld/Minecraft/cwc-minecraft/");
-        if (!loggingDir.exists()) loggingDir.mkdir();
+        loggingDir = new File(System.getProperty("user.dir"));
         screenshotDir = new File(loggingDir, "screenshots");
         if (!screenshotDir.exists()) screenshotDir.mkdir();
     }
@@ -36,13 +38,13 @@ public class CwCUtils {
      *
      * @param gameDirectory Path to game directory
      */
-    public static File getTimestampedFileForDirectory(File gameDirectory) {
+    public static String getTimestampedFileForDirectory(File gameDirectory) {
         String s = DATE_FORMAT.format(new Date()).toString();
         int i = 1;
 
         while (true) {
             File file1 = new File(gameDirectory, s + (i == 1 ? "" : "_" + i));
-            if (!file1.exists()) return file1;
+            if (!file1.exists()) return file1.getAbsolutePath().replace(gameDirectory.getAbsolutePath(),"");
             ++i;
         }
     }
@@ -52,26 +54,21 @@ public class CwCUtils {
      * @param mc Minecraft client
      * @param timestamp Whether or not to use timestamp in the screenshot filename
      * @param type Type of event that triggered this screenshot action
-     * @param onUpdate
      */
-    public static void takeScreenshot(Minecraft mc, boolean timestamp, CwCScreenshotEventType type, boolean onUpdate) {
+    public static void takeScreenshot(Minecraft mc, boolean timestamp, CwCScreenshotEventType type) {
         //TODO: append mission name, experiment number, architect/builder IDs somewhere to this path!
-        String prefix = timestamp ? CwCUtils.getTimestampedFileForDirectory(screenshotDir)+"" : screenshotDir.getAbsolutePath()+index;  // prefix with either timestamp or screenshot index
-        String suffix = type.name().toLowerCase(); //+(type == CwCScreenshotEventType.CHAT ? "" : onUpdate ? "-before" : "-after");     // suffix with type of triggering event
+        String prefix = timestamp ? CwCUtils.getTimestampedFileForDirectory(screenshotDir) : index+"";  // prefix with either timestamp or screenshot index
+        String suffix = CwCMod.state.name().toLowerCase()+"-"+type.name().toLowerCase();  // suffix with type of triggering event
 
         // take the screenshot
-        ScreenShotHelper.saveScreenshot(CwCUtils.loggingDir, (prefix+"-"+mc.player.getName()+"-"+suffix)
-                .replace(screenshotDir.getAbsolutePath(),"")+".png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
+        ScreenShotHelper.saveScreenshot(CwCUtils.loggingDir, prefix+"-"+mc.player.getName()+"-"+suffix+".png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
 
         // save screenshot filename to list
-        CwCMod.screenshots.add(CwCUtils.loggingDir+(prefix+"-"+mc.player.getName()+"-"+suffix)
-                .replace(screenshotDir.getAbsolutePath(),"")+".png");
-
-        System.out.println("Screenshot: "+CwCUtils.loggingDir+"/"+(prefix+"-"+mc.player.getName()+"-"+suffix)
-                .replace(screenshotDir.getAbsolutePath(),"")+".png");
+        CwCMod.screenshots.add(CwCUtils.screenshotDir+"/"+prefix+"-"+mc.player.getName()+"-"+suffix+".png");
+        System.out.println("Screenshot: "+CwCMod.screenshots.get(CwCMod.screenshots.size()-1));
         index++;
 
-        if (type == CwCScreenshotEventType.PICKUP && onUpdate) CwCEventHandler.disablePickup = false;
-        if (type == CwCScreenshotEventType.PUTDOWN && onUpdate) CwCEventHandler.disablePutdown = false;
+        if (type == CwCScreenshotEventType.PICKUP) CwCEventHandler.disablePickup = false;
+        if (type == CwCScreenshotEventType.PUTDOWN) CwCEventHandler.disablePutdown = false;
     }
 }

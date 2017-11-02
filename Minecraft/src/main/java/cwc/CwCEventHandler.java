@@ -38,8 +38,11 @@ import net.minecraftforge.fml.relauncher.SideOnly;
  */
 public class CwCEventHandler {
 
-    public static boolean reset = false;                // used for resetting the Architect to free-fly inspection
-    private static boolean unpressed = true;            // used for resetting the Architect to free-fly inspection
+    // used for resetting the Architect to free-fly inspection
+    public static boolean reset = false;
+    private static boolean unpressed = true;
+
+    // used to handle screenshot logic
     private static boolean receivedChat = false, renderedChat = false;  // chat is received & rendered
     protected static boolean placedBlock = false, pickedUpBlock = false, renderedBlock = false;  // block is placed/picked up & rendered
     protected static boolean updatePlayerTick = false, updateRenderTick = false;  // wait for the second update/render tick of a pickup action before taking a screenshot
@@ -291,14 +294,14 @@ public class CwCEventHandler {
 
                 // if switching from Building to Inspecting and mouse hasn't yet been overridden, override the mouse
                 if (CwCMod.state != CwCState.BUILDING && minecraft.mouseHelper instanceof MalmoModClient.MouseHook &&
-                        ((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding == false)
+                        !((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding)
                     ((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding = true;
             }
 
             // take a screenshot when a chat message has been received and rendered by the client
             if (receivedChat && renderedChat) {
                 System.out.println("Chat received & rendered: taking screenshot...");
-                CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT, false);
+                CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT);
                 receivedChat = false;
                 renderedChat = false;
             }
@@ -306,7 +309,7 @@ public class CwCEventHandler {
             // take a screenshot when a block place event has been received and rendered by the client
             if (placedBlock && renderedBlock) {
                 System.out.println("Block placed & rendered: taking screenshot...");
-                CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.PUTDOWN, true);
+                CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.PUTDOWN);
                 placedBlock = false;
                 renderedBlock = false;
             }
@@ -317,7 +320,7 @@ public class CwCEventHandler {
             // take a screenshot when a block break event has been received and rendered by the client
             else if (pickedUpBlock && renderedBlock && updatePlayerTick && updateRenderTick) {
                 System.out.println("Block removed, picked up & rendered: taking screenshot...");
-                CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.PICKUP, true);
+                CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.PICKUP);
                 pickedUpBlock = false;
                 renderedBlock = false;
                 updatePlayerTick = false;
