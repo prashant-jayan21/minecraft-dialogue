@@ -362,6 +362,8 @@ while not timed_out:
 print
 print "Writing collected data to files..."
 
+# FIXME: Parameterize all of these magic strings
+
 architect_name = "anjali"
 builder_name = "prashant"
 trial_num = 1
