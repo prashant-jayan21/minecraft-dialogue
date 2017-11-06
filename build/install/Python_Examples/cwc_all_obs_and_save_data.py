@@ -7,6 +7,7 @@ import os
 import sys
 import time
 import json
+from cwc_aligner import align
 
 def safeStartMission(agent_host, my_mission, my_client_pool, my_mission_record, role, expId):
     used_attempts = 0
@@ -357,21 +358,31 @@ while not timed_out:
 
     time.sleep(1)
 
+# write data
 print
-print "Writing collected data to file..."
+print "Writing collected data to files..."
 
 architect_name = "anjali"
 builder_name = "prashant"
 trial_num = 1
-file_name = "cwc_pilot_" + architect_name + "_" + builder_name + "_" + str(trial_num)
+obs_file_name = "cwc_pilot_" + architect_name + "_" + builder_name + "_" + str(trial_num) # for the json data files
 
-file = open(file_name + ".txt", "w")
+screenshots_dir = "/Users/prashant/Work/cwc-minecraft/Minecraft/run/screenshots/" # the screenshots dir populated on the mod side
+
+# human readable log
+file = open(obs_file_name + ".txt", "w")
 file.write(string_to_write)
 file.close()
 
-data_dict = {"all_world_states": all_world_states}
-with open(file_name + ".json", "w") as jsonfile:
-    json.dump(data_dict, jsonfile)
+# machine readable log -- unalinged
+obs_data_dict = {"all_world_states": all_world_states}
+with open(obs_file_name + ".json", "w") as jsonfile:
+    json.dump(obs_data_dict, jsonfile)
+
+# machine readable log -- aligned w/ screenshots
+obs_data_dict_aligned = align(obs_data_dict, screenshots_dir)
+with open(obs_file_name + "_aligned" + ".json", "w") as jsonfile:
+    json.dump(obs_data_dict_aligned, jsonfile)
 
 print "Done!"
 print
