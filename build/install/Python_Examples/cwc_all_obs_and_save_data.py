@@ -113,7 +113,6 @@ y_max = 16
 z_min = -5
 z_max = 5
 
-
 missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
@@ -248,7 +247,6 @@ def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, pr
         + "\n" + "\n" + "[builder absolute position] (x, y, z): " + str((builder_x_pos, builder_y_pos, builder_z_pos)) + " " + \
         "(yaw, pitch): " + str((builder_yaw, builder_pitch)) + "\n" + "\n"
 
-        # blocks = []
         blocks_outside = []
         blocks_inside = []
 
@@ -299,12 +297,11 @@ def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, pr
                 blocks_outside.append(block_info)
             else:
                 blocks_inside.append(block_info)
-            # blocks.append(block_info)
 
             string_to_write += "[" + str(block_rel["type"]) + "]" + " "+  "outside: " + str(outside) + " " + "absolute coordinates:" + " " +  str(absolute_coords) + " " + " | perspective coordinates:" + " " + str(perspective_coords) + "\n"
 
-        current_world_state["blocks_outside"] = blocks_outside
-        current_world_state["blocks_inside"] = blocks_inside
+        current_world_state["blocks_inventory"] = blocks_outside
+        current_world_state["blocks_structure"] = blocks_inside
 
         prev_blocks_state_abs = current_blocks_state_abs
         current_dialog_state = prev_dialog_state + chat_observation
