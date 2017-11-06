@@ -104,14 +104,22 @@ else:
 
 # Create mission xml
 
+# observation grid parameters
+x_min_obs = -10
+x_max_obs = 10
+y_min_obs = 1
+y_max_obs = 16
+z_min_obs = -10
+z_max_obs = 10
+
 # build region parameters
 # the build region is defined by the x and z bounds of the white floor and the y bounds of the observation grid
-x_min = -5
-x_max = 5
-y_min = 1
-y_max = 16
-z_min = -5
-z_max = 5
+x_min_build = -5
+x_max_build = 5
+y_min_build = y_min_obs # NOTE: Do not change this relation without thought!
+y_max_build = y_max_obs # NOTE: Do not change this relation without thought!
+z_min_build = -5
+z_max_build = 5
 
 missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -137,7 +145,7 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                     <DrawCuboid type="cwcmod:cwc_blue_rn" x1="8" y1="1" z1="0" x2="8" y2="1" z2="-4"/>
                     <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-8" y1="1" z1="6" x2="-8" y2="1" z2="2"/>
                     <DrawCuboid type="cwcmod:cwc_red_rn" x1="-8" y1="1" z1="0" x2="-8" y2="1" z2="-4"/>
-                    <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min) +'''" y1="0" z1="''' + str(z_min)+ '''" x2="'''+ str(x_max)+'''" y2="0" z2="''' + str(z_max) + '''"/>
+                    <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_build) +'''" y1="0" z1="''' + str(z_min_build)+ '''" x2="'''+ str(x_max_build)+'''" y2="0" z2="''' + str(z_max_build) + '''"/>
                   </DrawingDecorator>
                   <ServerQuitWhenAnyAgentFinishes/>
                 </ServerHandlers>
@@ -152,8 +160,8 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                   <ObservationFromFullStats/>
                    <ObservationFromGrid>
                      <Grid name="builder_grid" absoluteCoords="true">
-                       <min x="-10" y="'''+ str(y_min) + '''" z="-10"/>
-                       <max x="10" y="''' + str(y_max) + '''" z="10"/>
+                       <min x="'''+ str(x_min_obs) + '''" y="'''+ str(y_min_obs) + '''" z="''' + str(z_min_obs) + '''"/>
+                       <max x="'''+ str(x_max_obs) + '''" y="''' + str(y_max_obs) + '''" z="''' + str(z_max_obs) + '''"/>
                      </Grid>
                    </ObservationFromGrid>
                    <ObservationFromChat/>
@@ -259,17 +267,13 @@ def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, pr
             absolute_coords = (block_abs["x"], block_abs["y"], block_abs["z"])
 
             # check if the block is inside or outside the build region
-            build_region_range_x = (x_min, x_max)
-            build_region_range_y = (y_min, y_max)
-            build_region_range_z = (z_min, z_max)
-
             x = absolute_coords[0]
             y = absolute_coords[1]
             z = absolute_coords[2]
 
-            if x < build_region_range_x[0] or x > build_region_range_x[1] \
-            or y < build_region_range_y[0] or y > build_region_range_y[1] \
-            or z < build_region_range_z[0] or z > build_region_range_z[1]:
+            if x < x_min_build or x > x_max_build \
+            or y < y_min_build or y > y_max_build \
+            or z < z_min_build or z > z_max_build:
                 # outside
                 outside = True
             else:
