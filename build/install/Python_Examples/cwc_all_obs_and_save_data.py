@@ -67,13 +67,25 @@ def safeWaitForStart(agent_hosts):
     print()
     print("Mission has started.")
 
-# Create agent hosts
-agent_hosts = [MalmoPython.AgentHost(), MalmoPython.AgentHost(), MalmoPython.AgentHost()]
+# Create one agent host for parsing:
+agent_hosts = [MalmoPython.AgentHost()]
 
-# Set observation policy for builder
+# try:
+#     agent_hosts[0].parse( sys.argv )
+# except RuntimeError as e:
+#     print('ERROR:',e)
+#     print(agent_hosts[0].getUsage())
+#     exit(1)
+# if agent_hosts[0].receivedArgument("help"):
+#     print(agent_hosts[0].getUsage())
+#     exit(0)
+
+# Set observation policy
 agent_hosts[0].setObservationsPolicy(MalmoPython.ObservationsPolicy.KEEP_ALL_OBSERVATIONS)
 
-# Parse CLAs
+# Create the other agent host
+agent_hosts += [MalmoPython.AgentHost()]
+
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
 lan = False
 
@@ -84,13 +96,14 @@ if len(sys.argv) > 1 and sys.argv[1].lower() == 'lan':
 client_pool = MalmoPython.ClientPool()
 
 if not lan:
-    client_pool.add( MalmoPython.ClientInfo('127.0.0.1', 10000) )
-    client_pool.add( MalmoPython.ClientInfo('127.0.0.1', 10001) )
-    client_pool.add( MalmoPython.ClientInfo('127.0.0.1', 10002) )
+	client_pool.add( MalmoPython.ClientInfo('127.0.0.1', 10000) )
+	client_pool.add( MalmoPython.ClientInfo('127.0.0.1', 10001) )
+
 else:
-    client_pool.add( MalmoPython.ClientInfo('10.192.95.32', 10000) )
-    client_pool.add( MalmoPython.ClientInfo('10.195.220.132', 10000) )
-    client_pool.add( MalmoPython.ClientInfo('10.195.220.132', 10001) )
+	client_pool.add( MalmoPython.ClientInfo('10.192.95.32', 10000) )
+	client_pool.add( MalmoPython.ClientInfo('10.195.220.132', 10000) )
+
+# Create mission xml
 
 # observation grid parameters
 x_min_obs = -10
@@ -108,8 +121,6 @@ y_min_build = y_min_obs # NOTE: Do not change this relation without thought!
 y_max_build = y_max_obs # NOTE: Do not change this relation without thought!
 z_min_build = -5
 z_max_build = 5
-
-# Create mission xmls
 
 missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -167,47 +178,10 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
               </AgentSection>
             </Mission>'''
 
-missionXML_oracle='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-            <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-
-              <About>
-                <Summary>CWC Prototype</Summary>
-              </About>
-
-              <ServerSection>
-                <ServerInitialConditions>
-                  <Time>
-                    <StartTime>1000</StartTime>
-                    <AllowPassageOfTime>false</AllowPassageOfTime>
-                  </Time>
-                  <Weather>clear</Weather>
-                </ServerInitialConditions>
-                <ServerHandlers>
-                  <FlatWorldGenerator generatorString="3;241;1;"/>
-                  <DrawingDecorator>
-                    <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_build) +'''" y1="0" z1="''' + str(z_min_build)+ '''" x2="'''+ str(x_max_build)+'''" y2="0" z2="''' + str(z_max_build) + '''"/>
-                    <DrawBlock type="cwcmod:cwc_red_rn" x="0" y="1" z="3"/>
-                  </DrawingDecorator>
-                  <ServerQuitWhenAnyAgentFinishes/>
-                </ServerHandlers>
-              </ServerSection>
-
-              <AgentSection mode="Spectator">
-                <Name>Oracle</Name>
-                <AgentStart>
-                  <Placement x = "0" y = "1" z = "0"/>
-                </AgentStart>
-                <AgentHandlers/>
-              </AgentSection>
-
-            </Mission>'''
-
 my_mission = MalmoPython.MissionSpec(missionXML, True)
-my_mission_oracle = MalmoPython.MissionSpec(missionXML_oracle, True)
 
 safeStartMission(agent_hosts[0], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission")
 safeStartMission(agent_hosts[1], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 1, "cwc_dummy_mission")
-safeStartMission(agent_hosts[2], my_mission_oracle, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission_oracle")
 
 safeWaitForStart(agent_hosts)
 
