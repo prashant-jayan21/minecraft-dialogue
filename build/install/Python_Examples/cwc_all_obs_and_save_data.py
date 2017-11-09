@@ -90,7 +90,7 @@ if not lan:
 else:
     client_pool.add( MalmoPython.ClientInfo('10.192.95.32', 10000) )
     client_pool.add( MalmoPython.ClientInfo('10.195.220.132', 10000) )
-    client_pool.add( MalmoPython.ClientInfo('10.195.220.132', 10001) ) # TODO: Make sure this is the architect's machine -- in fact enforce it!
+    client_pool.add( MalmoPython.ClientInfo('10.195.220.132', 10001) )
 
 # observation grid parameters
 x_min_obs = -10
