@@ -122,6 +122,15 @@ y_max_build = y_max_obs # NOTE: Do not change this relation without thought!
 z_min_build = -5
 z_max_build = 5
 
+# goal region parameters
+displacement = 100
+x_min_goal = x_min_build + displacement
+x_max_goal = x_max_build + displacement
+y_min_goal = y_min_build # NOTE: Do not change this relation without thought!
+y_max_goal = y_max_build # NOTE: Do not change this relation without thought!
+z_min_goal = z_min_build + displacement
+z_max_goal = z_max_build + displacement
+
 missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
@@ -147,7 +156,18 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                     <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-8" y1="1" z1="6" x2="-8" y2="1" z2="2"/>
                     <DrawCuboid type="cwcmod:cwc_red_rn" x1="-8" y1="1" z1="0" x2="-8" y2="1" z2="-4"/>
                     <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_build) +'''" y1="0" z1="''' + str(z_min_build)+ '''" x2="'''+ str(x_max_build)+'''" y2="0" z2="''' + str(z_max_build) + '''"/>
+                    <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_goal) +'''" y1="0" z1="''' + str(z_min_goal)+ '''" x2="'''+ str(x_max_goal)+'''" y2="0" z2="''' + str(z_max_goal) + '''"/>
                   </DrawingDecorator>
+                  <BuildBattleDecorator>
+                    <GoalStructureBounds>
+                        <min x="'''+ str(x_min_goal) + '''" y="'''+ str(y_min_goal) + '''" z="''' + str(z_min_goal) + '''"/>
+                        <max x="'''+ str(x_max_goal) + '''" y="''' + str(y_max_goal) + '''" z="''' + str(z_max_goal) + '''"/>
+                    </GoalStructureBounds>
+                    <PlayerStructureBounds>
+                        <min x="'''+ str(x_min_build) + '''" y="'''+ str(y_min_build) + '''" z="''' + str(z_min_build) + '''"/>
+                        <max x="'''+ str(x_max_build) + '''" y="''' + str(y_max_build) + '''" z="''' + str(z_max_build) + '''"/>
+                    </PlayerStructureBounds>
+                  </BuildBattleDecorator>
                   <ServerQuitWhenAnyAgentFinishes/>
                 </ServerHandlers>
               </ServerSection>
