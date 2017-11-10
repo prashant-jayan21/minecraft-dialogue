@@ -112,7 +112,7 @@ if not args.lan:
     client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10001))
 else:
     client_pool.add(MalmoPython.ClientInfo(args.builder_ip_addr, 10000))
-    client_pool.add(MalmoPython.ClientInfo(args.architect_ip_addr, 10001))
+    client_pool.add(MalmoPython.ClientInfo(args.architect_ip_addr, 10000))
 
 # Create mission xml
 
