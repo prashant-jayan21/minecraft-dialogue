@@ -8,6 +8,8 @@ import sys
 import time
 import json
 from cwc_aligner import align
+import argparse
+import datetime
 
 def safeStartMission(agent_host, my_mission, my_client_pool, my_mission_record, role, expId):
     used_attempts = 0
@@ -87,21 +89,30 @@ agent_hosts[0].setObservationsPolicy(MalmoPython.ObservationsPolicy.KEEP_ALL_OBS
 agent_hosts += [MalmoPython.AgentHost()]
 
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
-lan = False
+# lan = False
+#
+# if len(sys.argv) > 1 and sys.argv[1].lower() == 'lan':
+# 	lan = True
 
-if len(sys.argv) > 1 and sys.argv[1].lower() == 'lan':
-	lan = True
+# Parse CLAs
+parser = argparse.ArgumentParser(description="Run a python mission.")
+parser.add_argument("--lan", help="whether you want to play over lan or on a single machine", action="store_true")
+parser.add_argument("--builder_ip_addr", help="IP address of the builder in case you choose --lan")
+parser.add_argument("--builder_id", help="ID of the builder in case you choose --lan")
+parser.add_argument("--architect_ip_addr", help="IP address of the architect in case you choose --lan")
+parser.add_argument("--architect_id", help="ID of the architect in case you choose --lan")
+parser.add_argument("--gold_config", help="file that contains the gold configuration aka goal structure")
+args = parser.parse_args()
 
 # Set up a client pool
 client_pool = MalmoPython.ClientPool()
 
-if not lan:
-	client_pool.add( MalmoPython.ClientInfo('127.0.0.1', 10000) )
-	client_pool.add( MalmoPython.ClientInfo('127.0.0.1', 10001) )
-
+if not args.lan:
+    client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10000))
+    client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10001))
 else:
-	client_pool.add( MalmoPython.ClientInfo('10.192.95.32', 10000) )
-	client_pool.add( MalmoPython.ClientInfo('10.195.220.132', 10000) )
+    client_pool.add(MalmoPython.ClientInfo(args.builder_ip_addr, 10000))
+    client_pool.add(MalmoPython.ClientInfo(args.architect_ip_addr, 10001))
 
 # Create mission xml
 
@@ -131,11 +142,15 @@ y_max_goal = y_max_build # NOTE: Do not change this relation without thought!
 z_min_goal = z_min_build + displacement
 z_max_goal = z_max_build + displacement
 
+# experiment ID
+experiment_time = datetime.datetime.now().isoformat()
+experiment_id = args.builder_id + "_" + args.architect_id + "_" + args.gold_config + "_" + experiment_time
+
 missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
               <About>
-                <Summary>CWC Prototype</Summary>
+                <Summary>''' + experiment_id + '''</Summary>
               </About>
 
               <ServerSection>
@@ -384,10 +399,7 @@ print "Writing collected data to files..."
 
 # FIXME: Parameterize all of these magic strings
 
-architect_name = "anjali"
-builder_name = "prashant"
-trial_num = 1
-obs_file_name = "cwc_pilot_" + architect_name + "_" + builder_name + "_" + str(trial_num) # for the json data files
+obs_file_name = "cwc_pilot_" + experiment_id # for the json data files
 
 screenshots_dir = "/Users/prashant/Work/cwc-minecraft/Minecraft/run/screenshots/" # the screenshots dir populated on the mod side
 
