@@ -144,7 +144,7 @@ z_max_goal = z_max_build + displacement
 
 # experiment ID
 experiment_time = datetime.datetime.now().isoformat()
-experiment_id = args.builder_id + "_" + args.architect_id + "_" + args.gold_config + "_" + experiment_time
+experiment_id = str(args.builder_id) + "_" + str(args.architect_id) + "_" + str(args.gold_config) + "_" + str(experiment_time)
 
 missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
