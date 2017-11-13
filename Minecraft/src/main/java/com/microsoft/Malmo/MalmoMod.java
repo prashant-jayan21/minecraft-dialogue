@@ -467,4 +467,7 @@ public class MalmoMod
             }
         }
     }
+
+    public MalmoModClient getClient() { return client; }
+    public MalmoModServer getServer() { return server; }
 }

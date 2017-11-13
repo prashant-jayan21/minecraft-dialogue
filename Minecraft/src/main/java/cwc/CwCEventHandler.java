@@ -1,10 +1,12 @@
 package cwc;
 
+import com.microsoft.Malmo.Client.ClientState;
 import com.microsoft.Malmo.Client.MalmoModClient;
 import com.microsoft.Malmo.MalmoMod;
 import com.microsoft.Malmo.MissionHandlers.AbsoluteMovementCommandsImplementation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.item.EntityFallingBlock;
@@ -21,6 +23,7 @@ import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
@@ -47,6 +50,15 @@ public class CwCEventHandler {
     protected static boolean placedBlock = false, pickedUpBlock = false, renderedBlock = false;  // block is placed/picked up & rendered
     protected static boolean updatePlayerTick = false, updateRenderTick = false;  // wait for the second update/render tick of a pickup action before taking a screenshot
     protected static boolean disablePutdown = false, disablePickup = false;  // disallow Builder to putdown/pickup until a screenshot of the last action has been taken
+
+    public static void reset() {
+        reset = true;
+        unpressed = true;
+        receivedChat = false; renderedChat = false;
+        placedBlock = false; pickedUpBlock = false; renderedBlock = false;
+        updatePlayerTick = false; updateRenderTick = false;
+        disablePutdown = false; disablePickup = false;
+    }
 
     /**
      * Fired when an entity joins the world (spawns). See {@link EntityJoinWorldEvent} for more details.
@@ -150,6 +162,11 @@ public class CwCEventHandler {
         GameSettings gs = minecraft.gameSettings;
         EntityPlayerSP player = minecraft.player;
 
+        if (gs.keyBindDrop.isPressed()) {
+            System.out.println("Quitting the mission...");
+            CwCMod.network.sendToServer(new CwCQuitMessage());
+        }
+
         // Handles mode-switching logic when the TAB key is pressed by either Architect or Builder.
         if (gs.keyBindPlayerList.isPressed()) {
             System.out.println("Player: " + player.getName() + "\tState: " + CwCMod.state);
@@ -160,7 +177,7 @@ public class CwCEventHandler {
 
                 // Find the Builder, teleport to his position and attack him (to enable third-person mob-view of Builder)
                 EntityPlayer builder = null;
-                for (EntityPlayer ep : Minecraft.getMinecraft().world.playerEntities)
+                for (EntityPlayer ep : minecraft.world.playerEntities)
                     if (ep.getName().equals(MalmoMod.BUILDER)) builder = ep;
 
                 if (builder != null) {
@@ -288,14 +305,20 @@ public class CwCEventHandler {
 
             }
 
-            // set mode overlay message for Builder
             else if (player.getName().equals(MalmoMod.BUILDER) && minecraft.player.getName().equals(MalmoMod.BUILDER)) {
+                // set mode overlay message for Builder
                 minecraft.ingameGUI.setOverlayMessage(CwCUtils.statusOverlay[CwCMod.state.ordinal()], true);
 
                 // if switching from Building to Inspecting and mouse hasn't yet been overridden, override the mouse
                 if (CwCMod.state != CwCState.BUILDING && minecraft.mouseHelper instanceof MalmoModClient.MouseHook &&
                         !((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding)
                     ((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding = true;
+
+                // unpress all keys on reset
+                if (reset) {
+                    KeyBinding.unPressAllKeys();
+                    reset = false;
+                }
             }
 
             // take a screenshot when a chat message has been received and rendered by the client
@@ -335,6 +358,9 @@ public class CwCEventHandler {
 //            icamera.setPosition(entity.lastTickPosX, entity.lastTickPosY, entity.lastTickPosZ);
 //        }
     }
+
+    @SubscribeEvent
+    public void onLivingDeath(LivingDeathEvent event) { CwCMod.network.sendToServer(new CwCQuitMessage()); }
 
     /**
      * Fired when the game overlay is rendered for a client. See {@link RenderGameOverlayEvent} for more details.

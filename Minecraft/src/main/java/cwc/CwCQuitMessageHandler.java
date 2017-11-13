@@ -9,10 +9,10 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
 /**
- * Server- & client-side handler for custom screenshot messages.
+ * Server- & client-side handler for quit messages.
  * @author nrynchn2
  */
-public class CwCScreenshotMessageHandler implements IMessageHandler<CwCScreenshotMessage, IMessage> {
+public class CwCQuitMessageHandler implements IMessageHandler<CwCQuitMessage, IMessage> {
 
     /**
      * Determines if message is received on the server or the client side and calls their respective message handlers.
@@ -20,7 +20,7 @@ public class CwCScreenshotMessageHandler implements IMessageHandler<CwCScreensho
      * @param ctx Message context
      * @return null
      */
-    public IMessage onMessage(final CwCScreenshotMessage message, MessageContext ctx) {
+    public IMessage onMessage(final CwCQuitMessage message, MessageContext ctx) {
         // process message on server
         if (ctx.side == Side.SERVER) {
             final EntityPlayerMP sender = ctx.getServerHandler().playerEntity;
@@ -37,7 +37,7 @@ public class CwCScreenshotMessageHandler implements IMessageHandler<CwCScreensho
         else {
             final Minecraft minecraft = Minecraft.getMinecraft();
             minecraft.addScheduledTask(new Runnable() {
-                public void run() { processMessageOnClient(message); }
+                public void run() { processMessageOnClient(minecraft); }
             });
             return null;
         }
@@ -45,23 +45,20 @@ public class CwCScreenshotMessageHandler implements IMessageHandler<CwCScreensho
 
     /**
      * Handles messages received on the server. Processes the message by sending it out to all connected clients.
-     * @param message Screenshot message
+     * @param message Quit message
      * @param sender Message sender
      */
-    void processMessageOnServer(CwCScreenshotMessage message, EntityPlayerMP sender) {
+    void processMessageOnServer(CwCQuitMessage message, EntityPlayerMP sender) {
         for (EntityPlayerMP player : sender.mcServer.getPlayerList().getPlayers())
             CwCMod.network.sendTo(message, player);
     }
 
     /**
-     * Handles messages received on the client. Processes the message by setting the appropriate boolean fields responsible for
-     * directing logic for when a screenshot should be taken.
-     * @param message Screenshot message
+     * Handles messages received on the client.
+     * @param minecraft Minecraft client instance
      */
-    void processMessageOnClient(CwCScreenshotMessage message) {
-        if (message.getType() == CwCScreenshotEventType.PICKUP)
-            CwCEventHandler.pickedUpBlock = true;
-        else if (message.getType() == CwCScreenshotEventType.PUTDOWN)
-            CwCEventHandler.placedBlock = true;
+    void processMessageOnClient(Minecraft minecraft) {
+        CwCMod.reset();
+        minecraft.player.sendChatMessage("/kill");
     }
 }

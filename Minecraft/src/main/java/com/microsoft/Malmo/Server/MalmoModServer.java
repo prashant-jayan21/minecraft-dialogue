@@ -57,4 +57,5 @@ public class MalmoModServer
         MinecraftForge.EVENT_BUS.register(this);
     }
 
+	public ServerStateMachine getStateMachine() { return stateMachine; }
 }

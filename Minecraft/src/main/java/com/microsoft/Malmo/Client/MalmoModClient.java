@@ -176,4 +176,6 @@ public class MalmoModClient
             event.setGui(new MalmoModGuiOptions.MalmoModGuiScreen(null));
         }
     }*/
+
+    public ClientStateMachine getStateMachine() { return stateMachine; }
 }

@@ -35,6 +35,8 @@ import java.util.logging.Level;
 import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
 
+import com.microsoft.Malmo.Schemas.*;
+import cwc.CwCMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.GuiDisconnected;
@@ -45,8 +47,11 @@ import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.launchwrapper.Launch;
 import net.minecraft.network.NetworkManager;
+import net.minecraft.network.play.server.SPacketHeldItemChange;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextComponentString;
@@ -76,16 +81,6 @@ import com.microsoft.Malmo.Client.MalmoModClient.InputType;
 import com.microsoft.Malmo.MissionHandlerInterfaces.IWantToQuit;
 import com.microsoft.Malmo.MissionHandlers.MissionBehaviour;
 import com.microsoft.Malmo.MissionHandlers.MultidimensionalReward;
-import com.microsoft.Malmo.Schemas.AgentSection;
-import com.microsoft.Malmo.Schemas.AgentStart;
-import com.microsoft.Malmo.Schemas.ClientAgentConnection;
-import com.microsoft.Malmo.Schemas.MinecraftServerConnection;
-import com.microsoft.Malmo.Schemas.Mission;
-import com.microsoft.Malmo.Schemas.MissionEnded;
-import com.microsoft.Malmo.Schemas.MissionInit;
-import com.microsoft.Malmo.Schemas.MissionResult;
-import com.microsoft.Malmo.Schemas.ModSettings;
-import com.microsoft.Malmo.Schemas.PosAndDirection;
 import com.microsoft.Malmo.Utils.AddressHelper;
 import com.microsoft.Malmo.Utils.AuthenticationHelper;
 import com.microsoft.Malmo.Utils.SchemaHelper;
@@ -320,7 +315,7 @@ public class ClientStateMachine extends StateMachine implements IMalmoMessageLis
         return null;
     }
 
-    protected MissionInit currentMissionInit()
+    public MissionInit currentMissionInit()
     {
         return this.currentMissionInit;
     }
@@ -885,6 +880,7 @@ public class ClientStateMachine extends StateMachine implements IMalmoMessageLis
         protected WaitingForServerEpisode(ClientStateMachine machine)
         {
             super(machine);
+            CwCMod.reset = true;
             MalmoMod.MalmoMessageHandler.registerForMessage(this, MalmoMessageType.SERVER_ALLPLAYERSJOINED);
         }
 

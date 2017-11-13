@@ -1,11 +1,13 @@
 package cwc;
 
+import com.microsoft.Malmo.MalmoMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ScreenShotHelper;
 
 import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 /**
@@ -15,10 +17,11 @@ import java.util.Date;
 public class CwCUtils {
     public static String[] statusOverlay = {"Architect is inspecting...", "Architect is thinking...", "Builder is building..."};  // status overlay strings (for indicating current game state)
 
+    public static ArrayList<String> screenshots = new ArrayList<String>();  // list of absolute paths of screenshots taken by the client
     public static boolean useTimestamps = false;    // whether or not to include timestamps as part of screenshot names
+    private static String summary;
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");  // timestamp date format
     private static int index = 1;        // if not using timestamps, index prefix of screenshots taken
-
     private static File loggingDir;      // directory of observation logs
     private static File screenshotDir;   // directory of screenshots (within logging directory)
     static {
@@ -55,19 +58,33 @@ public class CwCUtils {
      * @param type Type of event that triggered this screenshot action
      */
     public static void takeScreenshot(Minecraft mc, boolean timestamp, CwCScreenshotEventType type) {
-        //TODO: append mission name, experiment number, architect/builder IDs somewhere to this path!
-        String prefix = timestamp ? CwCUtils.getTimestampedFileForDirectory(screenshotDir) : index+"";  // prefix with either timestamp or screenshot index
-        String suffix = CwCMod.state.name().toLowerCase()+"-"+type.name().toLowerCase();  // suffix with type of triggering event
+        // get the mission summary
+        if (MalmoMod.instance.getClient() != null && MalmoMod.instance.getClient().getStateMachine().currentMissionInit() != null &&
+                (summary == null || !summary.equals(MalmoMod.instance.getClient().getStateMachine().currentMissionInit().getMission().getAbout().getSummary()))) {
+            summary = MalmoMod.instance.getClient().getStateMachine().currentMissionInit().getMission().getAbout().getSummary();
+            File dir = new File(screenshotDir, summary);
+            if (!dir.exists()) dir.mkdir();
+        }
+
+        // prefix with either timestamp or screenshot index
+        String prefix = (summary == null ? "" : summary+"/") + (timestamp ? CwCUtils.getTimestampedFileForDirectory(screenshotDir) : index+"");
+        // suffix with type of triggering event
+        String suffix = CwCMod.state.name().toLowerCase()+"-"+type.name().toLowerCase();
 
         // take the screenshot
         ScreenShotHelper.saveScreenshot(CwCUtils.loggingDir, prefix+"-"+mc.player.getName()+"-"+suffix+".png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
 
         // save screenshot filename to list
-        CwCMod.screenshots.add(CwCUtils.screenshotDir+"/"+prefix+"-"+mc.player.getName()+"-"+suffix+".png");
-        System.out.println("Screenshot: "+CwCMod.screenshots.get(CwCMod.screenshots.size()-1));
+        screenshots.add(CwCUtils.screenshotDir+"/"+prefix+"-"+mc.player.getName()+"-"+suffix+".png");
+        System.out.println("Screenshot: "+screenshots.get(screenshots.size()-1));
         index++;
 
-        if (type == CwCScreenshotEventType.PICKUP) CwCEventHandler.disablePickup = false;
+        if (type == CwCScreenshotEventType.PICKUP)  CwCEventHandler.disablePickup  = false;
         if (type == CwCScreenshotEventType.PUTDOWN) CwCEventHandler.disablePutdown = false;
+    }
+
+    public static void reset() {
+        screenshots = new ArrayList<String>();
+        index = 1;
     }
 }

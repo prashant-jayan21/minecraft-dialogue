@@ -35,8 +35,7 @@ public class CwCMod {
 	protected static int DEFAULT_STACK_SIZE = 1;		// stack sizes of blocks in inventory upon initialization of Builder (if unlimited inventory)
 
 	public static CwCState state = CwCState.INSPECTING; // mod state: initialized to "Inspecting"
-
-	public static ArrayList<String> screenshots = new ArrayList<String>();  // list of absolute paths of screenshots taken by the client
+	public static boolean reset = false;
 
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
@@ -54,6 +53,9 @@ public class CwCMod {
 		network.registerMessage(CwCScreenshotMessageHandler.class, CwCScreenshotMessage.class, 3, Side.CLIENT);
 		network.registerMessage(CwCScreenshotMessageHandler.class, CwCScreenshotMessage.class, 4, Side.SERVER);
 
+		network.registerMessage(CwCQuitMessageHandler.class, CwCQuitMessage.class, 5, Side.CLIENT);
+		network.registerMessage(CwCQuitMessageHandler.class, CwCQuitMessage.class, 6, Side.SERVER);
+
 		proxy.preInit();
 	}
 	
@@ -64,4 +66,11 @@ public class CwCMod {
 	public void postInit(FMLPostInitializationEvent event) { proxy.postInit(); }
 	
 	public static String prependModID(String name) { return MODID+":"+name; }
+
+	public static void reset() {
+		System.out.println("CwCMod: resetting...");
+		state = CwCState.INSPECTING;
+		CwCUtils.reset();
+		CwCEventHandler.reset();
+	}
 }

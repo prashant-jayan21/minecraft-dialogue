@@ -329,7 +329,7 @@ public class ServerStateMachine extends StateMachine
         return null;
     }
 
-    protected MissionInit currentMissionInit()
+    public MissionInit currentMissionInit()
     {
         return this.currentMissionInit;
     }
