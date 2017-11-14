@@ -174,7 +174,7 @@ def cwc_all_obs_and_save_data(args):
                       <Weather>clear</Weather>
                     </ServerInitialConditions>
                     <ServerHandlers>
-                      <FlatWorldGenerator generatorString="3;241;1;"/>
+                      <FlatWorldGenerator generatorString="3;241;1;" forceReset="true" destroyAfterUse="false"/>
                       <DrawingDecorator>
                         <DrawCuboid type="cwcmod:cwc_orange_rn" x1="5" y1="1" z1="8" x2="1" y2="1" z2="8"/>
                         <DrawCuboid type="cwcmod:cwc_yellow_rn" x1="-1" y1="1" z1="8" x2="-5" y2="1" z2="8"/>
@@ -226,7 +226,7 @@ def cwc_all_obs_and_save_data(args):
                 </Mission>'''
 
     my_mission = MalmoPython.MissionSpec(missionXML, True)
-    my_mission.forceWorldReset()
+    # my_mission.forceWorldReset()
 
     safeStartMission(agent_hosts[0], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission")
     safeStartMission(agent_hosts[1], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 1, "cwc_dummy_mission")
