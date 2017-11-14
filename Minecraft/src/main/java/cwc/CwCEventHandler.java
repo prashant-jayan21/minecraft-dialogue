@@ -39,8 +39,8 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 public class CwCEventHandler {
 
     // used for resetting the Architect to free-fly inspection
-    private static boolean unpressed = true;
     protected static boolean reset = false;
+    private static boolean unpressed = true;
 
     private static boolean isViewingGoldConfiguration = false;
 
@@ -59,10 +59,12 @@ public class CwCEventHandler {
     protected static void reset() {
         reset = true;
         unpressed = true;
-        receivedChat = false; renderedChat = false;
-        placedBlock = false; pickedUpBlock = false; renderedBlock = false;
-        updatePlayerTick = false; updateRenderTick = false;
+        isViewingGoldConfiguration = false;
         disablePutdown = false; disablePickup = false;
+
+        resetChatFields();
+        resetPlaceBlockFields();
+        resetBreakBlockFields();
     }
 
     /**
