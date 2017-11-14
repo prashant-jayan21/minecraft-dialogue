@@ -35,7 +35,6 @@ public class CwCMod {
 	protected static int DEFAULT_STACK_SIZE = 1;		// stack sizes of blocks in inventory upon initialization of Builder (if unlimited inventory)
 
 	public static CwCState state = CwCState.INSPECTING; // mod state: initialized to "Inspecting"
-	public static boolean reset = false;
 
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {

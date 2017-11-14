@@ -36,7 +36,6 @@ import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
 
 import com.microsoft.Malmo.Schemas.*;
-import cwc.CwCMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.GuiDisconnected;
@@ -877,7 +876,6 @@ public class ClientStateMachine extends StateMachine implements IMalmoMessageLis
         protected WaitingForServerEpisode(ClientStateMachine machine)
         {
             super(machine);
-            CwCMod.reset = true;
             MalmoMod.MalmoMessageHandler.registerForMessage(this, MalmoMessageType.SERVER_ALLPLAYERSJOINED);
         }
 
