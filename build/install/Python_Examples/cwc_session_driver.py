@@ -63,7 +63,7 @@ for gold_config in all_gold_configs:
     pool.map(cwc_all_obs_and_save_data, all_mission_args)
 
     print "\nROUND ENDED..."
-    print "\nWAITING FOR CLIENT RESETS..."
+    print "\nWAITING..."
 
     # Wait for some time
     time.sleep(30)
