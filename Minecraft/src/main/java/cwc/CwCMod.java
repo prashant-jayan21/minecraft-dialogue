@@ -54,6 +54,13 @@ public class CwCMod {
 		network.registerMessage(CwCScreenshotMessageHandler.class, CwCScreenshotMessage.class, 3, Side.CLIENT);
 		network.registerMessage(CwCScreenshotMessageHandler.class, CwCScreenshotMessage.class, 4, Side.SERVER);
 
+		// mission quit
+		network.registerMessage(CwCQuitMessageHandler.class, CwCQuitMessage.class, 5, Side.CLIENT);
+		network.registerMessage(CwCQuitMessageHandler.class, CwCQuitMessage.class, 6, Side.SERVER);
+
+		// register custom keybinds
+		CwCKeybinds.register();
+
 		proxy.preInit();
 	}
 	
@@ -64,4 +71,11 @@ public class CwCMod {
 	public void postInit(FMLPostInitializationEvent event) { proxy.postInit(); }
 	
 	public static String prependModID(String name) { return MODID+":"+name; }
+
+	public static void reset() {
+		System.out.println("CwCMod: resetting...");
+		state = CwCState.INSPECTING;
+		CwCUtils.reset();
+		CwCEventHandler.reset();
+	}
 }

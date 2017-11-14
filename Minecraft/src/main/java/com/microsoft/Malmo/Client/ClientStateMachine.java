@@ -35,6 +35,7 @@ import java.util.logging.Level;
 import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
 
+import com.microsoft.Malmo.Schemas.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.GuiDisconnected;
@@ -76,16 +77,6 @@ import com.microsoft.Malmo.Client.MalmoModClient.InputType;
 import com.microsoft.Malmo.MissionHandlerInterfaces.IWantToQuit;
 import com.microsoft.Malmo.MissionHandlers.MissionBehaviour;
 import com.microsoft.Malmo.MissionHandlers.MultidimensionalReward;
-import com.microsoft.Malmo.Schemas.AgentSection;
-import com.microsoft.Malmo.Schemas.AgentStart;
-import com.microsoft.Malmo.Schemas.ClientAgentConnection;
-import com.microsoft.Malmo.Schemas.MinecraftServerConnection;
-import com.microsoft.Malmo.Schemas.Mission;
-import com.microsoft.Malmo.Schemas.MissionEnded;
-import com.microsoft.Malmo.Schemas.MissionInit;
-import com.microsoft.Malmo.Schemas.MissionResult;
-import com.microsoft.Malmo.Schemas.ModSettings;
-import com.microsoft.Malmo.Schemas.PosAndDirection;
 import com.microsoft.Malmo.Utils.AddressHelper;
 import com.microsoft.Malmo.Utils.AuthenticationHelper;
 import com.microsoft.Malmo.Utils.SchemaHelper;
@@ -320,7 +311,7 @@ public class ClientStateMachine extends StateMachine implements IMalmoMessageLis
         return null;
     }
 
-    protected MissionInit currentMissionInit()
+    public MissionInit currentMissionInit()
     {
         return this.currentMissionInit;
     }
