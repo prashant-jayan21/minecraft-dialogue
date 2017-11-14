@@ -7,8 +7,8 @@ from cwc_all_functions import cwc_all_obs_and_save_data
 
 # Parse CLAs
 parser = argparse.ArgumentParser(description="Run a session driver.")
-parser.add_argument("--user_info_spreadsheet", help="File path of the spreadsheet (.csv) containing all user info")
-parser.add_argument("--gold_configs_spreadsheet", help="File path of the spreadsheet (.csv) containing all gold config file paths")
+parser.add_argument("user_info_spreadsheet", help="File path of the spreadsheet (.csv) containing all user info")
+parser.add_argument("gold_configs_spreadsheet", help="File path of the spreadsheet (.csv) containing all gold config file paths")
 args = parser.parse_args()
 
 # Read user info from spreadsheet
@@ -65,8 +65,8 @@ for gold_config in all_gold_configs:
     print "\nROUND ENDED..."
     print "\nWAITING FOR CLIENT RESETS..."
 
-    # Wait for client restarts
-    time.sleep(120) # FIXME: Remove this
+    # Wait for some time
+    time.sleep(30)
 
 # Cleanup worker processes
 pool.close()
