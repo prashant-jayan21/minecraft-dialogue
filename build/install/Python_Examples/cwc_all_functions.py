@@ -7,7 +7,7 @@ import os
 import sys
 import time
 import json
-from cwc_aligner import align
+# from cwc_aligner import align
 import argparse
 import datetime
 
@@ -90,7 +90,8 @@ def cwc_all_obs_and_save_data(args):
     # Create the other agent host
     agent_hosts += [MalmoPython.AgentHost()]
 
-    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
+    # sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
+
     # lan = False
     #
     # if len(sys.argv) > 1 and sys.argv[1].lower() == 'lan':
@@ -146,7 +147,7 @@ def cwc_all_obs_and_save_data(args):
 
     # experiment ID
     experiment_time = datetime.datetime.now().isoformat()
-    experiment_id = str(args["builder_id"]) + "_" + str(args["architect_id"]) + "_" + str(args["gold_config"]) + "_" + str(experiment_time)
+    experiment_id = args["builder_id"] + "_" + args["architect_id"] + "_" + os.path.basename(args["gold_config"]) + "_" + experiment_time
 
     # read gold config file and obtain xml substring
     gold_config_file = open(args["gold_config"], "r")
@@ -179,7 +180,7 @@ def cwc_all_obs_and_save_data(args):
                         <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-8" y1="1" z1="6" x2="-8" y2="1" z2="2"/>
                         <DrawCuboid type="cwcmod:cwc_red_rn" x1="-8" y1="1" z1="0" x2="-8" y2="1" z2="-4"/>
                         <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_build) +'''" y1="0" z1="''' + str(z_min_build)+ '''" x2="'''+ str(x_max_build)+'''" y2="0" z2="''' + str(z_max_build) + '''"/>
-                        <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_goal) +'''" y1="0" z1="''' + str(z_min_goal)+ '''" x2="'''+ str(x_max_goal)+'''" y2="0" z2="''' + str(z_max_goal) + '''"/>''' + gold_config_xml_substring +
+                        <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_goal) +'''" y1="0" z1="''' + str(z_min_goal)+ '''" x2="'''+ str(x_max_goal)+'''" y2="0" z2="''' + str(z_max_goal) + '''"/>''' + gold_config_xml_substring + \
                       '''</DrawingDecorator>
                       <BuildBattleDecorator>
                         <GoalStructureBounds>
@@ -409,7 +410,7 @@ def cwc_all_obs_and_save_data(args):
 
     obs_file_name = "cwc_pilot_" + experiment_id # for the json data files
 
-    screenshots_dir = "/Users/prashant/Work/cwc-minecraft/Minecraft/run/screenshots/" # the screenshots dir populated on the mod side
+    # screenshots_dir = "../../../Minecraft/run/screenshots/" + experiment_id # the screenshots dir populated on the mod side
 
     # human readable log
     txt_log = open(obs_file_name + ".txt", "w")
@@ -422,9 +423,9 @@ def cwc_all_obs_and_save_data(args):
         json.dump(obs_data_dict, json_log)
 
     # machine readable log -- aligned w/ screenshots
-    obs_data_dict_aligned = align(obs_data_dict, screenshots_dir)
-    with open(obs_file_name + "_aligned" + ".json", "w") as json_log_aligned:
-        json.dump(obs_data_dict_aligned, json_log_aligned)
+    # obs_data_dict_aligned = align(obs_data_dict, screenshots_dir)
+    # with open(obs_file_name + "_aligned" + ".json", "w") as json_log_aligned:
+    #     json.dump(obs_data_dict_aligned, json_log_aligned)
 
     print "Done!"
     print
