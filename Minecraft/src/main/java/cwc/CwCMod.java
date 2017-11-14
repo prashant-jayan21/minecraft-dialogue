@@ -36,6 +36,8 @@ public class CwCMod {
 
 	public static CwCState state = CwCState.INSPECTING; // mod state: initialized to "Inspecting"
 
+	public static ArrayList<String> screenshots = new ArrayList<String>();  // list of absolute paths of screenshots taken by the client
+
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
 		// initialize the network channel and register the types of messages that can be sent & received over it

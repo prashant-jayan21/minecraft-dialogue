@@ -18,7 +18,6 @@ public class CwCUtils {
     protected static String[] architectOverlay = {"Inspecting...", "Type an instruction...", "Builder is building..."};     // architect status overlay strings (for indicating current game state)
     protected static String[] builderOverlay = { "Architect is inspecting...", "Architect is thinking...", "Building..."};  // builder status overlay strings (for indicating current game state)
 
-    public static ArrayList<String> screenshots = new ArrayList<String>();  // list of absolute paths of screenshots taken by the client
     public static boolean useTimestamps = false;    // whether or not to include timestamps as part of screenshot names
     private static String summary;
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");  // timestamp date format
@@ -76,8 +75,8 @@ public class CwCUtils {
         ScreenShotHelper.saveScreenshot(CwCUtils.loggingDir, prefix+"-"+mc.player.getName()+"-"+suffix+".png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
 
         // save screenshot filename to list
-        screenshots.add(CwCUtils.screenshotDir+"/"+prefix+"-"+mc.player.getName()+"-"+suffix+".png");
-        System.out.println("Screenshot: "+screenshots.get(screenshots.size()-1));
+        CwCMod.screenshots.add(CwCUtils.screenshotDir+"/"+prefix+"-"+mc.player.getName()+"-"+suffix+".png");
+        System.out.println("Screenshot: "+CwCMod.screenshots.get(CwCMod.screenshots.size()-1));
         index++;
 
         if (type == CwCScreenshotEventType.PICKUP)  CwCEventHandler.disablePickup  = false;
@@ -85,7 +84,7 @@ public class CwCUtils {
     }
 
     protected static void reset() {
-        screenshots = new ArrayList<String>();
+        CwCMod.screenshots = new ArrayList<String>();
         index = 1;
     }
 }
