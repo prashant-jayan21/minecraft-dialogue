@@ -7,6 +7,7 @@ import os
 import sys
 import time
 import json
+from cwc_aligner import align
 
 def safeStartMission(agent_host, my_mission, my_client_pool, my_mission_record, role, expId):
     used_attempts = 0
@@ -103,6 +104,33 @@ else:
 	client_pool.add( MalmoPython.ClientInfo('10.195.220.132', 10000) )
 
 # Create mission xml
+
+# observation grid parameters
+x_min_obs = -10
+x_max_obs = 10
+y_min_obs = 1
+y_max_obs = 11
+z_min_obs = -10
+z_max_obs = 10
+
+# build region parameters
+# the build region is defined by the x and z bounds of the white floor and the y bounds of the observation grid
+x_min_build = -5
+x_max_build = 5
+y_min_build = y_min_obs # NOTE: Do not change this relation without thought!
+y_max_build = y_max_obs # NOTE: Do not change this relation without thought!
+z_min_build = -5
+z_max_build = 5
+
+# goal region parameters
+displacement = 100
+x_min_goal = x_min_build + displacement
+x_max_goal = x_max_build + displacement
+y_min_goal = y_min_build # NOTE: Do not change this relation without thought!
+y_max_goal = y_max_build # NOTE: Do not change this relation without thought!
+z_min_goal = z_min_build + displacement
+z_max_goal = z_max_build + displacement
+
 missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
@@ -127,8 +155,19 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                     <DrawCuboid type="cwcmod:cwc_blue_rn" x1="8" y1="1" z1="0" x2="8" y2="1" z2="-4"/>
                     <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-8" y1="1" z1="6" x2="-8" y2="1" z2="2"/>
                     <DrawCuboid type="cwcmod:cwc_red_rn" x1="-8" y1="1" z1="0" x2="-8" y2="1" z2="-4"/>
-                    <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="-5" y1="0" z1="-5" x2="5" y2="0" z2="5"/>
+                    <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_build) +'''" y1="0" z1="''' + str(z_min_build)+ '''" x2="'''+ str(x_max_build)+'''" y2="0" z2="''' + str(z_max_build) + '''"/>
+                    <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_goal) +'''" y1="0" z1="''' + str(z_min_goal)+ '''" x2="'''+ str(x_max_goal)+'''" y2="0" z2="''' + str(z_max_goal) + '''"/>
                   </DrawingDecorator>
+                  <BuildBattleDecorator>
+                    <GoalStructureBounds>
+                        <min x="'''+ str(x_min_goal) + '''" y="'''+ str(y_min_goal) + '''" z="''' + str(z_min_goal) + '''"/>
+                        <max x="'''+ str(x_max_goal) + '''" y="''' + str(y_max_goal) + '''" z="''' + str(z_max_goal) + '''"/>
+                    </GoalStructureBounds>
+                    <PlayerStructureBounds>
+                        <min x="'''+ str(x_min_build) + '''" y="'''+ str(y_min_build) + '''" z="''' + str(z_min_build) + '''"/>
+                        <max x="'''+ str(x_max_build) + '''" y="''' + str(y_max_build) + '''" z="''' + str(z_max_build) + '''"/>
+                    </PlayerStructureBounds>
+                  </BuildBattleDecorator>
                   <ServerQuitWhenAnyAgentFinishes/>
                 </ServerHandlers>
               </ServerSection>
@@ -142,8 +181,8 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                   <ObservationFromFullStats/>
                    <ObservationFromGrid>
                      <Grid name="builder_grid" absoluteCoords="true">
-                       <min x="-5" y="1" z="-5"/>
-                       <max x="5" y="14" z="5"/>
+                       <min x="'''+ str(x_min_obs) + '''" y="'''+ str(y_min_obs) + '''" z="''' + str(z_min_obs) + '''"/>
+                       <max x="'''+ str(x_max_obs) + '''" y="''' + str(y_max_obs) + '''" z="''' + str(z_max_obs) + '''"/>
                      </Grid>
                    </ObservationFromGrid>
                    <ObservationFromChat/>
@@ -237,14 +276,33 @@ def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, pr
         + "\n" + "\n" + "[builder absolute position] (x, y, z): " + str((builder_x_pos, builder_y_pos, builder_z_pos)) + " " + \
         "(yaw, pitch): " + str((builder_yaw, builder_pitch)) + "\n" + "\n"
 
-        blocks = []
+        blocks_outside = []
+        blocks_inside = []
 
         for i in range(len(current_blocks_state_rel)):
+
             block_rel = current_blocks_state_rel[i]
             block_abs = current_blocks_state_abs[i]
+
             perspective_coords = getPerspectiveCoordinates(block_rel["x"], block_rel["y"], block_rel["z"], builder_yaw, builder_pitch)
             absolute_coords = (block_abs["x"], block_abs["y"], block_abs["z"])
-            print "["+block_rel["type"]+"]", "absolute coordinates:", absolute_coords, " | perspective coordinates:", perspective_coords
+
+            # check if the block is inside or outside the build region
+            x = absolute_coords[0]
+            y = absolute_coords[1]
+            z = absolute_coords[2]
+
+            if x < x_min_build or x > x_max_build \
+            or y < y_min_build or y > y_max_build \
+            or z < z_min_build or z > z_max_build:
+                # outside
+                outside = True
+            else:
+                # inside
+                outside = False
+
+            print "["+block_rel["type"]+"]", "outside:", outside, "absolute coordinates:", absolute_coords, " | perspective coordinates:", perspective_coords
+
             coordinates_absolute = {
                 "x": absolute_coords[0],
                 "y": absolute_coords[1],
@@ -260,10 +318,15 @@ def processObservation(observation, prev_blocks_state_abs, prev_dialog_state, pr
                 "coordinates_absolute": coordinates_absolute,
                 "coordinates_perspective": coordinates_perspective
             }
-            blocks.append(block_info)
-            string_to_write += "[" + str(block_rel["type"]) + "]" + " "+ "absolute coordinates:" + " " +  str(absolute_coords) + " " + " | perspective coordinates:" + " " + str(perspective_coords) + "\n"
+            if outside:
+                blocks_outside.append(block_info)
+            else:
+                blocks_inside.append(block_info)
 
-        current_world_state["blocks"] = blocks
+            string_to_write += "[" + str(block_rel["type"]) + "]" + " "+  "outside: " + str(outside) + " " + "absolute coordinates:" + " " +  str(absolute_coords) + " " + " | perspective coordinates:" + " " + str(perspective_coords) + "\n"
+
+        current_world_state["blocks_inventory"] = blocks_outside
+        current_world_state["blocks_structure"] = blocks_inside
 
         prev_blocks_state_abs = current_blocks_state_abs
         current_dialog_state = prev_dialog_state + chat_observation
@@ -315,21 +378,33 @@ while not timed_out:
 
     time.sleep(1)
 
+# write data
 print
-print "Writing collected data to file..."
+print "Writing collected data to files..."
+
+# FIXME: Parameterize all of these magic strings
 
 architect_name = "anjali"
 builder_name = "prashant"
 trial_num = 1
-file_name = "cwc_pilot_" + architect_name + "_" + builder_name + "_" + str(trial_num)
+obs_file_name = "cwc_pilot_" + architect_name + "_" + builder_name + "_" + str(trial_num) # for the json data files
 
-file = open(file_name + ".txt", "w")
+screenshots_dir = "/Users/prashant/Work/cwc-minecraft/Minecraft/run/screenshots/" # the screenshots dir populated on the mod side
+
+# human readable log
+file = open(obs_file_name + ".txt", "w")
 file.write(string_to_write)
 file.close()
 
-data_dict = {"all_world_states": all_world_states}
-with open(file_name + ".json", "w") as jsonfile:
-    json.dump(data_dict, jsonfile)
+# machine readable log -- unalinged
+obs_data_dict = {"all_world_states": all_world_states}
+with open(obs_file_name + ".json", "w") as jsonfile:
+    json.dump(obs_data_dict, jsonfile)
+
+# machine readable log -- aligned w/ screenshots
+obs_data_dict_aligned = align(obs_data_dict, screenshots_dir)
+with open(obs_file_name + "_aligned" + ".json", "w") as jsonfile:
+    json.dump(obs_data_dict_aligned, jsonfile)
 
 print "Done!"
 print
