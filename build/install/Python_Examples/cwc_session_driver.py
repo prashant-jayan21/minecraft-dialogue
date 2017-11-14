@@ -66,7 +66,7 @@ for gold_config in all_gold_configs:
     print "\nWAITING..."
 
     # Wait for some time
-    time.sleep(30)
+    time.sleep(10)
 
 # Cleanup worker processes
 pool.close()

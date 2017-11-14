@@ -146,8 +146,11 @@ def cwc_all_obs_and_save_data(args):
     z_max_goal = z_max_build + displacement
 
     # experiment ID
-    experiment_time = datetime.datetime.now().isoformat()
-    experiment_id = args["builder_id"] + "_" + args["architect_id"] + "_" + os.path.basename(args["gold_config"]) + "_" + experiment_time
+    print datetime.datetime.now()
+    experiment_time = str(datetime.datetime.now()) #datetime.datetime.now().isoformat()
+    player_ids = "b"+args["builder_id"] + "-a" + args["architect_id"]
+    config_id = os.path.basename(args["gold_config"]).replace(".xml","")
+    experiment_id = player_ids + "-" + config_id + "-" + experiment_time
 
     # read gold config file and obtain xml substring
     gold_config_file = open(args["gold_config"], "r")
@@ -216,7 +219,7 @@ def cwc_all_obs_and_save_data(args):
                   <AgentSection mode="Spectator">
                     <Name>Architect</Name>
                     <AgentStart>
-                      <Placement x = "0" y = "1" z = "-5"/>
+                      <Placement x = "0" y = "5" z = "-5" pitch="45"/>
                     </AgentStart>
                     <AgentHandlers/>
                   </AgentSection>
@@ -405,22 +408,35 @@ def cwc_all_obs_and_save_data(args):
 
     # write data
     print
-    print "Writing collected data to files..."
+    print "Writing collected data to files...",
 
     # FIXME: Parameterize all of these magic strings
 
-    obs_file_name = "cwc_pilot_" + experiment_id # for the json data files
+    if not os.path.isdir("logs/"):
+        os.makedirs("logs/")
+
+    if not os.path.isdir("logs/"+player_ids):
+        os.makedirs("logs/"+player_ids+"/")
+
+    if not os.path.isdir("logs/"+player_ids+"/"+config_id+"/"):
+        os.makedirs("logs/"+player_ids+"/"+config_id+"/")
+        os.makedirs("logs/"+player_ids+"/"+config_id+"/json/")
+        os.makedirs("logs/"+player_ids+"/"+config_id+"/txt/")
+
+    obs_file_name = "cwc_pilot-" + config_id + "-" + experiment_time # for the json data files
+
+    print "with filename:",obs_file_name
 
     # screenshots_dir = "../../../Minecraft/run/screenshots/" + experiment_id # the screenshots dir populated on the mod side
 
     # human readable log
-    txt_log = open(obs_file_name + ".txt", "w")
+    txt_log = open("logs/"+player_ids+"/"+config_id+"/txt/"+obs_file_name + ".txt", "w")
     txt_log.write(string_to_write)
     txt_log.close()
 
     # machine readable log -- unalinged
     obs_data_dict = {"all_world_states": all_world_states}
-    with open(obs_file_name + ".json", "w") as json_log:
+    with open("logs/"+player_ids+"/"+config_id+"/json/"+obs_file_name + ".json", "w") as json_log:
         json.dump(obs_data_dict, json_log)
 
     # machine readable log -- aligned w/ screenshots
