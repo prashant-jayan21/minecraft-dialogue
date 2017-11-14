@@ -15,7 +15,8 @@ import java.util.Date;
  * @author nrynchn2
  */
 public class CwCUtils {
-    public static String[] statusOverlay = {"Architect is inspecting...", "Architect is thinking...", "Builder is building..."};  // status overlay strings (for indicating current game state)
+    protected static String[] architectOverlay = {"Inspecting...", "Type an instruction...", "Builder is building..."};     // architect status overlay strings (for indicating current game state)
+    protected static String[] builderOverlay = { "Architect is inspecting...", "Architect is thinking...", "Building..."};  // builder status overlay strings (for indicating current game state)
 
     public static ArrayList<String> screenshots = new ArrayList<String>();  // list of absolute paths of screenshots taken by the client
     public static boolean useTimestamps = false;    // whether or not to include timestamps as part of screenshot names
@@ -40,7 +41,7 @@ public class CwCUtils {
      *
      * @param gameDirectory Path to game directory
      */
-    public static String getTimestampedFileForDirectory(File gameDirectory) {
+    protected static String getTimestampedFileForDirectory(File gameDirectory) {
         String s = DATE_FORMAT.format(new Date()).toString();
         int i = 1;
 
@@ -57,7 +58,7 @@ public class CwCUtils {
      * @param timestamp Whether or not to use timestamp in the screenshot filename
      * @param type Type of event that triggered this screenshot action
      */
-    public static void takeScreenshot(Minecraft mc, boolean timestamp, CwCScreenshotEventType type) {
+    protected static void takeScreenshot(Minecraft mc, boolean timestamp, CwCScreenshotEventType type) {
         // get the mission summary
         if (MalmoMod.instance.getClient() != null && MalmoMod.instance.getClient().getStateMachine().currentMissionInit() != null &&
                 (summary == null || !summary.equals(MalmoMod.instance.getClient().getStateMachine().currentMissionInit().getMission().getAbout().getSummary()))) {
@@ -83,7 +84,7 @@ public class CwCUtils {
         if (type == CwCScreenshotEventType.PUTDOWN) CwCEventHandler.disablePutdown = false;
     }
 
-    public static void reset() {
+    protected static void reset() {
         screenshots = new ArrayList<String>();
         index = 1;
     }

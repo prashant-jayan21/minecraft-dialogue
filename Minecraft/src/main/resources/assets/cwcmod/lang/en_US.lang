@@ -9,3 +9,6 @@ tile.cwc_unbreakable_grey_un.name=cwc-unbreakable-grey
 tile.cwc_unbreakable_white_un.name=cwc-unbreakable-white
 tile.cwc_unbreakable_transparent_un.name=cwc-unbreakable-transparent
 itemGroup.cwc_creative_tab=CwC Blocks
+key.quit=Quit Mission
+key.gold=Gold Configuration
+key.categories.cwc=CwC

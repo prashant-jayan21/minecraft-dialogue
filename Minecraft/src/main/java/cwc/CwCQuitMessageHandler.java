@@ -16,7 +16,7 @@ public class CwCQuitMessageHandler implements IMessageHandler<CwCQuitMessage, IM
 
     /**
      * Determines if message is received on the server or the client side and calls their respective message handlers.
-     * @param message Screenshot message
+     * @param message Quit message
      * @param ctx Message context
      * @return null
      */
@@ -37,7 +37,7 @@ public class CwCQuitMessageHandler implements IMessageHandler<CwCQuitMessage, IM
         else {
             final Minecraft minecraft = Minecraft.getMinecraft();
             minecraft.addScheduledTask(new Runnable() {
-                public void run() { processMessageOnClient(minecraft); }
+                public void run() { processMessageOnClient(message, minecraft); }
             });
             return null;
         }
@@ -54,11 +54,16 @@ public class CwCQuitMessageHandler implements IMessageHandler<CwCQuitMessage, IM
     }
 
     /**
-     * Handles messages received on the client.
+     * Handles messages received on the client by setting the appropriate "quit" field in {@link CwCEventHandler}.
+     * Kills the player attached to this client and resets the mod state.
+     * @param message Quit message
      * @param minecraft Minecraft client instance
      */
-    void processMessageOnClient(Minecraft minecraft) {
-        CwCMod.reset();
-        minecraft.player.sendChatMessage("/kill");
+    void processMessageOnClient(CwCQuitMessage message, Minecraft minecraft) {
+        CwCEventHandler.quit = message.quit();
+        if (CwCEventHandler.quit) {
+            CwCMod.reset();
+            minecraft.player.sendChatMessage("/kill");
+        }
     }
 }
