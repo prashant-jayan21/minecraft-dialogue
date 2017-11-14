@@ -148,6 +148,12 @@ def cwc_all_obs_and_save_data(args):
     experiment_time = datetime.datetime.now().isoformat()
     experiment_id = str(args["builder_id"]) + "_" + str(args["architect_id"]) + "_" + str(args["gold_config"]) + "_" + str(experiment_time)
 
+    # read gold config file and obtain xml substring
+    gold_config_file = open(args["gold_config"], "r")
+    gold_config_xml_substring = gold_config_file.read()
+    gold_config_file.close()
+
+    # construct mission xml
     missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
@@ -173,8 +179,8 @@ def cwc_all_obs_and_save_data(args):
                         <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-8" y1="1" z1="6" x2="-8" y2="1" z2="2"/>
                         <DrawCuboid type="cwcmod:cwc_red_rn" x1="-8" y1="1" z1="0" x2="-8" y2="1" z2="-4"/>
                         <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_build) +'''" y1="0" z1="''' + str(z_min_build)+ '''" x2="'''+ str(x_max_build)+'''" y2="0" z2="''' + str(z_max_build) + '''"/>
-                        <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_goal) +'''" y1="0" z1="''' + str(z_min_goal)+ '''" x2="'''+ str(x_max_goal)+'''" y2="0" z2="''' + str(z_max_goal) + '''"/>
-                      </DrawingDecorator>
+                        <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_goal) +'''" y1="0" z1="''' + str(z_min_goal)+ '''" x2="'''+ str(x_max_goal)+'''" y2="0" z2="''' + str(z_max_goal) + '''"/>''' + gold_config_xml_substring +
+                      '''</DrawingDecorator>
                       <BuildBattleDecorator>
                         <GoalStructureBounds>
                             <min x="'''+ str(x_min_goal) + '''" y="'''+ str(y_min_goal) + '''" z="''' + str(z_min_goal) + '''"/>
@@ -406,19 +412,19 @@ def cwc_all_obs_and_save_data(args):
     screenshots_dir = "/Users/prashant/Work/cwc-minecraft/Minecraft/run/screenshots/" # the screenshots dir populated on the mod side
 
     # human readable log
-    file = open(obs_file_name + ".txt", "w")
-    file.write(string_to_write)
-    file.close()
+    txt_log = open(obs_file_name + ".txt", "w")
+    txt_log.write(string_to_write)
+    txt_log.close()
 
     # machine readable log -- unalinged
     obs_data_dict = {"all_world_states": all_world_states}
-    with open(obs_file_name + ".json", "w") as jsonfile:
-        json.dump(obs_data_dict, jsonfile)
+    with open(obs_file_name + ".json", "w") as json_log:
+        json.dump(obs_data_dict, json_log)
 
     # machine readable log -- aligned w/ screenshots
     obs_data_dict_aligned = align(obs_data_dict, screenshots_dir)
-    with open(obs_file_name + "_aligned" + ".json", "w") as jsonfile:
-        json.dump(obs_data_dict_aligned, jsonfile)
+    with open(obs_file_name + "_aligned" + ".json", "w") as json_log_aligned:
+        json.dump(obs_data_dict_aligned, json_log_aligned)
 
     print "Done!"
     print
