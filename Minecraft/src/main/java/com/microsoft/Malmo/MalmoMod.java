@@ -83,7 +83,6 @@ public class MalmoMod
 
     public static final String ARCHITECT = "Architect";
     public static final String BUILDER = "Builder";
-    public static final String ORACLE = "Oracle";
 
     protected static Hashtable<String, Object> clientProperties = new Hashtable<String, Object>();
     protected static Hashtable<String, Object> serverProperties = new Hashtable<String, Object>();
@@ -467,4 +466,7 @@ public class MalmoMod
             }
         }
     }
+
+    public MalmoModClient getClient() { return client; }
+    public MalmoModServer getServer() { return server; }
 }
