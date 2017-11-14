@@ -1,45 +1,72 @@
 from multiprocessing import Pool
 import time
+import csv
+from random import shuffle
+import argparse
 from cwc_all_functions import cwc_all_obs_and_save_data
 
-# Number of rounds in one session
-num_rounds = 3
-num_missions_per_round = 2
+# Parse CLAs
+parser = argparse.ArgumentParser(description="Run a session driver.")
+parser.add_argument("--user_spreadsheet", help="Absolute path of the spreadsheet (.csv) containing all user info")
+parser.add_argument("--gold_configs_spreadsheet", help="Absolute path of the spreadsheet (.csv) containing all gold config absolute file paths")
+args = parser.parse_args()
+
+# Read user info from spreadsheet
+
+all_users = []
+with open(args.user_spreadsheet, 'rb') as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        all_users.append(row)
+
+assert len(all_users)%2 == 0 # test that there are even number of users
+
+# Read gold config abs file paths from spreadsheet
+
+all_gold_configs = []
+with open(args.gold_configs_spreadsheet, 'rb') as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        all_gold_configs.append(row)
+
+# Some params
+num_users = len(all_users)
+num_gold_configs = len(all_gold_configs)
+
+num_rounds = num_gold_configs
+num_missions_per_round = num_users/2
 
 # Spawn worker processes
 pool = Pool(processes=num_missions_per_round)
 
 # Execute rounds
-for i in range(num_rounds):
+for gold_config in all_gold_configs:
 
-    print "\nROUND " + str(i) + " STARTED..."
+    print "\nROUND STARTED..."
+    print "\nGOLD CONFIG: " + gold_config
 
-    # Read info for all missions
-    args_mission_1 = {
-        "lan": False,
-        "builder_ip_addr": None,
-        "builder_id": "1",
-        "architect_ip_addr": None,
-        "architect_id": "2",
-        "gold_config": None,
-    }
+    # randomly pair up users
+    shuffle(all_users)
+    user_pairs_randomized = zip(all_users[0::2], all_users[1::2])
 
-    args_mission_2 = {
-        "lan": False,
-        "builder_ip_addr": None,
-        "builder_id": "3",
-        "architect_ip_addr": None,
-        "architect_id": "4",
-        "gold_config": None,
-    }
+    # create mission args list
+    all_mission_args = []
+    for user_pair in user_pairs_randomized:
+        mission_args = {
+            "lan": False,
+            "builder_ip_addr": user_pair[0]["ip address"],
+            "builder_id": user_pair[0]["id"],
+            "architect_ip_addr": user_pair[1]["ip address"],
+            "architect_id": user_pair[1]["id"],
+            "gold_config": gold_config,
+        }
+        all_mission_args.append(mission_args)
 
-    mission_args = [args_mission_1, args_mission_2]
-
-    # Submit missions jobs to process pool
+    # Submit mission jobs to process pool
     print "\nMISSIONS RUNNING..."
-    pool.map(cwc_all_obs_and_save_data, mission_args)
+    pool.map(cwc_all_obs_and_save_data, all_mission_args)
 
-    print "\nROUND " + str(i) + " ENDED..."
+    print "\nROUND ENDED..."
     print "\nWAITING FOR CLIENT RESETS..."
 
     # Wait for client restarts
