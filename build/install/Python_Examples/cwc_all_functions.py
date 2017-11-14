@@ -223,6 +223,7 @@ def cwc_all_obs_and_save_data(args):
                 </Mission>'''
 
     my_mission = MalmoPython.MissionSpec(missionXML, True)
+    my_mission.forceWorldReset()
 
     safeStartMission(agent_hosts[0], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission")
     safeStartMission(agent_hosts[1], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 1, "cwc_dummy_mission")
