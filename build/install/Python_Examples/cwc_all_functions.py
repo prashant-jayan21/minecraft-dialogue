@@ -146,7 +146,7 @@ def cwc_all_obs_and_save_data(args):
     z_max_goal = z_max_build + displacement
 
     # experiment ID
-    print datetime.datetime.now()
+    # print datetime.datetime.now()
     experiment_time = str(datetime.datetime.now()) #datetime.datetime.now().isoformat()
     player_ids = "b"+args["builder_id"] + "-a" + args["architect_id"]
     config_id = os.path.basename(args["gold_config"]).replace(".xml","")
@@ -286,17 +286,17 @@ def cwc_all_obs_and_save_data(args):
         # world state dict
         current_world_state = {}
         if current_blocks_state_abs != prev_blocks_state_abs or chat_observation != [] or current_game_state != prev_game_state:
-            print
-            print "-"*20
-            print "[STATE]", current_game_state
+            # print
+            # print "-"*20
+            # print "[STATE]", current_game_state
             current_world_state["state"] = current_game_state
 
-            print "[timestamp]", msg_timestamp
-            print
+            # print "[timestamp]", msg_timestamp
+            # print
             current_world_state["timestamp"] = msg_timestamp.isoformat()
 
-            print "[builder absolute position] (x, y, z): " + str((builder_x_pos, builder_y_pos, builder_z_pos)), "(yaw, pitch): " + str((builder_yaw, builder_pitch))
-            print
+            # print "[builder absolute position] (x, y, z): " + str((builder_x_pos, builder_y_pos, builder_z_pos)), "(yaw, pitch): " + str((builder_yaw, builder_pitch))
+            # print
             builder_position_absolute = {"x": builder_x_pos, "y": builder_y_pos, "z": builder_z_pos, "yaw": builder_yaw, "pitch": builder_pitch}
             current_world_state["builder_position_absolute"] = builder_position_absolute # TODO: there will be some rounding when encoded to json
 
@@ -329,7 +329,7 @@ def cwc_all_obs_and_save_data(args):
                     # inside
                     outside = False
 
-                print "["+block_rel["type"]+"]", "outside:", outside, "absolute coordinates:", absolute_coords, " | perspective coordinates:", perspective_coords
+                # print "["+block_rel["type"]+"]", "outside:", outside, "absolute coordinates:", absolute_coords, " | perspective coordinates:", perspective_coords
 
                 coordinates_absolute = {
                     "x": absolute_coords[0],
@@ -359,14 +359,14 @@ def cwc_all_obs_and_save_data(args):
             prev_blocks_state_abs = current_blocks_state_abs
             current_dialog_state = prev_dialog_state + chat_observation
 
-            print
-            print "[chat]"
+            # print
+            # print "[chat]"
             string_to_write += "\n" + "[chat]" + "\n"
 
             utterances = []
 
             for utterance in current_dialog_state:
-                print utterance
+                # print utterance
                 utterances.append(utterance)
                 string_to_write += str(utterance) + "\n"
 
@@ -375,7 +375,7 @@ def cwc_all_obs_and_save_data(args):
             prev_dialog_state = current_dialog_state
             prev_game_state = current_game_state
 
-            print "-"*20
+            # print "-"*20
             string_to_write += "-"*20 + "\n"
 
 
@@ -425,7 +425,7 @@ def cwc_all_obs_and_save_data(args):
 
     obs_file_name = "cwc_pilot-" + config_id + "-" + experiment_time # for the json data files
 
-    print "with filename:",obs_file_name
+    # print "with filename:",obs_file_name
 
     # screenshots_dir = "../../../Minecraft/run/screenshots/" + experiment_id # the screenshots dir populated on the mod side
 
