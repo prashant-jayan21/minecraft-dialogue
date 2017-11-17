@@ -49,7 +49,7 @@ for gold_config in all_gold_configs:
     all_mission_args = []
     for user_pair in user_pairs_randomized:
         mission_args = {
-            "lan": False,
+            "lan": True,
             "builder_ip_addr": user_pair[0]["ip address"],
             "builder_id": user_pair[0]["id"],
             "architect_ip_addr": user_pair[1]["ip address"],
