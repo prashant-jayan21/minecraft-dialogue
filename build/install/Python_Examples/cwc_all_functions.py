@@ -227,8 +227,8 @@ def cwc_all_obs_and_save_data(args):
                     <ServerHandlers>
                       <FlatWorldGenerator generatorString="3;241;1;" forceReset="true" destroyAfterUse="false"/>
                       <DrawingDecorator>
-                        <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_build) +'''" y1="0" z1="''' + str(z_min_build)+ '''" x2="'''+ str(x_max_build)+'''" y2="0" z2="''' + str(z_max_build) + '''"/>
-                      </DrawingDecorator>
+                        <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_goal) +'''" y1="0" z1="''' + str(z_min_goal)+ '''" x2="'''+ str(x_max_goal)+'''" y2="0" z2="''' + str(z_max_goal) + '''"/>''' + gold_config_xml_substring + \
+                      '''</DrawingDecorator>
                       <ServerQuitWhenAnyAgentFinishes/>
                     </ServerHandlers>
                   </ServerSection>
@@ -236,7 +236,7 @@ def cwc_all_obs_and_save_data(args):
                   <AgentSection mode="Spectator">
                     <Name>Oracle</Name>
                     <AgentStart>
-                      <Placement x = "0" y = "5" z = "-5" pitch="45"/>
+                      <Placement x = "100" y = "5" z = "95" pitch="45"/>
                     </AgentStart>
                     <AgentHandlers/>
                   </AgentSection>
