@@ -130,8 +130,7 @@ def cwc_all_obs_and_save_data(args):
     z_max_goal = z_max_build + displacement
 
     # experiment ID
-    # print datetime.datetime.now()
-    experiment_time = str(datetime.datetime.now()) #datetime.datetime.now().isoformat()
+    experiment_time = str(datetime.datetime.now())
     player_ids = "b"+args["builder_id"] + "-a" + args["architect_id"]
     config_id = os.path.basename(args["gold_config"]).replace(".xml","")
     experiment_id = player_ids + "-" + config_id + "-" + experiment_time
@@ -167,18 +166,7 @@ def cwc_all_obs_and_save_data(args):
                         <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-8" y1="1" z1="6" x2="-8" y2="1" z2="2"/>
                         <DrawCuboid type="cwcmod:cwc_red_rn" x1="-8" y1="1" z1="0" x2="-8" y2="1" z2="-4"/>
                         <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_build) +'''" y1="0" z1="''' + str(z_min_build)+ '''" x2="'''+ str(x_max_build)+'''" y2="0" z2="''' + str(z_max_build) + '''"/>
-                        <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_goal) +'''" y1="0" z1="''' + str(z_min_goal)+ '''" x2="'''+ str(x_max_goal)+'''" y2="0" z2="''' + str(z_max_goal) + '''"/>''' + gold_config_xml_substring + \
-                      '''</DrawingDecorator>
-                      <BuildBattleDecorator>
-                        <GoalStructureBounds>
-                            <min x="'''+ str(x_min_goal) + '''" y="'''+ str(y_min_goal) + '''" z="''' + str(z_min_goal) + '''"/>
-                            <max x="'''+ str(x_max_goal) + '''" y="''' + str(y_max_goal) + '''" z="''' + str(z_max_goal) + '''"/>
-                        </GoalStructureBounds>
-                        <PlayerStructureBounds>
-                            <min x="'''+ str(x_min_build) + '''" y="'''+ str(y_min_build) + '''" z="''' + str(z_min_build) + '''"/>
-                            <max x="'''+ str(x_max_build) + '''" y="''' + str(y_max_build) + '''" z="''' + str(z_max_build) + '''"/>
-                        </PlayerStructureBounds>
-                      </BuildBattleDecorator>
+                      </DrawingDecorator>
                       <ServerQuitWhenAnyAgentFinishes/>
                     </ServerHandlers>
                   </ServerSection>
