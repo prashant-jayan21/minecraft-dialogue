@@ -1,10 +1,10 @@
 package cwc;
 
-import com.microsoft.Malmo.Client.MalmoModClient;
 import com.microsoft.Malmo.MalmoMod;
 import com.microsoft.Malmo.MissionHandlers.AbsoluteMovementCommandsImplementation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.gui.GuiChat;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.item.EntityFallingBlock;
@@ -15,9 +15,7 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.SPacketHeldItemChange;
-import net.minecraft.world.GameType;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
-import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
@@ -29,6 +27,7 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent.*;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -37,12 +36,6 @@ import net.minecraftforge.fml.relauncher.SideOnly;
  * @author nrynchn2
  */
 public class CwCEventHandler {
-
-    // used for resetting the Architect to free-fly inspection
-    protected static boolean reset = false;
-    private static boolean unpressed = true;
-
-    private static boolean isViewingGoldConfiguration = false;
 
     // used to indicate mission should be quit
     protected static boolean quit = false;
@@ -53,14 +46,15 @@ public class CwCEventHandler {
     protected static boolean updatePlayerTick = false, updateRenderTick = false;  // wait for the second update/render tick of a pickup action before taking a screenshot
     protected static boolean disablePutdown = false, disablePickup = false;  // disallow Builder to putdown/pickup until a screenshot of the last action has been taken
 
+    protected static boolean initialized = false;
+
     /**
      * Resets the mod state and related boolean fields for button/screenshot logic.
      */
     protected static void reset() {
-        reset = true;
-        unpressed = true;
-        isViewingGoldConfiguration = false;
-        disablePutdown = false; disablePickup = false;
+        disablePutdown = false;
+        disablePickup  = false;
+        initialized = false;
 
         resetChatFields();
         resetPlaceBlockFields();
@@ -97,12 +91,15 @@ public class CwCEventHandler {
             System.out.println("\t-- flying capabilities ON, damage OFF");
 
             // spawn with empty hand (if possible)
-            int es = player.inventory.getFirstEmptyStack();
-            player.inventory.currentItem = es < 0 ? 0 : es;
-            player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
+            if (player.getName().equals(MalmoMod.BUILDER)) {
+                int es = player.inventory.getFirstEmptyStack();
+                player.inventory.currentItem = es < 0 ? 0 : es;
+                player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
+            }
 
             // initialize Architect, Builder (if limited inventory) with empty inventory
-            if (player.getName().equals(MalmoMod.ARCHITECT) || (player.getName().equals(MalmoMod.BUILDER) && !CwCMod.unlimitedInventory)) {
+            if (player.getName().equals(MalmoMod.ARCHITECT) || player.getName().equals(MalmoMod.ORACLE) ||
+                    (player.getName().equals(MalmoMod.BUILDER) && !CwCMod.unlimitedInventory)) {
                 for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++)
                     player.inventory.setInventorySlotContents(i, ItemStack.EMPTY);
                 return;
@@ -150,9 +147,11 @@ public class CwCEventHandler {
             System.out.println("\t-- flying capabilities ON, damage OFF");
 
             // spawn with empty hand (if possible)
-            int es = player.inventory.getFirstEmptyStack();
-            player.inventory.currentItem = es < 0 ? 0 : es;
-            player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
+            if (player.getName().equals(MalmoMod.BUILDER)) {
+                int es = player.inventory.getFirstEmptyStack();
+                player.inventory.currentItem = es < 0 ? 0 : es;
+                player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
+            }
         }
     }
 
@@ -170,49 +169,10 @@ public class CwCEventHandler {
         GameSettings gs = minecraft.gameSettings;
         EntityPlayerSP player = minecraft.player;
 
-        // Quits the mission if the ESC key is pressed by killing both the Builder and the Architect.
-        if (CwCKeybinds.quit.isPressed()) {
-            System.out.println("Quitting the mission...");
-            CwCMod.network.sendToServer(new CwCQuitMessage(true));
-            // Unpress the key
-            KeyBinding.unPressAllKeys();
-        }
-
-        // Handles mode-switching logic when the TAB key is pressed by either Architect or Builder.
-        if (gs.keyBindPlayerList.isPressed()) {
-
-            // Architect switches from Inspecting to Thinking mode
-            if (player.getName().equals(MalmoMod.ARCHITECT) && minecraft.playerController.getCurrentGameType() == GameType.SPECTATOR && CwCMod.state == CwCState.INSPECTING) {
-
-                // Find the Builder, teleport to his position and attack him (to enable third-person mob-view of Builder)
-                EntityPlayer builder = null;
-                for (EntityPlayer ep : minecraft.world.playerEntities)
-                    if (ep.getName().equals(MalmoMod.BUILDER)) builder = ep;
-
-                if (builder != null) {
-                    gs.thirdPersonView = 1;
-                    CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(builder.posX, builder.posY, builder.posZ, 0, 0, true, true, true, true, true));
-                    minecraft.playerController.attackEntity(Minecraft.getMinecraft().player, builder);
-                    CwCMod.network.sendToServer(new CwCStateMessage(CwCState.THINKING));
-                }
-                else System.out.println("Warning: Builder not found. (Are we viewing the gold configuration?)");
-            }
-
-            // Builder switches from Building to Inspecting mode
-            else if (player.getName().equals(MalmoMod.BUILDER) && CwCMod.state == CwCState.BUILDING)
-                CwCMod.network.sendToServer(new CwCStateMessage(CwCState.INSPECTING));
-
-            // Unpress the key
-            KeyBinding.unPressAllKeys();
-        }
-
         // Builder keybinds
-        else if (player.getName().equals(MalmoMod.BUILDER)) {
-            // ignore all keypresses if not in Building mode
-            if (CwCMod.state != CwCState.BUILDING) KeyBinding.unPressAllKeys();
-
+        if (player.getName().equals(MalmoMod.BUILDER)) {
             // ignore regular set of keypresses while building (e.g. dropping items, swapping hands, inventory, etc.)
-            else if (gs.keyBindDrop.isPressed() || gs.keyBindSwapHands.isPressed() || gs.keyBindUseItem.isPressed() ||
+            if (gs.keyBindDrop.isPressed() || gs.keyBindSwapHands.isPressed() || gs.keyBindUseItem.isPressed() ||
                     gs.keyBindInventory.isPressed() || gs.keyBindPlayerList.isPressed() || gs.keyBindCommand.isPressed() ||
                     gs.keyBindScreenshot.isPressed() || gs.keyBindTogglePerspective.isPressed() || gs.keyBindSmoothCamera.isPressed() ||
                     gs.keyBindSpectatorOutlines.isPressed());
@@ -220,23 +180,15 @@ public class CwCEventHandler {
 
         // Architect keybinds
         else if (player.getName().equals(MalmoMod.ARCHITECT)) {
-            // disable opening chatbox while Inspecting
-            if (CwCMod.state == CwCState.INSPECTING && (gs.keyBindChat.isPressed() || gs.keyBindCommand.isPressed())) ;
+            // teleport back to builder point-of-view if trying to initiate a chat
+            if (gs.keyBindChat.isPressed()) {
+                EntityPlayer builder = null;
+                for (EntityPlayer ep : minecraft.world.playerEntities)
+                    if (ep.getName().equals(MalmoMod.BUILDER)) builder = ep;
 
-            // teleport to the location of the gold configuration (or back to neutral, if already viewing) if G is pressed while Inspecting
-            if (CwCMod.state == CwCState.INSPECTING && CwCKeybinds.gold.isPressed()) {
-                if (!isViewingGoldConfiguration) {
-                    CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(100, 5, 95, 0, 45, true, true, true, true, true));
-                    isViewingGoldConfiguration = true;
-                }
-                else {
-                    CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 5, -5, 0, 45, true, true, true, true, true));
-                    isViewingGoldConfiguration = false;
-                }
+                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(builder.posX, builder.posY+3, builder.posZ-3, 0, 45, true, true, true, true, true));
+                minecraft.displayGuiScreen(new GuiChat());
             }
-
-            // do not allow Architect to stop Builder mob-view in Thinking, Building modes
-            if (CwCMod.state != CwCState.INSPECTING && gs.keyBindSneak.isPressed()) KeyBinding.unPressAllKeys();
 
             // ignore regular set of keypresses
             if (gs.keyBindDrop.isPressed() || gs.keyBindSwapHands.isPressed() || gs.keyBindUseItem.isPressed() ||
@@ -250,16 +202,20 @@ public class CwCEventHandler {
     }
 
     /**
-     * Fired when a change of mouse input is detected. See {@link MouseEvent} for more details.
-     * Disable Builder's mouse unless in the Building state.
+     * Fired when a client ticks. See {@link net.minecraftforge.fml.common.gameevent.TickEvent.ClientTickEvent} for more details.
+     * Quits the mission (kills all connected players) when the Ctrl+Q key combination is pressed.
      *
      * @param event
      */
     @SubscribeEvent
-    public void onMouseInput(MouseEvent event) {
-        EntityPlayer player = Minecraft.getMinecraft().player;
-        if (player.getName().equals(MalmoMod.BUILDER) && CwCMod.state != CwCState.BUILDING)
-            event.setCanceled(true);
+    public void onClientTick(TickEvent.ClientTickEvent event) {
+        // Quits the mission if Ctrl-Q is pressed by either player, killing both the Builder and the Architect.
+        if (CwCKeybinds.quitKeyQ.isKeyDown() && CwCKeybinds.quitCtrl.isKeyDown()) {
+            System.out.println("CwCMod: Quitting the mission...");
+            CwCMod.network.sendToServer(new CwCQuitMessage(true));
+            // Unpress the keys
+            KeyBinding.unPressAllKeys();
+        }
     }
 
     /**
@@ -286,64 +242,25 @@ public class CwCEventHandler {
 
         if (player.getEntityWorld().isRemote) {
             Minecraft minecraft = Minecraft.getMinecraft();
-            if (player.getName().equals(MalmoMod.ARCHITECT)) {
+            if (player.getName().equals(MalmoMod.ARCHITECT) && !initialized) {
+                EntityPlayer builder = null;
+                for (EntityPlayer ep : minecraft.world.playerEntities)
+                    if (ep.getName().equals(MalmoMod.BUILDER)) builder = ep;
 
-                // when resetting to Inspecting mode, press the 'sneak' key and set Architect back to first-person view
-                if (CwCMod.state == CwCState.INSPECTING && reset) {
-                    KeyBinding.setKeyBindState(Minecraft.getMinecraft().gameSettings.keyBindSneak.getKeyCode(), true);
-                    Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
-                    reset = false;
-                    unpressed = false;
-                }
-
-                // unpress the 'sneak' key & teleport to neutral position
-                else if (Minecraft.getMinecraft().gameSettings.keyBindSneak.isKeyDown() && !unpressed) {
-                    KeyBinding.unPressAllKeys();
-                    unpressed = true;
-
-                    EntityPlayer builder = null;
-                    for (EntityPlayer ep : Minecraft.getMinecraft().world.playerEntities)
-                        if (ep.getName().equals(MalmoMod.BUILDER)) builder = ep;
-
-                    if (builder != null)
-                        CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 5, -5, 0, 45, true, true, true, true, true));
-                }
-
-                // set mode overlay message for Architect
-                if (minecraft.player.getName().equals(MalmoMod.ARCHITECT)) {
-                    if (CwCMod.state == CwCState.INSPECTING && isViewingGoldConfiguration)
-                        minecraft.ingameGUI.setOverlayMessage("Viewing goal configuration", true);
-                    else minecraft.ingameGUI.setOverlayMessage(CwCUtils.architectOverlay[CwCMod.state.ordinal()], true);
-                }
-
-            }
-
-            else if (player.getName().equals(MalmoMod.BUILDER) && minecraft.player.getName().equals(MalmoMod.BUILDER)) {
-                // set mode overlay message for Builder
-                minecraft.ingameGUI.setOverlayMessage(CwCUtils.builderOverlay[CwCMod.state.ordinal()], true);
-
-                // if switching from Building to Inspecting and mouse hasn't yet been overridden, override the mouse
-                if (CwCMod.state != CwCState.BUILDING && minecraft.mouseHelper instanceof MalmoModClient.MouseHook &&
-                        !((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding)
-                    ((MalmoModClient.MouseHook) minecraft.mouseHelper).isOverriding = true;
-
-                // unpress all keys on reset
-                if (reset) {
-                    KeyBinding.unPressAllKeys();
-                    reset = false;
+                if (builder != null && builder.lastTickPosY == 0) {
+                    CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(builder.posX, builder.posY + 3, builder.posZ - 3, 0, 45, true, true, true, true, true));
+                    initialized = true;
                 }
             }
 
             // take a screenshot when a chat message has been received and rendered by the client
             if (receivedChat && renderedChat) {
-                System.out.println("Chat received & rendered: taking screenshot...");
                 CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT);
                 resetChatFields();
             }
 
             // take a screenshot when a block place event has been received and rendered by the client
             if (placedBlock && renderedBlock) {
-                System.out.println("Block placed & rendered: taking screenshot...");
                 CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.PUTDOWN);
                 resetPlaceBlockFields();
             }
@@ -353,7 +270,6 @@ public class CwCEventHandler {
 
             // take a screenshot when a block break event has been received and rendered by the client
             else if (pickedUpBlock && renderedBlock && updatePlayerTick && updateRenderTick) {
-                System.out.println("Block removed, picked up & rendered: taking screenshot...");
                 CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.PICKUP);
                 resetBreakBlockFields();
             }
@@ -404,10 +320,6 @@ public class CwCEventHandler {
         Minecraft minecraft = Minecraft.getMinecraft();
         EntityPlayer player = minecraft.player;
 
-        // switch to Building mode upon first Architect utterance in Thinking mode
-        if (player.getName().equals(MalmoMod.ARCHITECT) && minecraft.playerController.getCurrentGameType() == GameType.SPECTATOR && CwCMod.state == CwCState.THINKING)
-            CwCMod.network.sendToServer(new CwCStateMessage(CwCState.BUILDING));
-
         // take a screenshot if message is non-system message
         if (event.getType() == 0) receivedChat = true;
     }
@@ -430,8 +342,7 @@ public class CwCEventHandler {
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onBlockClicked(PlayerInteractEvent.LeftClickBlock event) {
-        if (event.getEntity() instanceof EntityPlayer && event.getEntity().getName().equals(MalmoMod.BUILDER) &&
-                CwCMod.state == CwCState.BUILDING) {
+        if (event.getEntity() instanceof EntityPlayer && event.getEntity().getName().equals(MalmoMod.BUILDER)) {
             EntityPlayer player = (EntityPlayer) event.getEntity();
 
             // count the number of items currently in his inventory (hotbar)
@@ -456,7 +367,7 @@ public class CwCEventHandler {
     public void onBlockPlace(BlockEvent.PlaceEvent event) {
         if (!event.getPlayer().getEntityWorld().isRemote && event.getPlayer() instanceof EntityPlayerMP) {
             EntityPlayerMP player = (EntityPlayerMP) event.getPlayer();
-            System.out.println("Block " + event.getPlacedBlock().getBlock().getUnlocalizedName() + " placed by " + player.getName());
+//            System.out.println("Block " + event.getPlacedBlock().getBlock().getUnlocalizedName() + " placed by " + player.getName());
 
             // find first empty slot in the hotbar and set the held item to it (if possible)
             int empty = player.inventory.getFirstEmptyStack();
@@ -492,7 +403,7 @@ public class CwCEventHandler {
     public void onItemPickup(EntityItemPickupEvent event) {
         if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayerMP) {
             EntityPlayerMP player = (EntityPlayerMP) event.getEntityPlayer();
-            System.out.println("Item " + event.getItem().getName() + " picked up by " + player.getName());
+//            System.out.println("Item " + event.getItem().getName() + " picked up by " + player.getName());
 
             // Due to how mouseclicks are handled, usually a pickup event is also fired for the player attempting to pick up Air. We will ignore this.
             if (event.getItem().getEntityItem().getItem() != Items.AIR) {
