@@ -9,7 +9,7 @@ import org.lwjgl.input.Keyboard;
  */
 public class CwCKeybinds {
     public static KeyBinding quitCtrl;  // ctrl + Q: quit
-    public static KeyBinding quitKeyQ;
+    public static KeyBinding quitKeyC;
     // public static KeyBinding gold;  // G: switch to gold configuration (available only in Inspecting mode)
 
     /**
@@ -17,8 +17,8 @@ public class CwCKeybinds {
      */
     public static void register() {
         quitCtrl = new KeyBinding("key.quit-ctrl", Keyboard.KEY_LCONTROL, "key.categories.cwc");
-        quitKeyQ = new KeyBinding("key.quit-q", Keyboard.KEY_Q, "key.categories.cwc");
+        quitKeyC = new KeyBinding("key.quit-q", Keyboard.KEY_C, "key.categories.cwc");
         ClientRegistry.registerKeyBinding(quitCtrl);
-        ClientRegistry.registerKeyBinding(quitKeyQ);
+        ClientRegistry.registerKeyBinding(quitKeyC);
     }
 }

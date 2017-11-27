@@ -41,24 +41,24 @@ public class CwCEventHandler {
     protected static boolean quit = false;
 
     // used to handle screenshot logic
-    protected static boolean receivedChat = false, renderedChat = false;  // chat is received & rendered
+    protected static boolean receivedChat = false, renderedChat = false;                         // chat is received & rendered
     protected static boolean placedBlock = false, pickedUpBlock = false, renderedBlock = false;  // block is placed/picked up & rendered
-    protected static boolean updatePlayerTick = false, updateRenderTick = false;  // wait for the second update/render tick of a pickup action before taking a screenshot
-    protected static boolean disablePutdown = false, disablePickup = false;  // disallow Builder to putdown/pickup until a screenshot of the last action has been taken
+    protected static boolean updatePlayerTick = false, updateRenderTick = false;                 // wait for the second update/render tick of a pickup action before taking a screenshot
+    protected static boolean disablePutdown = false, disablePickup = false;                      // disallows Builder to putdown/pickup until a screenshot of the last action has been taken
 
-    protected static boolean initialized = false;
+    private static boolean following = false, sneaking = false, sneakTick = false;               // resets the architect's position after his chat box is closed
 
     /**
-     * Resets the mod state and related boolean fields for button/screenshot logic.
+     * Resets the necessary boolean fields.
      */
     protected static void reset() {
         disablePutdown = false;
         disablePickup  = false;
-        initialized = false;
 
         resetChatFields();
         resetPlaceBlockFields();
         resetBreakBlockFields();
+        resetArchitectFollowFields();
     }
 
     /**
@@ -180,14 +180,17 @@ public class CwCEventHandler {
 
         // Architect keybinds
         else if (player.getName().equals(MalmoMod.ARCHITECT)) {
-            // teleport back to builder point-of-view if trying to initiate a chat
+            // assume third-person mob-view of Builder when initiating a chat
             if (gs.keyBindChat.isPressed()) {
                 EntityPlayer builder = null;
                 for (EntityPlayer ep : minecraft.world.playerEntities)
                     if (ep.getName().equals(MalmoMod.BUILDER)) builder = ep;
 
-                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(builder.posX, builder.posY+3, builder.posZ-3, 0, 45, true, true, true, true, true));
+                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(builder.posX, builder.posY, builder.posZ, 0, 0, true, true, true, true, true));
+                minecraft.playerController.attackEntity(Minecraft.getMinecraft().player, builder);
                 minecraft.displayGuiScreen(new GuiChat());
+                gs.thirdPersonView = 1;
+                following = true;
             }
 
             // ignore regular set of keypresses
@@ -204,17 +207,27 @@ public class CwCEventHandler {
     /**
      * Fired when a client ticks. See {@link net.minecraftforge.fml.common.gameevent.TickEvent.ClientTickEvent} for more details.
      * Quits the mission (kills all connected players) when the Ctrl+Q key combination is pressed.
+     * Also starts the process to exit Architect's mob-view when his chat window is closed.
      *
      * @param event
      */
+    @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
         // Quits the mission if Ctrl-Q is pressed by either player, killing both the Builder and the Architect.
-        if (CwCKeybinds.quitKeyQ.isKeyDown() && CwCKeybinds.quitCtrl.isKeyDown()) {
+        if (CwCKeybinds.quitKeyC.isKeyDown() && CwCKeybinds.quitCtrl.isKeyDown()) {
             System.out.println("CwCMod: Quitting the mission...");
             CwCMod.network.sendToServer(new CwCQuitMessage(true));
             // Unpress the keys
             KeyBinding.unPressAllKeys();
+        }
+
+        // exit mob-view when chat window is closed
+        Minecraft minecraft = Minecraft.getMinecraft();
+        if (minecraft != null && minecraft.player != null && minecraft.player.getName().equals(MalmoMod.ARCHITECT)
+                && following && !minecraft.ingameGUI.getChatGUI().getChatOpen()) {
+            KeyBinding.setKeyBindState(minecraft.gameSettings.keyBindSneak.getKeyCode(), true);
+            sneaking = true;
         }
     }
 
@@ -222,11 +235,8 @@ public class CwCEventHandler {
      * Fired when a living entity is updated via onUpdate(). See {@link net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent} for more details.
      * This piece of code implements multiple features:
      * (1) Prevents noclipping through floor.
-     * (2) Resets the Architect from mob-view to free camera when the Builder ends his Building turn by simulating a "sneak" keypress.
-     * (3) Initializes the Builder with an overridden mouse (i.e., mouse cannot be clicked, and changes in mouse's location are not registered as mouse movements).
-     *     Also handles the mouse override logic for the Builder based on the current mode.
-     * (4) Produces the text overlay that displays the current mode for both Architect and Builder.
-     * (5) Prompts the Architect and Builder clients to take screenshots when a chat or block action has been executed and rendered.
+     * (2) Continues to reset the Architect from mob-view to free camera by simulating a "sneak" keypress, which is initiated in {@link #onClientTick(TickEvent.ClientTickEvent)}.
+     * (3) Prompts the Architect and Builder clients to take screenshots when a chat or block action has been executed and rendered.
      *
      * @param event
      */
@@ -242,26 +252,28 @@ public class CwCEventHandler {
 
         if (player.getEntityWorld().isRemote) {
             Minecraft minecraft = Minecraft.getMinecraft();
-            if (player.getName().equals(MalmoMod.ARCHITECT) && !initialized) {
-                EntityPlayer builder = null;
-                for (EntityPlayer ep : minecraft.world.playerEntities)
-                    if (ep.getName().equals(MalmoMod.BUILDER)) builder = ep;
 
-                if (builder != null && builder.lastTickPosY == 0) {
-                    CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(builder.posX, builder.posY + 3, builder.posZ - 3, 0, 45, true, true, true, true, true));
-                    initialized = true;
-                }
+            // Architect sneaking to break mob-view, first tick
+            if (player.getName().equals(MalmoMod.ARCHITECT) && sneaking && !sneakTick)
+                sneakTick = true;
+
+            // Architect sneaking to break mob-view, second tick: going back to first-person view and teleporting to a neutral position
+            else if (player.getName().equals(MalmoMod.ARCHITECT) && sneaking && sneakTick) {
+                KeyBinding.unPressAllKeys();
+                minecraft.gameSettings.thirdPersonView = 0;
+                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 5, -5, 0, 45, true, true, true, true, true));
+                resetArchitectFollowFields();
             }
 
             // take a screenshot when a chat message has been received and rendered by the client
             if (receivedChat && renderedChat) {
-                CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT);
+                CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT);
                 resetChatFields();
             }
 
             // take a screenshot when a block place event has been received and rendered by the client
             if (placedBlock && renderedBlock) {
-                CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.PUTDOWN);
+                CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.PUTDOWN);
                 resetPlaceBlockFields();
             }
 
@@ -270,7 +282,7 @@ public class CwCEventHandler {
 
             // take a screenshot when a block break event has been received and rendered by the client
             else if (pickedUpBlock && renderedBlock && updatePlayerTick && updateRenderTick) {
-                CwCUtils.takeScreenshot(Minecraft.getMinecraft(), CwCUtils.useTimestamps, CwCScreenshotEventType.PICKUP);
+                CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.PICKUP);
                 resetBreakBlockFields();
             }
         }
@@ -309,7 +321,6 @@ public class CwCEventHandler {
 
     /**
      * Fired when a chat message is received on the client. See {@link ClientChatReceivedEvent} for more details.
-     * Immediately switches to Building mode upon receiving the first utterance from the Architect in Thinking mode.
      * Sets boolean field indicating a screenshot should be taken once the chat message has been rendered.
      *
      * @param event
@@ -454,5 +465,14 @@ public class CwCEventHandler {
         renderedBlock = false;
         updatePlayerTick = false;
         updateRenderTick = false;
+    }
+
+    /**
+     * Helper: reset the boolean fields associated with Architect's mob-view.
+     */
+    private static void resetArchitectFollowFields() {
+        following = false;
+        sneaking = false;
+        sneakTick = false;
     }
 }
