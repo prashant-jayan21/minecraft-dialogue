@@ -159,12 +159,12 @@ def cwc_all_obs_and_save_data(args):
                     <ServerHandlers>
                       <FlatWorldGenerator generatorString="3;241;1;" forceReset="true" destroyAfterUse="false"/>
                       <DrawingDecorator>
-                        <DrawCuboid type="cwcmod:cwc_orange_rn" x1="5" y1="1" z1="8" x2="1" y2="1" z2="8"/>
-                        <DrawCuboid type="cwcmod:cwc_yellow_rn" x1="-1" y1="1" z1="8" x2="-5" y2="1" z2="8"/>
-                        <DrawCuboid type="cwcmod:cwc_green_rn" x1="8" y1="1" z1="6" x2="8" y2="1" z2="2"/>
-                        <DrawCuboid type="cwcmod:cwc_blue_rn" x1="8" y1="1" z1="0" x2="8" y2="1" z2="-4"/>
-                        <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-8" y1="1" z1="6" x2="-8" y2="1" z2="2"/>
-                        <DrawCuboid type="cwcmod:cwc_red_rn" x1="-8" y1="1" z1="0" x2="-8" y2="1" z2="-4"/>
+                        <DrawCuboid type="cwcmod:cwc_orange_rn" x1="5" y1="1" z1="8" x2="1" y2="2" z2="8"/>
+                        <DrawCuboid type="cwcmod:cwc_yellow_rn" x1="-1" y1="1" z1="8" x2="-5" y2="2" z2="8"/>
+                        <DrawCuboid type="cwcmod:cwc_green_rn" x1="8" y1="1" z1="6" x2="8" y2="2" z2="2"/>
+                        <DrawCuboid type="cwcmod:cwc_blue_rn" x1="8" y1="1" z1="0" x2="8" y2="2" z2="-4"/>
+                        <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-8" y1="1" z1="6" x2="-8" y2="2" z2="2"/>
+                        <DrawCuboid type="cwcmod:cwc_red_rn" x1="-8" y1="1" z1="0" x2="-8" y2="2" z2="-4"/>
                         <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_build) +'''" y1="0" z1="''' + str(z_min_build)+ '''" x2="'''+ str(x_max_build)+'''" y2="0" z2="''' + str(z_max_build) + '''"/>
                       </DrawingDecorator>
                       <ServerQuitWhenAnyAgentFinishes/>
