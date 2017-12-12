@@ -8,9 +8,8 @@ import org.lwjgl.input.Keyboard;
  * Custom keybinds specific to the CwC Mod.
  */
 public class CwCKeybinds {
-    public static KeyBinding quitCtrl;  // ctrl + Q: quit
+    public static KeyBinding quitCtrl;  // ctrl + C: quit
     public static KeyBinding quitKeyC;
-    // public static KeyBinding gold;  // G: switch to gold configuration (available only in Inspecting mode)
 
     /**
      * Registers the custom keybinds.

@@ -30,6 +30,8 @@ public class CwCUtils {
         if (!screenshotDir.exists()) screenshotDir.mkdir();
     }
 
+    private static boolean disableScreenshots = true;
+
     /**
      * Creates a unique PNG file in the given directory named by a timestamp.  Handles cases where the timestamp alone
      * is not enough to create a uniquely named file, though it still might suffer from an unlikely race condition where
@@ -62,17 +64,22 @@ public class CwCUtils {
         if (MalmoMod.instance.getClient() != null && MalmoMod.instance.getClient().getStateMachine().currentMissionInit() != null &&
                 (summary == null || !summary.equals(MalmoMod.instance.getClient().getStateMachine().currentMissionInit().getMission().getAbout().getSummary()))) {
             summary = MalmoMod.instance.getClient().getStateMachine().currentMissionInit().getMission().getAbout().getSummary();
-            File dir = new File(screenshotDir, summary);
-            if (!dir.exists()) dir.mkdir();
+
+            if (!disableScreenshots) {
+                File dir = new File(screenshotDir, summary);
+                if (!dir.exists()) dir.mkdir();
+            }
+            else System.out.println("DEBUG: Screenshots are disabled");
         }
 
         // prefix with either timestamp or screenshot index
         String prefix = (summary == null ? "" : summary+"/") + (timestamp ? CwCUtils.getTimestampedFileForDirectory(screenshotDir) : index+"");
         // suffix with type of triggering event
-        String suffix = CwCMod.state.name().toLowerCase()+"-"+type.name().toLowerCase();
+        String suffix = type.name().toLowerCase();
 
         // take the screenshot
-        ScreenShotHelper.saveScreenshot(CwCUtils.loggingDir, prefix+"-"+mc.player.getName()+"-"+suffix+".png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
+        if (!disableScreenshots)
+            ScreenShotHelper.saveScreenshot(CwCUtils.loggingDir, prefix+"-"+mc.player.getName()+"-"+suffix+".png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
 
         // save screenshot filename to list
         CwCMod.screenshots.add(CwCUtils.screenshotDir+"/"+prefix+"-"+mc.player.getName()+"-"+suffix+".png");

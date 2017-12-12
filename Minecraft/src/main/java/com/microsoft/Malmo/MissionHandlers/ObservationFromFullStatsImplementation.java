@@ -53,11 +53,10 @@ public class ObservationFromFullStatsImplementation extends ObservationFromServe
         @Override
         void buildJson(JsonObject json, EntityPlayerMP player, ObservationRequestMessage message)
         {
-            JSONWorldDataHelper.buildAchievementStats(json, player);
+            JSONWorldDataHelper.buildAchievementStats(json, player, true);
             JSONWorldDataHelper.buildLifeStats(json, player);
             JSONWorldDataHelper.buildPositionStats(json, player);
             JSONWorldDataHelper.buildEnvironmentStats(json, player);
-            JSONWorldDataHelper.buildGameState(json); // TODO: Make this a separate observation
         }
 
         @Override

@@ -40,6 +40,9 @@ public class CwCEventHandler {
     // used to indicate mission should be quit
     protected static boolean quit = false;
 
+    protected static boolean chatting = false;
+    protected static boolean partnerIsChatting = false;
+
     // used to handle screenshot logic
     protected static boolean receivedChat = false, renderedChat = false;                         // chat is received & rendered
     protected static boolean placedBlock = false, pickedUpBlock = false, renderedBlock = false;  // block is placed/picked up & rendered
@@ -116,12 +119,8 @@ public class CwCEventHandler {
 
             // unlimited inventory: initialize the inventory with default stack sizes
             if (empty) {
-                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.red, CwCMod.DEFAULT_STACK_SIZE));
-                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.orange, CwCMod.DEFAULT_STACK_SIZE));
-                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.yellow, CwCMod.DEFAULT_STACK_SIZE));
-                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.green, CwCMod.DEFAULT_STACK_SIZE));
-                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.blue, CwCMod.DEFAULT_STACK_SIZE));
-                player.inventory.addItemStackToInventory(new ItemStack(StartupCommon.purple, CwCMod.DEFAULT_STACK_SIZE));
+                for (CwCBlock block : StartupCommon.blocks)
+                    player.inventory.addItemStackToInventory(new ItemStack(block, CwCMod.DEFAULT_STACK_SIZE));
                 System.out.println("\t-- inventory INITIALIZED");
             }
         }
@@ -229,6 +228,23 @@ public class CwCEventHandler {
             KeyBinding.setKeyBindState(minecraft.gameSettings.keyBindSneak.getKeyCode(), true);
             sneaking = true;
         }
+
+        if (minecraft != null && minecraft.player != null) {
+            if (!chatting && minecraft.ingameGUI.getChatGUI().getChatOpen()) {
+                CwCMod.network.sendToServer(new CwCChatMessage(true));
+                chatting = true;
+            }
+            else if (chatting && !minecraft.ingameGUI.getChatGUI().getChatOpen()) {
+                CwCMod.network.sendToServer(new CwCChatMessage(false));
+                chatting = false;
+            }
+        }
+
+        if (partnerIsChatting) {
+            String partner = minecraft.player.getName().equals(MalmoMod.ARCHITECT) ? "Builder" : "Architect";
+            minecraft.ingameGUI.setOverlayMessage(partner+" is typing...", true);
+        }
+        else minecraft.ingameGUI.setOverlayMessage("", false);
     }
 
     /**
@@ -368,9 +384,8 @@ public class CwCEventHandler {
 
     /**
      * Fired when a block is placed by a player. See {@link net.minecraftforge.event.world.BlockEvent.PlaceEvent} for more details.
-     * Sets held item to first empty slot upon placing a block.
-     * If, for some reason, no hotbar slots are empty, then this does nothing.
-     * Also starts the process for taking a screenshot (on both clients) upon placing blocks.
+     * Starts the process for taking a screenshot (on both clients) upon placing blocks.
+     * Disables the player from putting down any more blocks until the
      *
      * @param event
      */
@@ -378,15 +393,6 @@ public class CwCEventHandler {
     public void onBlockPlace(BlockEvent.PlaceEvent event) {
         if (!event.getPlayer().getEntityWorld().isRemote && event.getPlayer() instanceof EntityPlayerMP) {
             EntityPlayerMP player = (EntityPlayerMP) event.getPlayer();
-//            System.out.println("Block " + event.getPlacedBlock().getBlock().getUnlocalizedName() + " placed by " + player.getName());
-
-            // find first empty slot in the hotbar and set the held item to it (if possible)
-            int empty = player.inventory.getFirstEmptyStack();
-            player.inventory.currentItem = empty < 0 ? player.inventory.currentItem : empty;
-
-            // let the server know that the held item has been changed
-            // (and also notify in order to prepare to take a screenshot)
-            player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
             CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PUTDOWN));
 
             // don't allow any more blocks to be placed until the screenshot has been taken

@@ -19,6 +19,7 @@
 
 package com.microsoft.Malmo;
 
+import com.microsoft.Malmo.MissionHandlers.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
@@ -57,13 +58,6 @@ import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 
 import com.microsoft.Malmo.Client.MalmoModClient;
-import com.microsoft.Malmo.MissionHandlers.AbsoluteMovementCommandsImplementation;
-import com.microsoft.Malmo.MissionHandlers.DiscreteMovementCommandsImplementation;
-import com.microsoft.Malmo.MissionHandlers.InventoryCommandsImplementation;
-import com.microsoft.Malmo.MissionHandlers.ObservationFromFullInventoryImplementation;
-import com.microsoft.Malmo.MissionHandlers.ObservationFromFullStatsImplementation;
-import com.microsoft.Malmo.MissionHandlers.ObservationFromGridImplementation;
-import com.microsoft.Malmo.MissionHandlers.SimpleCraftCommandsImplementation;
 import com.microsoft.Malmo.Schemas.MissionInit;
 import com.microsoft.Malmo.Server.MalmoModServer;
 import com.microsoft.Malmo.Utils.AddressHelper;
@@ -136,7 +130,8 @@ public class MalmoMod
         network.registerMessage(DiscreteMovementCommandsImplementation.AttackActionMessageHandler.class, DiscreteMovementCommandsImplementation.AttackActionMessage.class, 9, Side.SERVER);
         network.registerMessage(ObservationFromFullInventoryImplementation.InventoryRequestMessageHandler.class, ObservationFromFullInventoryImplementation.InventoryRequestMessage.class, 10, Side.SERVER);
         network.registerMessage(InventoryCommandsImplementation.InventoryChangeMessageHandler.class, InventoryCommandsImplementation.InventoryChangeMessage.class, 11, Side.CLIENT);
-        }
+        network.registerMessage(CwCObservationImplementation.CwCRequestMessageHandler.class,CwCObservationImplementation.CwCRequestMessage.class, 12, Side.SERVER);
+    }
 
     @EventHandler
     public void onMissingMappingsEvent(FMLMissingMappingsEvent event)

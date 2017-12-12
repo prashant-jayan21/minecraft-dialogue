@@ -34,8 +34,6 @@ public class CwCMod {
 	public static final int MAX_INVENTORY_SIZE = 5;		// maximum number of blocks that can be held at a time by the Builder (if limited inventory)
 	protected static int DEFAULT_STACK_SIZE = 1;		// stack sizes of blocks in inventory upon initialization of Builder (if unlimited inventory)
 
-	public static CwCState state = CwCState.INSPECTING; // mod state: initialized to "Inspecting"
-
 	public static ArrayList<String> screenshots = new ArrayList<String>();  // list of absolute paths of screenshots taken by the client
 
 	@EventHandler
@@ -46,17 +44,17 @@ public class CwCMod {
 		// player teleportation
 		network.registerMessage(AbsoluteMovementCommandsImplementation.TeleportMessageHandler.class, AbsoluteMovementCommandsImplementation.TeleportMessage.class, 0, Side.SERVER);
 
-		// mod state change (Inspecting -> Thinking -> Building)
-		network.registerMessage(CwCStateMessageHandler.class, CwCStateMessage.class, 1, Side.CLIENT);
-		network.registerMessage(CwCStateMessageHandler.class, CwCStateMessage.class, 2, Side.SERVER);
-
 		// screenshot triggers
-		network.registerMessage(CwCScreenshotMessageHandler.class, CwCScreenshotMessage.class, 3, Side.CLIENT);
-		network.registerMessage(CwCScreenshotMessageHandler.class, CwCScreenshotMessage.class, 4, Side.SERVER);
+		network.registerMessage(CwCScreenshotMessageHandler.class, CwCScreenshotMessage.class, 1, Side.CLIENT);
+		network.registerMessage(CwCScreenshotMessageHandler.class, CwCScreenshotMessage.class, 2, Side.SERVER);
 
 		// mission quit
-		network.registerMessage(CwCQuitMessageHandler.class, CwCQuitMessage.class, 5, Side.CLIENT);
-		network.registerMessage(CwCQuitMessageHandler.class, CwCQuitMessage.class, 6, Side.SERVER);
+		network.registerMessage(CwCQuitMessageHandler.class, CwCQuitMessage.class, 3, Side.CLIENT);
+		network.registerMessage(CwCQuitMessageHandler.class, CwCQuitMessage.class, 4, Side.SERVER);
+
+		// partner chatting
+		network.registerMessage(CwCChatMessageHandler.class, CwCChatMessage.class, 5, Side.CLIENT);
+		network.registerMessage(CwCChatMessageHandler.class, CwCChatMessage.class, 6, Side.SERVER);
 
 		// register custom keybinds
 		CwCKeybinds.register();
@@ -74,7 +72,6 @@ public class CwCMod {
 
 	public static void reset() {
 		System.out.println("CwCMod: resetting...");
-		state = CwCState.INSPECTING;
 		CwCUtils.reset();
 		CwCEventHandler.reset();
 	}

@@ -1707,6 +1707,28 @@
     <xs:complexType/>
   </xs:element>
 
+  <xs:element name="CwCObservation">
+    <xs:annotation>
+      <xs:documentation>
+        When present, the Mod will return observations that say what the nearby blocks are.
+
+        For each {{{Grid}}} entry, a named JSON element will be returned with a 1D array of block types, in order along the x, then z, then y axes.
+
+        When present, the Mod will return observations that say what chat messages have occurred and from which player.
+
+        A JSON element {{{Chat}}} will be returned, with a list of chat strings.
+
+        Note that unless the AgentHost ObservationsPolicy is set to KEEP_ALL_OBSERVATIONS it is likely that chat messages will be missed.
+        The default policy is LATEST_OBSERVATION_ONLY.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:choice minOccurs="1" maxOccurs="unbounded" >
+        <xs:element name="Grid" type="GridDefinition" />
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+
   <!--============================================= REWARD PRODUCERS ==============================================-->
   
   <xs:simpleType name="Dimension">

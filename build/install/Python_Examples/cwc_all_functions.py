@@ -177,14 +177,12 @@ def cwc_all_obs_and_save_data(args):
                       <Placement x = "0" y = "1" z = "0"/>
                     </AgentStart>
                     <AgentHandlers>
-                      <ObservationFromFullStats/>
-                       <ObservationFromGrid>
-                         <Grid name="builder_grid" absoluteCoords="true">
+                      <CwCObservation>
+                         <Grid name="BuilderGrid" absoluteCoords="true">
                            <min x="'''+ str(x_min_obs) + '''" y="'''+ str(y_min_obs) + '''" z="''' + str(z_min_obs) + '''"/>
                            <max x="'''+ str(x_max_obs) + '''" y="''' + str(y_max_obs) + '''" z="''' + str(z_max_obs) + '''"/>
                          </Grid>
-                       </ObservationFromGrid>
-                       <ObservationFromChat/>
+                      </CwCObservation>
                     </AgentHandlers>
                   </AgentSection>
 
@@ -404,11 +402,11 @@ def cwc_all_obs_and_save_data(args):
             if world_state.is_mission_running == False:
                 timed_out = True
 
-            if i == 0 and world_state.is_mission_running and world_state.number_of_observations_since_last_state > 0:
-                for observation in world_state.observations:
-                    (prev_blocks_state_abs, prev_dialog_state, prev_game_state, string_to_write, world_state) = processObservation(observation, prev_blocks_state_abs, prev_dialog_state, prev_game_state, string_to_write)
-                    if world_state:
-                        all_world_states.append(world_state)
+            # if i == 0 and world_state.is_mission_running and world_state.number_of_observations_since_last_state > 0:
+            #     for observation in world_state.observations:
+            #         (prev_blocks_state_abs, prev_dialog_state, prev_game_state, string_to_write, world_state) = processObservation(observation, prev_blocks_state_abs, prev_dialog_state, prev_game_state, string_to_write)
+            #         if world_state:
+            #             all_world_states.append(world_state)
 
         time.sleep(1)
 
