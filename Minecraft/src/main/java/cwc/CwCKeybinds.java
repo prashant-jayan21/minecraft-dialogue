@@ -8,16 +8,17 @@ import org.lwjgl.input.Keyboard;
  * Custom keybinds specific to the CwC Mod.
  */
 public class CwCKeybinds {
-    public static KeyBinding quit;  // ESC: quit
-    public static KeyBinding gold;  // G: switch to gold configuration (available only in Inspecting mode)
+    public static KeyBinding quitCtrl;  // ctrl + Q: quit
+    public static KeyBinding quitKeyC;
+    // public static KeyBinding gold;  // G: switch to gold configuration (available only in Inspecting mode)
 
     /**
      * Registers the custom keybinds.
      */
     public static void register() {
-        quit = new KeyBinding("key.quit", Keyboard.KEY_ESCAPE, "key.categories.cwc");
-        gold = new KeyBinding("key.gold", Keyboard.KEY_G, "key.categories.cwc");
-        ClientRegistry.registerKeyBinding(quit);
-        ClientRegistry.registerKeyBinding(gold);
+        quitCtrl = new KeyBinding("key.quit-ctrl", Keyboard.KEY_LCONTROL, "key.categories.cwc");
+        quitKeyC = new KeyBinding("key.quit-q", Keyboard.KEY_C, "key.categories.cwc");
+        ClientRegistry.registerKeyBinding(quitCtrl);
+        ClientRegistry.registerKeyBinding(quitKeyC);
     }
 }

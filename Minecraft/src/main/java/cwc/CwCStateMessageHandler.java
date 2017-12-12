@@ -68,7 +68,7 @@ public class CwCStateMessageHandler implements IMessageHandler<CwCStateMessage, 
 
         // when switching to Inspecting, set the reset field to prompt Architect to exit mob-view and override the Builder's mouse
         if (CwCMod.state == CwCState.INSPECTING) {
-            CwCEventHandler.reset = true;
+//            CwCEventHandler.reset = true;
             if (player.getName().equals(MalmoMod.BUILDER) && mc.mouseHelper instanceof MalmoModClient.MouseHook)
                 ((MalmoModClient.MouseHook) mc.mouseHelper).isOverriding = true;
         }

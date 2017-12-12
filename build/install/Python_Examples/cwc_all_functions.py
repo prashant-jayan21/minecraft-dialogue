@@ -71,31 +71,13 @@ def safeWaitForStart(agent_hosts):
 
 def cwc_all_obs_and_save_data(args):
 
-    # Create one agent host for parsing:
-    agent_hosts = [MalmoPython.AgentHost()]
+    # Create agent hosts:
+    agent_hosts = [MalmoPython.AgentHost(), MalmoPython.AgentHost(), MalmoPython.AgentHost()]
 
-    # try:
-    #     agent_hosts[0].parse( sys.argv )
-    # except RuntimeError as e:
-    #     print('ERROR:',e)
-    #     print(agent_hosts[0].getUsage())
-    #     exit(1)
-    # if agent_hosts[0].receivedArgument("help"):
-    #     print(agent_hosts[0].getUsage())
-    #     exit(0)
-
-    # Set observation policy
+    # Set observation policy for builder
     agent_hosts[0].setObservationsPolicy(MalmoPython.ObservationsPolicy.KEEP_ALL_OBSERVATIONS)
 
-    # Create the other agent host
-    agent_hosts += [MalmoPython.AgentHost()]
-
     # sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
-
-    # lan = False
-    #
-    # if len(sys.argv) > 1 and sys.argv[1].lower() == 'lan':
-    # 	lan = True
 
     # Parse CLAs
     # parser = argparse.ArgumentParser(description="Run a python mission.")
@@ -113,11 +95,13 @@ def cwc_all_obs_and_save_data(args):
     if not args["lan"]:
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10000))
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10001))
+        client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10002))
     else:
         client_pool.add(MalmoPython.ClientInfo(args["builder_ip_addr"], 10000))
         client_pool.add(MalmoPython.ClientInfo(args["architect_ip_addr"], 10000))
+        client_pool.add(MalmoPython.ClientInfo(args["architect_ip_addr"], 10001))
 
-    # Create mission xml
+    # Create mission xmls
 
     # observation grid parameters
     x_min_obs = -10
@@ -146,8 +130,7 @@ def cwc_all_obs_and_save_data(args):
     z_max_goal = z_max_build + displacement
 
     # experiment ID
-    # print datetime.datetime.now()
-    experiment_time = str(datetime.datetime.now()) #datetime.datetime.now().isoformat()
+    experiment_time = str(datetime.datetime.now())
     player_ids = "b"+args["builder_id"] + "-a" + args["architect_id"]
     config_id = os.path.basename(args["gold_config"]).replace(".xml","")
     experiment_id = player_ids + "-" + config_id + "-" + experiment_time
@@ -176,25 +159,14 @@ def cwc_all_obs_and_save_data(args):
                     <ServerHandlers>
                       <FlatWorldGenerator generatorString="3;241;1;" forceReset="true" destroyAfterUse="false"/>
                       <DrawingDecorator>
-                        <DrawCuboid type="cwcmod:cwc_orange_rn" x1="5" y1="1" z1="8" x2="1" y2="1" z2="8"/>
-                        <DrawCuboid type="cwcmod:cwc_yellow_rn" x1="-1" y1="1" z1="8" x2="-5" y2="1" z2="8"/>
-                        <DrawCuboid type="cwcmod:cwc_green_rn" x1="8" y1="1" z1="6" x2="8" y2="1" z2="2"/>
-                        <DrawCuboid type="cwcmod:cwc_blue_rn" x1="8" y1="1" z1="0" x2="8" y2="1" z2="-4"/>
-                        <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-8" y1="1" z1="6" x2="-8" y2="1" z2="2"/>
-                        <DrawCuboid type="cwcmod:cwc_red_rn" x1="-8" y1="1" z1="0" x2="-8" y2="1" z2="-4"/>
+                        <DrawCuboid type="cwcmod:cwc_orange_rn" x1="5" y1="1" z1="8" x2="1" y2="2" z2="8"/>
+                        <DrawCuboid type="cwcmod:cwc_yellow_rn" x1="-1" y1="1" z1="8" x2="-5" y2="2" z2="8"/>
+                        <DrawCuboid type="cwcmod:cwc_green_rn" x1="8" y1="1" z1="6" x2="8" y2="2" z2="2"/>
+                        <DrawCuboid type="cwcmod:cwc_blue_rn" x1="8" y1="1" z1="0" x2="8" y2="2" z2="-4"/>
+                        <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-8" y1="1" z1="6" x2="-8" y2="2" z2="2"/>
+                        <DrawCuboid type="cwcmod:cwc_red_rn" x1="-8" y1="1" z1="0" x2="-8" y2="2" z2="-4"/>
                         <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_build) +'''" y1="0" z1="''' + str(z_min_build)+ '''" x2="'''+ str(x_max_build)+'''" y2="0" z2="''' + str(z_max_build) + '''"/>
-                        <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_goal) +'''" y1="0" z1="''' + str(z_min_goal)+ '''" x2="'''+ str(x_max_goal)+'''" y2="0" z2="''' + str(z_max_goal) + '''"/>''' + gold_config_xml_substring + \
-                      '''</DrawingDecorator>
-                      <BuildBattleDecorator>
-                        <GoalStructureBounds>
-                            <min x="'''+ str(x_min_goal) + '''" y="'''+ str(y_min_goal) + '''" z="''' + str(z_min_goal) + '''"/>
-                            <max x="'''+ str(x_max_goal) + '''" y="''' + str(y_max_goal) + '''" z="''' + str(z_max_goal) + '''"/>
-                        </GoalStructureBounds>
-                        <PlayerStructureBounds>
-                            <min x="'''+ str(x_min_build) + '''" y="'''+ str(y_min_build) + '''" z="''' + str(z_min_build) + '''"/>
-                            <max x="'''+ str(x_max_build) + '''" y="''' + str(y_max_build) + '''" z="''' + str(z_max_build) + '''"/>
-                        </PlayerStructureBounds>
-                      </BuildBattleDecorator>
+                      </DrawingDecorator>
                       <ServerQuitWhenAnyAgentFinishes/>
                     </ServerHandlers>
                   </ServerSection>
@@ -225,11 +197,45 @@ def cwc_all_obs_and_save_data(args):
                   </AgentSection>
                 </Mission>'''
 
+    missionXML_oracle='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+                <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+                  <About>
+                    <Summary>''' + experiment_id + '''</Summary>
+                  </About>
+
+                  <ServerSection>
+                    <ServerInitialConditions>
+                      <Time>
+                        <StartTime>1000</StartTime>
+                        <AllowPassageOfTime>false</AllowPassageOfTime>
+                      </Time>
+                      <Weather>clear</Weather>
+                    </ServerInitialConditions>
+                    <ServerHandlers>
+                      <FlatWorldGenerator generatorString="3;241;1;" forceReset="true" destroyAfterUse="false"/>
+                      <DrawingDecorator>
+                        <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_goal) +'''" y1="0" z1="''' + str(z_min_goal)+ '''" x2="'''+ str(x_max_goal)+'''" y2="0" z2="''' + str(z_max_goal) + '''"/>''' + gold_config_xml_substring + \
+                      '''</DrawingDecorator>
+                      <ServerQuitWhenAnyAgentFinishes/>
+                    </ServerHandlers>
+                  </ServerSection>
+
+                  <AgentSection mode="Spectator">
+                    <Name>Oracle</Name>
+                    <AgentStart>
+                      <Placement x = "100" y = "5" z = "95" pitch="45"/>
+                    </AgentStart>
+                    <AgentHandlers/>
+                  </AgentSection>
+                </Mission>'''
+
     my_mission = MalmoPython.MissionSpec(missionXML, True)
-    # my_mission.forceWorldReset()
+    my_mission_oracle = MalmoPython.MissionSpec(missionXML_oracle, True)
 
     safeStartMission(agent_hosts[0], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission")
     safeStartMission(agent_hosts[1], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 1, "cwc_dummy_mission")
+    safeStartMission(agent_hosts[2], my_mission_oracle, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission_oracle")
 
     safeWaitForStart(agent_hosts)
 
@@ -455,7 +461,7 @@ def cwc_all_obs_and_save_data(args):
         hasEnded = True # assume all good
         sys.stdout.write('.')
         time.sleep(0.1)
-        for ah in agent_hosts:
+        for ah in agent_hosts[0:2]:
             world_state = ah.getWorldState()
             if world_state.is_mission_running:
                 hasEnded = False # all not good
