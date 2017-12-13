@@ -99,8 +99,11 @@ public class JSONWorldDataHelper {
 
     /**
      * Builds the basic achievement world data to be used as observation signals by the listener.
+     * Modified: doesn't include all achievements (e.g. entities killed, damage taken/dealt) if specified.
      *
      * @param json a JSON object into which the achievement stats will be added.
+     * @param player The  player whose achievements should be recorded.
+     * @param fullStats Whether or not to include kill/damage achievements.
      */
     public static void buildAchievementStats(JsonObject json, EntityPlayerMP player, boolean fullStats) {
         StatisticsManagerServer sfw = player.getStatFile();

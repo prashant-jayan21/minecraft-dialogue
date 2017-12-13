@@ -62,7 +62,7 @@ import com.microsoft.Malmo.Schemas.MissionInit;
 public abstract class ObservationFromServer extends HandlerBase implements IMalmoMessageListener, IObservationProducer
 {
 	private String latestJsonStats = "";
-	private String lastJsonStats = "";
+	private String lastJsonStats = ""; // keeps track of the information that was last sent from server.
 	protected boolean missionIsRunning = false;
 	
 	ObservationFromServer()

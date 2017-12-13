@@ -47,10 +47,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Simple IObservationProducer object that pings out a whole bunch of data.<br>
+ * IObservationProducer object that pings out a whole bunch of data.
+ * CwCObservation takes care of observations from chat, builder's grid, and the builder's stats (e.g. time alive, distance travelled, etc.).
  */
 public class CwCObservationImplementation extends ObservationFromServer
 {
+    /**
+     * Note: identical to {@link ObservationFromGridImplementation#parseParameters(Object)}.
+     * @param params the parameter block to parse
+     * @return
+     */
     @Override
     public boolean parseParameters(Object params) {
         if (params == null || !(params instanceof CwCObservation))
@@ -74,13 +80,14 @@ public class CwCObservationImplementation extends ObservationFromServer
         return true;
     }
 
+    /**
+     * Note: identical to {@link com.microsoft.Malmo.MissionHandlers.ObservationFromGridImplementation.GridRequestMessage}.
+     */
     public static class CwCRequestMessage extends ObservationFromServer.ObservationRequestMessage
     {
         private List<ObservationFromGridImplementation.SimpleGridDef> environs = null;
 
-        public CwCRequestMessage()	// Needed so FML can instantiate our class using reflection.
-        {
-        }
+        public CwCRequestMessage() { }	// Needed so FML can instantiate our class using reflection.
 
         public CwCRequestMessage(List<ObservationFromGridImplementation.SimpleGridDef> environs) {
             this.environs = environs;
@@ -114,9 +121,13 @@ public class CwCObservationImplementation extends ObservationFromServer
             }
         }
 
-        List<ObservationFromGridImplementation.SimpleGridDef>getEnvirons() { return this.environs; }
+        List<ObservationFromGridImplementation.SimpleGridDef> getEnvirons() { return this.environs; }
     }
 
+    /**
+     * Note: adapted from {@link com.microsoft.Malmo.MissionHandlers.ObservationFromGridImplementation.GridRequestMessageHandler}.
+     * Additional features include recording achievement and position stats normally recorded by {@link com.microsoft.Malmo.Schemas.ObservationFromFullStats}.
+     */
     public static class CwCRequestMessageHandler extends ObservationFromServer.ObservationRequestMessageHandler implements IMessageHandler<CwCRequestMessage, IMessage> {
         @Override
         void buildJson(JsonObject json, EntityPlayerMP player, ObservationRequestMessage message) {
@@ -139,9 +150,9 @@ public class CwCObservationImplementation extends ObservationFromServer
     }
 
     private List<ObservationFromGridImplementation.SimpleGridDef> environs = null;
-    private ArrayList<String> chatMessagesReceived = new ArrayList<String>();
-    private String lastScreenshotPath = "";
-    private boolean actionPerformed = false;
+    private ArrayList<String> chatMessagesReceived = new ArrayList<String>(); // list of chat messages received since last JSON was written
+    private String lastScreenshotPath = "";                              // screenshot path sent in last JSON
+    private boolean actionPerformed = false;                             // marks whether or not a write-triggering action has been performed
 
     @Override
     public ObservationRequestMessage createObservationRequestMessage()
@@ -149,6 +160,11 @@ public class CwCObservationImplementation extends ObservationFromServer
         return new CwCRequestMessage(this.environs);
     }
 
+    /**
+     * Sends an observation request message to the server upon client tick when a valid action (e.g. chat, pickup, or putdown)
+     * has been performed.
+     * @param ev Forge client tick event
+     */
     @Override
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent ev) {
@@ -163,6 +179,11 @@ public class CwCObservationImplementation extends ObservationFromServer
         }
     }
 
+    /**
+     * Writes server observations, then chat and screenshot path, to the JSON.
+     * @param json JSON object to be written to
+     * @param missionInit
+     */
     @Override
     public void writeObservationsToJSON(JsonObject json, MissionInit missionInit) {
         super.writeObservationsToJSON(json, missionInit);

@@ -70,6 +70,9 @@ public class CwCMod {
 	
 	public static String prependModID(String name) { return MODID+":"+name; }
 
+	/**
+	 * Resets all required fields associated with the mod.
+	 */
 	public static void reset() {
 		System.out.println("CwCMod: resetting...");
 		CwCUtils.reset();

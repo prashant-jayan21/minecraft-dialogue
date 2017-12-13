@@ -86,10 +86,14 @@ public class CwCUtils {
         System.out.println("Screenshot: "+CwCMod.screenshots.get(CwCMod.screenshots.size()-1));
         index++;
 
+        // re-enable pickup or putdown actions
         if (type == CwCScreenshotEventType.PICKUP)  CwCEventHandler.disablePickup  = false;
         if (type == CwCScreenshotEventType.PUTDOWN) CwCEventHandler.disablePutdown = false;
     }
 
+    /**
+     * Resets appropriate fields.
+     */
     protected static void reset() {
         CwCMod.screenshots = new ArrayList<String>();
         index = 1;
