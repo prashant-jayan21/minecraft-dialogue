@@ -200,10 +200,10 @@ public class JSONWorldDataHelper {
                         arr.add(element);
 
                         JsonObject blockObj = new JsonObject();
-                        blockObj.addProperty("type", name);
-                        blockObj.addProperty("x", p.getX());
-                        blockObj.addProperty("y", p.getY());
-                        blockObj.addProperty("z", p.getZ());
+                        blockObj.addProperty("Type", name);
+                        blockObj.addProperty("X", p.getX());
+                        blockObj.addProperty("Y", p.getY());
+                        blockObj.addProperty("Z", p.getZ());
                         blockInfoArr.add(blockObj);
 
                         BlockPos p_relative;
@@ -213,10 +213,10 @@ public class JSONWorldDataHelper {
                             p_relative = new BlockPos(x, y, z);
 
                         JsonObject blockObj2 = new JsonObject();
-                        blockObj2.addProperty("type", name);
-                        blockObj2.addProperty("x", p_relative.getX());
-                        blockObj2.addProperty("y", p_relative.getY());
-                        blockObj2.addProperty("z", p_relative.getZ());
+                        blockObj2.addProperty("Type", name);
+                        blockObj2.addProperty("X", p_relative.getX());
+                        blockObj2.addProperty("Y", p_relative.getY());
+                        blockObj2.addProperty("Z", p_relative.getZ());
                         blockInfoArr2.add(blockObj2);
                     }
 
