@@ -40,7 +40,6 @@ import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.GameType;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
 import net.minecraft.world.biome.Biome.SpawnListEntry;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingSpawnEvent.CheckSpawn;
@@ -766,7 +765,7 @@ public class ServerStateMachine extends StateMachine
                             // Also make sure we haven't accidentally left the player flying:
                             player.capabilities.isFlying = false;
                             player.capabilities.allowFlying = true;     // FIXME: enabled flight -- should do this conditionally
-                            player.capabilities.disableDamage = true;   // FIXME: enabled invulnerability f-- should do this conditionally
+                            player.capabilities.disableDamage = true;   // FIXME: enabled invulnerability -- should do this conditionally
                             player.sendPlayerAbilities();
                             player.onUpdate();
                         }

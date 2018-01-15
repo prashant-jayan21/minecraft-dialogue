@@ -28,6 +28,7 @@ import com.microsoft.Malmo.Schemas.MissionInit;
 import com.microsoft.Malmo.Schemas.ObservationFromGrid;
 import cwc.CwCMod;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -42,6 +43,8 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 import com.google.gson.JsonObject;
 import com.microsoft.Malmo.Utils.JSONWorldDataHelper;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +55,9 @@ import java.util.List;
  */
 public class CwCObservationImplementation extends ObservationFromServer
 {
+    private static int waitTickAfterInit = 0;
+    private static boolean initialized = false;
+
     /**
      * Note: identical to {@link ObservationFromGridImplementation#parseParameters(Object)}.
      * @param params the parameter block to parse
@@ -206,12 +212,16 @@ public class CwCObservationImplementation extends ObservationFromServer
     public void prepare(MissionInit missionInit) {
         super.prepare(missionInit);
         MinecraftForge.EVENT_BUS.register(this);
+        waitTickAfterInit = 0;
+        initialized = false;
     }
 
     @Override
     public void cleanup() {
         super.cleanup();
         MinecraftForge.EVENT_BUS.unregister(this);
+        waitTickAfterInit = 0;
+        initialized = false;
     }
 
     @SubscribeEvent
@@ -230,5 +240,18 @@ public class CwCObservationImplementation extends ObservationFromServer
     @SubscribeEvent
     public void onEvent(BlockEvent.PlaceEvent event) {
         actionPerformed = true;
+    }
+
+    @SideOnly(Side.CLIENT)
+    @SubscribeEvent
+    public void onEvent(TickEvent.ClientTickEvent event) {
+        if (this.missionIsRunning) {
+            if (waitTickAfterInit < 50) waitTickAfterInit++;
+            else if (!initialized) {
+                if (Minecraft.getMinecraft().player.getName().equals(MalmoMod.BUILDER))
+                    Minecraft.getMinecraft().player.sendChatMessage("Mission has started.");
+                initialized = true;
+            }
+        }
     }
 }

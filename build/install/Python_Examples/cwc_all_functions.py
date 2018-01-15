@@ -3,8 +3,36 @@
 # Record all observations
 
 import MalmoPython
-import os, sys, time, json, argparse, datetime
-# from cwc_aligner import align
+import os, sys, time, json, argparse, datetime, copy
+import numpy as np
+
+# observation grid parameters
+x_min_obs = -10
+x_max_obs = 10
+y_min_obs = 1
+y_max_obs = 11
+z_min_obs = -10
+z_max_obs = 10
+
+# build region parameters
+# the build region is defined by the x and z bounds of the white floor and the y bounds of the observation grid
+x_min_build = -5
+x_max_build = 5
+y_min_build = y_min_obs # NOTE: Do not change this relation without thought!
+y_max_build = y_max_obs # NOTE: Do not change this relation without thought!
+z_min_build = -5
+z_max_build = 5
+
+# goal region parameters
+displacement = 100
+x_min_goal = x_min_build + displacement
+x_max_goal = x_max_build + displacement
+y_min_goal = y_min_build # NOTE: Do not change this relation without thought!
+y_max_goal = y_max_build # NOTE: Do not change this relation without thought!
+z_min_goal = z_min_build + displacement
+z_max_goal = z_max_build + displacement
+
+chat_history = []
 
 def safeStartMission(agent_host, my_mission, my_client_pool, my_mission_record, role, expId):
     used_attempts = 0
@@ -61,8 +89,155 @@ def safeWaitForStart(agent_hosts):
     if time.time() - start_time >= time_out:
         print("Timed out while waiting for mission to start - bailing.")
         exit(1)
-    print()
-    print("Mission has started.")
+    print("\nMission has started.")
+
+def getPerspectiveCoordinates(x, y, z, yaw, pitch):
+    # construct vector
+    v = np.matrix('{}; {}; {}'.format(x, y, z))
+    # construct yaw rotation matrix
+    theta_yaw = np.radians(-1 * yaw)
+    c, s = np.cos(theta_yaw), np.sin(theta_yaw)
+    R_yaw = np.matrix('{} {} {}; {} {} {}; {} {} {}'.format(c, 0, -s, 0, 1, 0, s, 0, c))
+    # multiply
+    v_new = R_yaw * v
+    # construct pitch rotation matrix
+    theta_pitch = np.radians(pitch)
+    c, s = np.cos(theta_pitch), np.sin(theta_pitch)
+    R_pitch = np.matrix('{} {} {}; {} {} {}; {} {} {}'.format(1, 0, 0, 0, c, s, 0, -s, c))
+    # multiply
+    v_final = R_pitch * v_new
+    x_final = v_final.item(0)
+    y_final = v_final.item(1)
+    z_final = v_final.item(2)
+    return (x_final, y_final, z_final)
+
+def processObservation(observations, string_to_write, chat_history):
+    # print "Processing observation..."
+    timestamp, yaw, pitch, xpos, ypos, zpos, chat, ss_path, grid_absolute, grid_relative = None, None, None, None, None, None, None, None, None, None
+    world_states, cws = [], {}
+
+    for observation in observations:
+        print "Processing observation:",
+
+        if timestamp is None:
+            print "timestamp",
+            timestamp = observation.timestamp.replace(microsecond=0).isoformat(' ')
+            cws["Timestamp"] = str(timestamp)
+
+        js = json.loads(observation.text)
+
+        if js.get(u'Yaw') is not None: 
+            print "ypxyzpos",
+            if yaw is not None:
+                sys.stdout.write("(start of new observation -- ")
+                (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
+                yaw, pitch, xpos, ypos, zpos, ss_path, grid_absolute, grid_relative, chat = None, None, None, None, None, None, None, None, []
+                sys.stdout.write(") ")
+
+            yaw = js.get(u'Yaw')
+            pitch = js.get(u'Pitch')
+            xpos = js.get(u'XPos')
+            ypos = js.get(u'YPos')
+            zpos = js.get(u'ZPos')
+            cws["BuilderPosition"] = {"X": xpos, "Y": ypos, "Z": zpos, "Yaw": yaw, "Pitch": pitch}
+
+        if js.get(u'Chat') is not None:
+            print "chat",
+            if chat is not None:
+                sys.stdout.write("(start of new observation -- ")
+                (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
+                yaw, pitch, xpos, ypos, zpos, ss_path, grid_absolute, grid_relative, chat = None, None, None, None, None, None, None, None, []
+                sys.stdout.write(") ")
+
+            chat = js.get(u'Chat')
+            chat_history += chat
+
+        if js.get(u'ScreenshotPath') is not None:
+            print "screenshotpath",
+            if ss_path is not None:
+                sys.stdout.write("(start of new observation -- ")
+                (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
+                yaw, pitch, xpos, ypos, zpos, ss_path, grid_absolute, grid_relative, chat = None, None, None, None, None, None, None, None, []
+                sys.stdout.write(") ")
+
+            ss_path = js.get(u'ScreenshotPath')
+            cws["ScreenshotPath"] = ss_path
+
+        if js.get(u'BuilderGridAbsolute') is not None:
+            print "buildergrid",
+            if grid_absolute is not None:
+                sys.stdout.write("(start of new observation -- ")
+                (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
+                yaw, pitch, xpos, ypos, zpos, ss_path, grid_absolute, grid_relative, chat = None, None, None, None, None, None, None, None, []
+                sys.stdout.write(") ")
+
+            grid_absolute = js.get(u'BuilderGridAbsolute')
+            grid_relative = js.get(u'BuilderGridRelative')
+
+        print
+
+    (ts, string_to_write) = createNewWorldState(world_states, cws, None, grid_absolute, grid_relative, string_to_write)
+    print string_to_write
+    print "World states:" 
+    for ws in world_states:
+        prettyPrintJson(ws)
+        print
+    return (string_to_write, world_states)
+
+def createNewWorldState(world_states, cws, timestamp, grid_absolute, grid_relative, stw):
+    print "Creating world state...",
+    recordGridCoordinates(cws, grid_absolute, grid_relative)
+    world_states.append(cws)
+    stw = writeToString(cws, stw)
+    return ({"Timestamp": str(timestamp)}, stw)
+
+def recordGridCoordinates(cws, grid_absolute, grid_relative):
+    yaw, pitch = cws["BuilderPosition"]["Yaw"], cws["BuilderPosition"]["Pitch"]
+    blocks_inside, blocks_outside = [], []
+    for i in range(len(grid_absolute)):
+        block_absolute = grid_absolute[i]
+        block_relative = grid_relative[i]
+
+        (ax, ay, az) = (block_absolute["X"], block_absolute["Y"], block_absolute["Z"])
+        (px, py, pz) = getPerspectiveCoordinates(block_relative["X"], block_relative["Y"], block_relative["Z"], yaw, pitch)
+
+        block_info = {"Type": block_relative["Type"], "AbsoluteCoordinates": {"X": ax, "Y": ay, "Z": az}, "PerspectiveCoordinates": {"X": px, "Y": py, "Z": pz}}
+        outside = ax < x_min_build or ax > x_max_build or ay < y_min_build or ay > y_max_build or az < z_min_build or az > z_max_build
+        blocks_outside.append(block_info) if outside else blocks_inside.append(block_info)
+
+    cws["BlocksOutside"] = blocks_outside
+    cws["BlocksInside"] = blocks_inside
+    cws["ChatLog"] = copy.deepcopy(chat_history)
+
+def writeToString(cws, stw):
+    stw += "\n"+"-"*20+"\n[Timestamp] "+cws["Timestamp"]+"\n[Builder Position] (x, y, z): ("+str(cws["BuilderPosition"]["X"])+", "+str(cws["BuilderPosition"]["Y"])+", "+str(cws["BuilderPosition"]["Z"])+") " + \
+           "(yaw, pitch): ("+str(cws["BuilderPosition"]["Yaw"])+", "+str(cws["BuilderPosition"]["Pitch"])+")\n[Screenshot Path] "+cws["ScreenshotPath"]+"\n\n[Chat Log]\n"
+    for utterance in cws["ChatLog"]:
+        stw += "\t"+utterance+"\n"
+    stw += "\n[Blocks Inside]\n"
+    for block in cws["BlocksInside"]:
+        stw += "\tType: "+block["Type"]+"  Absolute (x, y, z): ("+str(block["AbsoluteCoordinates"]["X"])+", "+str(block["AbsoluteCoordinates"]["Y"])+", "+str(block["AbsoluteCoordinates"]["Z"])+")  Perspective (x, y, z): " + \
+        str(block["PerspectiveCoordinates"]["X"])+", "+str(block["PerspectiveCoordinates"]["Y"])+", "+str(block["PerspectiveCoordinates"]["Z"])+")\n"
+    stw += "\n[Blocks Outside]\n"
+    for block in cws["BlocksOutside"]:
+        stw += "\tType: "+block["Type"]+"  Absolute (x, y, z): ("+str(block["AbsoluteCoordinates"]["X"])+", "+str(block["AbsoluteCoordinates"]["Y"])+", "+str(block["AbsoluteCoordinates"]["Z"])+")  Perspective (x, y, z): " + \
+        str(block["PerspectiveCoordinates"]["X"])+", "+str(block["PerspectiveCoordinates"]["Y"])+", "+str(block["PerspectiveCoordinates"]["Z"])+")\n"
+    return stw
+
+def prettyPrintJson(cws):
+    for element in cws:
+        sys.stdout.write("\t"+element+": ")
+        if element == 'BlocksOutside':
+            print len(cws[element]), "values",
+        elif element == 'Timestamp' or element == 'ScreenshotPath':
+            print cws[element],
+        elif element == 'BuilderPosition' or element == 'BlocksInside':
+            print cws[element],
+        else:
+            for value in cws[element]:
+                print "\n\t\t", value,
+        print
+    print
 
 def cwc_all_obs_and_save_data(args):
 
@@ -98,32 +273,6 @@ def cwc_all_obs_and_save_data(args):
 
     # Create mission xmls
 
-    # observation grid parameters
-    x_min_obs = -10
-    x_max_obs = 10
-    y_min_obs = 1
-    y_max_obs = 11
-    z_min_obs = -10
-    z_max_obs = 10
-
-    # build region parameters
-    # the build region is defined by the x and z bounds of the white floor and the y bounds of the observation grid
-    x_min_build = -5
-    x_max_build = 5
-    y_min_build = y_min_obs # NOTE: Do not change this relation without thought!
-    y_max_build = y_max_obs # NOTE: Do not change this relation without thought!
-    z_min_build = -5
-    z_max_build = 5
-
-    # goal region parameters
-    displacement = 100
-    x_min_goal = x_min_build + displacement
-    x_max_goal = x_max_build + displacement
-    y_min_goal = y_min_build # NOTE: Do not change this relation without thought!
-    y_max_goal = y_max_build # NOTE: Do not change this relation without thought!
-    z_min_goal = z_min_build + displacement
-    z_max_goal = z_max_build + displacement
-
     # experiment ID
     experiment_time = str(datetime.datetime.now())
     player_ids = "B"+args["builder_id"] + "-A" + args["architect_id"]
@@ -137,7 +286,6 @@ def cwc_all_obs_and_save_data(args):
 
     string_to_write = ""
     all_world_states = []
-    chat_history = []
 
     # construct mission xml
     missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
@@ -230,137 +378,13 @@ def cwc_all_obs_and_save_data(args):
     my_mission = MalmoPython.MissionSpec(missionXML, True)
     my_mission_oracle = MalmoPython.MissionSpec(missionXML_oracle, True)
 
+    safeStartMission(agent_hosts[2], my_mission_oracle, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission_oracle")
     safeStartMission(agent_hosts[0], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission")
     safeStartMission(agent_hosts[1], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 1, "cwc_dummy_mission")
-    safeStartMission(agent_hosts[2], my_mission_oracle, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission_oracle")
 
     safeWaitForStart(agent_hosts)
 
-    time.sleep(1)
-
     timed_out = False
-
-    import numpy as np
-
-    def getPerspectiveCoordinates(x, y, z, yaw, pitch):
-        # construct vector
-        v = np.matrix('{}; {}; {}'.format(x, y, z))
-        # construct yaw rotation matrix
-        theta_yaw = np.radians(-1 * yaw)
-        c, s = np.cos(theta_yaw), np.sin(theta_yaw)
-        R_yaw = np.matrix('{} {} {}; {} {} {}; {} {} {}'.format(c, 0, -s, 0, 1, 0, s, 0, c))
-        # multiply
-        v_new = R_yaw * v
-        # construct pitch rotation matrix
-        theta_pitch = np.radians(pitch)
-        c, s = np.cos(theta_pitch), np.sin(theta_pitch)
-        R_pitch = np.matrix('{} {} {}; {} {} {}; {} {} {}'.format(1, 0, 0, 0, c, s, 0, -s, c))
-        # multiply
-        v_final = R_pitch * v_new
-        x_final = v_final.item(0)
-        y_final = v_final.item(1)
-        z_final = v_final.item(2)
-        return (x_final, y_final, z_final)
-
-    def processObservation(observations, string_to_write, chat_history):
-        # print "Processing observation..."
-        timestamp, yaw, pitch, xpos, ypos, zpos, chat, ss_path, grid_absolute, grid_relative = None, None, None, None, None, None, None, None, None, None
-        world_states, cws = [], {}
-
-        for observation in observations:
-            if timestamp is None:
-                # print "Getting timestamp"
-                timestamp = observation.timestamp.replace(microsecond=0).isoformat(' ')
-                cws["Timestamp"] = str(timestamp)
-
-            js = json.loads(observation.text)
-
-            if js.get(u'Yaw'): 
-                # print "Getting yaw, pitch, xyzpos"
-                if yaw is not None:
-                    (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
-                    yaw, pitch, xpos, ypos, zpos, ss_path, grid_absolute, grid_relative, chat = None, None, None, None, None, None, None, None, []
-
-                yaw = js.get(u'Yaw')
-                pitch = js.get(u'Pitch')
-                xpos = js.get(u'XPos')
-                ypos = js.get(u'YPos')
-                zpos = js.get(u'ZPos')
-                cws["BuilderPosition"] = {"X": xpos, "Y": ypos, "Z": zpos, "Yaw": yaw, "Pitch": pitch}
-
-            if js.get(u'Chat'):
-                # print "Getting chat"
-                if chat is not None:
-                    (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
-                    yaw, pitch, xpos, ypos, zpos, ss_path, grid_absolute, grid_relative, chat = None, None, None, None, None, None, None, None, []
-
-                chat = js.get(u'Chat')
-                chat_history += chat
-
-            if js.get(u'ScreenshotPath'):
-                # print "Getting screenshot path"
-                if ss_path is not None:
-                    (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
-                    yaw, pitch, xpos, ypos, zpos, ss_path, grid_absolute, grid_relative, chat = None, None, None, None, None, None, None, None, []
-
-                ss_path = js.get(u'ScreenshotPath')
-                cws["ScreenshotPath"] = ss_path
-
-            if js.get(u'BuilderGridAbsolute'):
-                # print "Getting builder grid"
-                if grid_absolute is not None:
-                    (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
-                    yaw, pitch, xpos, ypos, zpos, ss_path, grid_absolute, grid_relative, chat = None, None, None, None, None, None, None, None, []
-
-                grid_absolute = js.get(u'BuilderGridAbsolute')
-                grid_relative = js.get(u'BuilderGridRelative')
-
-        (ts, string_to_write) = createNewWorldState(world_states, cws, None, grid_absolute, grid_relative, string_to_write)
-        print "World states:", world_states
-        return (string_to_write, world_states)
-
-    def createNewWorldState(world_states, cws, timestamp, grid_absolute, grid_relative, stw):
-        # print "Creating world state..."
-        recordGridCoordinates(cws, grid_absolute, grid_relative)
-        world_states.append(cws)
-        stw = writeToString(cws, stw)
-        return ({"Timestamp": str(timestamp)}, stw)
-
-    def recordGridCoordinates(cws, grid_absolute, grid_relative):
-        # print "Recording grid coordinates..."
-        yaw, pitch = cws["BuilderPosition"]["Yaw"], cws["BuilderPosition"]["Pitch"]
-        blocks_inside, blocks_outside = [], []
-        for i in range(len(grid_absolute)):
-            block_absolute = grid_absolute[i]
-            block_relative = grid_relative[i]
-
-            (ax, ay, az) = (block_absolute["X"], block_absolute["Y"], block_absolute["Z"])
-            (px, py, pz) = getPerspectiveCoordinates(block_relative["X"], block_relative["Y"], block_relative["Z"], yaw, pitch)
-
-            block_info = {"Type": block_relative["Type"], "AbsoluteCoordinates": {"X": ax, "Y": ay, "Z": az}, "PerspectiveCoordinates": {"X": px, "Y": py, "Z": pz}}
-            outside = ax < x_min_build or ax > x_max_build or ay < y_min_build or ay > y_max_build or az < z_min_build or az > z_max_build
-            blocks_outside.append(block_info) if outside else blocks_inside.append(block_info)
-
-        cws["BlocksOutside"] = blocks_outside
-        cws["BlocksInside"] = blocks_inside
-        cws["ChatLog"] = chat_history
-
-    def writeToString(cws, stw):
-        # print "Writing to string..."
-        stw += "\n"+"-"*20+"\n[Timestamp] "+cws["Timestamp"]+"\n[Builder Position] (x, y, z): ("+str(cws["BuilderPosition"]["X"])+", "+str(cws["BuilderPosition"]["Y"])+", "+str(cws["BuilderPosition"]["Z"])+") " + \
-               "(yaw, pitch): ("+str(cws["BuilderPosition"]["Yaw"])+", "+str(cws["BuilderPosition"]["Pitch"])+")\n[Screenshot Path] "+cws["ScreenshotPath"]+"\n\n[Chat Log]\n"
-        for utterance in cws["ChatLog"]:
-            stw += "\t"+utterance+"\n"
-        stw += "\n[Blocks Inside]\n"
-        for block in cws["BlocksInside"]:
-            stw += "\tType: "+block["Type"]+"  Absolute (x, y, z): ("+str(block["AbsoluteCoordinates"]["X"])+", "+str(block["AbsoluteCoordinates"]["Y"])+", "+str(block["AbsoluteCoordinates"]["Z"])+")  Perspective (x, y, z): " + \
-            str(block["PerspectiveCoordinates"]["X"])+", "+str(block["PerspectiveCoordinates"]["Y"])+", "+str(block["PerspectiveCoordinates"]["Z"])+")\n"
-        stw += "\n[Blocks Outside]\n"
-        for block in cws["BlocksOutside"]:
-            stw += "\tType: "+block["Type"]+"  Absolute (x, y, z): ("+str(block["AbsoluteCoordinates"]["X"])+", "+str(block["AbsoluteCoordinates"]["Y"])+", "+str(block["AbsoluteCoordinates"]["Z"])+")  Perspective (x, y, z): " + \
-            str(block["PerspectiveCoordinates"]["X"])+", "+str(block["PerspectiveCoordinates"]["Y"])+", "+str(block["PerspectiveCoordinates"]["Z"])+")\n"
-        return stw
-
 
     while not timed_out:
         for i in range(2):
@@ -372,8 +396,8 @@ def cwc_all_obs_and_save_data(args):
 
             elif i == 0 and world_state.number_of_observations_since_last_state > 1:
                 print "Number of observations received:", world_state.number_of_observations_since_last_state
-                for observation in world_state.observations:
-                    print observation
+                # for observation in world_state.observations:
+                #     print observation
                 (string_to_write, world_states) = processObservation(world_state.observations, string_to_write, chat_history)
                 if world_states:
                     for ws in world_states:
