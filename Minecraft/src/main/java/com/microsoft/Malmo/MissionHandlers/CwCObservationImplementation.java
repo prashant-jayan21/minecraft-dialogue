@@ -55,9 +55,6 @@ import java.util.List;
  */
 public class CwCObservationImplementation extends ObservationFromServer
 {
-    private static int waitTickAfterInit = 0;
-    private static boolean initialized = false;
-
     /**
      * Note: identical to {@link ObservationFromGridImplementation#parseParameters(Object)}.
      * @param params the parameter block to parse
@@ -159,6 +156,9 @@ public class CwCObservationImplementation extends ObservationFromServer
     private ArrayList<String> chatMessagesReceived = new ArrayList<String>(); // list of chat messages received since last JSON was written
     private String lastScreenshotPath = "";                              // screenshot path sent in last JSON
     private boolean actionPerformed = false;                             // marks whether or not a write-triggering action has been performed
+    private static int waitTickAfterInit = 0;
+    private static boolean initialized = false;
+
 
     @Override
     public ObservationRequestMessage createObservationRequestMessage()
@@ -212,16 +212,12 @@ public class CwCObservationImplementation extends ObservationFromServer
     public void prepare(MissionInit missionInit) {
         super.prepare(missionInit);
         MinecraftForge.EVENT_BUS.register(this);
-        waitTickAfterInit = 0;
-        initialized = false;
     }
 
     @Override
     public void cleanup() {
         super.cleanup();
         MinecraftForge.EVENT_BUS.unregister(this);
-        waitTickAfterInit = 0;
-        initialized = false;
     }
 
     @SubscribeEvent

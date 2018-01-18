@@ -49,7 +49,8 @@ public class CwCEventHandler {
     protected static boolean updatePlayerTick = false, updateRenderTick = false;                 // wait for the second update/render tick of a pickup action before taking a screenshot
     protected static boolean disablePutdown = false, disablePickup = false;                      // disallows Builder to putdown/pickup until a screenshot of the last action has been taken
 
-    private static boolean following = false, sneaking = false, sneakTick = false;               // resets the architect's position after his chat box is closed
+    private static boolean following = false, sneaking = false;  // resets the architect's position after his chat box is closed
+    protected static double builderCurrentY = Double.MIN_VALUE;
 
     /**
      * Resets the necessary boolean fields.
@@ -226,6 +227,7 @@ public class CwCEventHandler {
         if (minecraft != null && minecraft.player != null && minecraft.player.getName().equals(MalmoMod.ARCHITECT)
                 && following && !minecraft.ingameGUI.getChatGUI().getChatOpen()) {
             KeyBinding.setKeyBindState(minecraft.gameSettings.keyBindSneak.getKeyCode(), true);
+            minecraft.gameSettings.thirdPersonView = 0;
             sneaking = true;
         }
 
@@ -269,16 +271,16 @@ public class CwCEventHandler {
         if (player.getEntityWorld().isRemote) {
             Minecraft minecraft = Minecraft.getMinecraft();
 
-            // Architect sneaking to break mob-view, first tick
-            if (player.getName().equals(MalmoMod.ARCHITECT) && sneaking && !sneakTick)
-                sneakTick = true;
+            // Architect sneaking to break mob-view
+            if (player.getName().equals(MalmoMod.ARCHITECT) && sneaking) {
+                CwCMod.network.sendToServer(new CwCPositionMessage());
 
-            // Architect sneaking to break mob-view, second tick: going back to first-person view and teleporting to a neutral position
-            else if (player.getName().equals(MalmoMod.ARCHITECT) && sneaking && sneakTick) {
-                KeyBinding.unPressAllKeys();
-                minecraft.gameSettings.thirdPersonView = 0;
-                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 5, -5, 0, 45, true, true, true, true, true));
-                resetArchitectFollowFields();
+                // once the Architect's y-coordinate position differs from the Builder's, teleport him to a neutral position
+                if (player.posY != builderCurrentY) {
+                    KeyBinding.unPressAllKeys();
+                    CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 5, -5, 0, 45, true, true, true, true, true));
+                    resetArchitectFollowFields();
+                }
             }
 
             // take a screenshot when a chat message has been received and rendered by the client
@@ -302,13 +304,6 @@ public class CwCEventHandler {
                 resetBreakBlockFields();
             }
         }
-
-        //TODO: calculations of visible entities
-//        if (player.getEntityWorld().isRemote) {
-//            ICamera icamera = new Frustum();
-//            Entity entity = Minecraft.getMinecraft().getRenderViewEntity();;
-//            icamera.setPosition(entity.lastTickPosX, entity.lastTickPosY, entity.lastTickPosZ);
-//        }
     }
 
     /**
@@ -479,6 +474,6 @@ public class CwCEventHandler {
     private static void resetArchitectFollowFields() {
         following = false;
         sneaking = false;
-        sneakTick = false;
+        builderCurrentY = Double.MIN_VALUE;
     }
 }

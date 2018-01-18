@@ -129,7 +129,7 @@ def processObservation(observations, string_to_write, chat_history):
         if js.get(u'Yaw') is not None: 
             print "ypxyzpos",
             if yaw is not None:
-                sys.stdout.write("(start of new observation -- ")
+                sys.stdout.write(" (start of new observation -- ")
                 (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
                 yaw, pitch, xpos, ypos, zpos, ss_path, grid_absolute, grid_relative, chat = None, None, None, None, None, None, None, None, []
                 sys.stdout.write(") ")
@@ -144,7 +144,7 @@ def processObservation(observations, string_to_write, chat_history):
         if js.get(u'Chat') is not None:
             print "chat",
             if chat is not None:
-                sys.stdout.write("(start of new observation -- ")
+                sys.stdout.write(" (start of new observation -- ")
                 (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
                 yaw, pitch, xpos, ypos, zpos, ss_path, grid_absolute, grid_relative, chat = None, None, None, None, None, None, None, None, []
                 sys.stdout.write(") ")
@@ -155,7 +155,7 @@ def processObservation(observations, string_to_write, chat_history):
         if js.get(u'ScreenshotPath') is not None:
             print "screenshotpath",
             if ss_path is not None:
-                sys.stdout.write("(start of new observation -- ")
+                sys.stdout.write(" (start of new observation -- ")
                 (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
                 yaw, pitch, xpos, ypos, zpos, ss_path, grid_absolute, grid_relative, chat = None, None, None, None, None, None, None, None, []
                 sys.stdout.write(") ")
@@ -166,7 +166,7 @@ def processObservation(observations, string_to_write, chat_history):
         if js.get(u'BuilderGridAbsolute') is not None:
             print "buildergrid",
             if grid_absolute is not None:
-                sys.stdout.write("(start of new observation -- ")
+                sys.stdout.write(" (start of new observation -- ")
                 (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
                 yaw, pitch, xpos, ypos, zpos, ss_path, grid_absolute, grid_relative, chat = None, None, None, None, None, None, None, None, []
                 sys.stdout.write(") ")
@@ -177,7 +177,7 @@ def processObservation(observations, string_to_write, chat_history):
         print
 
     (ts, string_to_write) = createNewWorldState(world_states, cws, None, grid_absolute, grid_relative, string_to_write)
-    print string_to_write
+    prettyPrintString(string_to_write)
     print "World states:" 
     for ws in world_states:
         prettyPrintJson(ws)
@@ -209,6 +209,9 @@ def recordGridCoordinates(cws, grid_absolute, grid_relative):
     cws["BlocksInside"] = blocks_inside
     cws["ChatLog"] = copy.deepcopy(chat_history)
 
+def checkJson(cws):
+    return cws["Timestamp"] is not None and cws["BuilderPosition"] is not None and cws["ScreenshotPath"] is not None and cws["ChatLog"] is not None and cws["BlocksInside"] is not None and cws["BlocksOutside"] is not None
+
 def writeToString(cws, stw):
     stw += "\n"+"-"*20+"\n[Timestamp] "+cws["Timestamp"]+"\n[Builder Position] (x, y, z): ("+str(cws["BuilderPosition"]["X"])+", "+str(cws["BuilderPosition"]["Y"])+", "+str(cws["BuilderPosition"]["Z"])+") " + \
            "(yaw, pitch): ("+str(cws["BuilderPosition"]["Yaw"])+", "+str(cws["BuilderPosition"]["Pitch"])+")\n[Screenshot Path] "+cws["ScreenshotPath"]+"\n\n[Chat Log]\n"
@@ -238,6 +241,29 @@ def prettyPrintJson(cws):
                 print "\n\t\t", value,
         print
     print
+
+def prettyPrintString(stw):
+    sys.stdout.write("\n\n")
+
+    begin = True
+    num_lines = 0
+    for line in stw.split("\n"):
+        if line.strip().startswith('Type:'):
+            num_lines += 1
+
+        elif '[Blocks Outside]' in line or '---' in line:
+            if not begin:
+                sys.stdout.write('\t('+str(num_lines)+' values)\n')
+            else:
+                begin = False
+
+            sys.stdout.write(line+"\n")
+            num_lines = 0
+
+        elif len(line.strip()) > 0:
+            sys.stdout.write(line+"\n")
+
+    sys.stdout.write('\t('+str(num_lines)+' values)\n\n')
 
 def cwc_all_obs_and_save_data(args):
 
@@ -394,8 +420,12 @@ def cwc_all_obs_and_save_data(args):
             if not world_state.is_mission_running:
                 timed_out = True
 
-            elif i == 0 and world_state.number_of_observations_since_last_state > 1:
-                print "Number of observations received:", world_state.number_of_observations_since_last_state
+            elif i == 0 and world_state.number_of_observations_since_last_state > 0:
+                if world_state.number_of_observations_since_last_state % 2 != 0:
+                    time.sleep(1)
+                    nextws = ah.getWorldState()
+                    print "Odd number of observations received. After waiting, appending", len(nextws.observations),"more observations"
+                    world_state.observations.extend(nextws.observations)
                 # for observation in world_state.observations:
                 #     print observation
                 (string_to_write, world_states) = processObservation(world_state.observations, string_to_write, chat_history)

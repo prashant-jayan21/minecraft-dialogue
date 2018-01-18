@@ -56,6 +56,10 @@ public class CwCMod {
 		network.registerMessage(CwCChatMessageHandler.class, CwCChatMessage.class, 5, Side.CLIENT);
 		network.registerMessage(CwCChatMessageHandler.class, CwCChatMessage.class, 6, Side.SERVER);
 
+		// builder position
+		network.registerMessage(CwCPositionMessageHandler.class, CwCPositionMessage.class, 7, Side.CLIENT);
+		network.registerMessage(CwCPositionMessageHandler.class, CwCPositionMessage.class, 8, Side.SERVER);
+
 		// register custom keybinds
 		CwCKeybinds.register();
 
