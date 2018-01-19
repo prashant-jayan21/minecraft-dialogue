@@ -22,14 +22,14 @@ package com.microsoft.Malmo.MissionHandlers;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonPrimitive;
 import com.microsoft.Malmo.MalmoMod;
-import com.microsoft.Malmo.Schemas.CwCObservation;
-import com.microsoft.Malmo.Schemas.GridDefinition;
-import com.microsoft.Malmo.Schemas.MissionInit;
-import com.microsoft.Malmo.Schemas.ObservationFromGrid;
+import com.microsoft.Malmo.Schemas.*;
+import com.microsoft.Malmo.Utils.MinecraftTypeHelper;
 import cwc.CwCMod;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.item.ItemStack;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
@@ -48,6 +48,8 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.microsoft.Malmo.MissionHandlers.ObservationFromFullInventoryImplementation.getInventoryJSON;
 
 /**
  * IObservationProducer object that pings out a whole bunch of data.
@@ -138,6 +140,10 @@ public class CwCObservationImplementation extends ObservationFromServer
                 JSONWorldDataHelper.buildAchievementStats(json, player, false);
                 JSONWorldDataHelper.buildPositionStats(json, player);
 
+                JsonArray arr = new JsonArray();
+                getSimplifiedInventoryJSON(arr, player.inventory);
+                json.add("BuilderInventory", arr);
+
                 List<ObservationFromGridImplementation.SimpleGridDef> environs = ((CwCRequestMessage)message).getEnvirons();
                 if (environs != null) {
                     for (ObservationFromGridImplementation.SimpleGridDef sgd : environs)
@@ -152,13 +158,28 @@ public class CwCObservationImplementation extends ObservationFromServer
         }
     }
 
+    public static void getSimplifiedInventoryJSON(JsonArray arr, IInventory inventory) {
+        for (int i = 0; i < inventory.getSizeInventory(); i++) {
+            ItemStack is = inventory.getStackInSlot(i);
+            if (is != null && !is.isEmpty()) {
+                JsonObject jobj = new JsonObject();
+                DrawItem di = MinecraftTypeHelper.getDrawItemFromItemStack(is);
+                String name = di.getType();
+
+                jobj.addProperty("Type", name);
+                jobj.addProperty("Index", i);
+                jobj.addProperty("Quantity", is.getCount());
+                arr.add(jobj);
+            }
+        }
+    }
+
     private List<ObservationFromGridImplementation.SimpleGridDef> environs = null;
     private ArrayList<String> chatMessagesReceived = new ArrayList<String>(); // list of chat messages received since last JSON was written
     private String lastScreenshotPath = "";                              // screenshot path sent in last JSON
     private boolean actionPerformed = false;                             // marks whether or not a write-triggering action has been performed
     private static int waitTickAfterInit = 0;
     private static boolean initialized = false;
-
 
     @Override
     public ObservationRequestMessage createObservationRequestMessage()

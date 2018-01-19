@@ -33,6 +33,7 @@ z_min_goal = z_min_build + displacement
 z_max_goal = z_max_build + displacement
 
 chat_history = []
+last_ws = None
 
 def safeStartMission(agent_host, my_mission, my_client_pool, my_mission_record, role, expId):
     used_attempts = 0
@@ -113,8 +114,10 @@ def getPerspectiveCoordinates(x, y, z, yaw, pitch):
 
 def processObservation(observations, string_to_write, chat_history):
     # print "Processing observation..."
-    timestamp, yaw, pitch, xpos, ypos, zpos, chat, ss_path, grid_absolute, grid_relative = None, None, None, None, None, None, None, None, None, None
+    timestamp, yaw, pitch, xpos, ypos, zpos, ss_path, chat, inventory, grid_absolute, grid_relative = None, None, None, None, None, None, None, None, None, None, None
     world_states, cws = [], {}
+    if last_ws is not None:
+        cws = last_ws
 
     for observation in observations:
         print "Processing observation:",
@@ -131,7 +134,7 @@ def processObservation(observations, string_to_write, chat_history):
             if yaw is not None:
                 sys.stdout.write(" (start of new observation -- ")
                 (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
-                yaw, pitch, xpos, ypos, zpos, ss_path, grid_absolute, grid_relative, chat = None, None, None, None, None, None, None, None, []
+                yaw, pitch, xpos, ypos, zpos, ss_path, chat, inventory, grid_absolute, grid_relative = None, None, None, None, None, None, None, None, None, None
                 sys.stdout.write(") ")
 
             yaw = js.get(u'Yaw')
@@ -141,34 +144,48 @@ def processObservation(observations, string_to_write, chat_history):
             zpos = js.get(u'ZPos')
             cws["BuilderPosition"] = {"X": xpos, "Y": ypos, "Z": zpos, "Yaw": yaw, "Pitch": pitch}
 
-        if js.get(u'Chat') is not None:
-            print "chat",
-            if chat is not None:
-                sys.stdout.write(" (start of new observation -- ")
-                (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
-                yaw, pitch, xpos, ypos, zpos, ss_path, grid_absolute, grid_relative, chat = None, None, None, None, None, None, None, None, []
-                sys.stdout.write(") ")
-
-            chat = js.get(u'Chat')
-            chat_history += chat
-
         if js.get(u'ScreenshotPath') is not None:
             print "screenshotpath",
             if ss_path is not None:
                 sys.stdout.write(" (start of new observation -- ")
                 (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
-                yaw, pitch, xpos, ypos, zpos, ss_path, grid_absolute, grid_relative, chat = None, None, None, None, None, None, None, None, []
+                yaw, pitch, xpos, ypos, zpos, ss_path, chat, inventory, grid_absolute, grid_relative = None, None, None, None, None, None, None, None, None, None
                 sys.stdout.write(") ")
 
             ss_path = js.get(u'ScreenshotPath')
             cws["ScreenshotPath"] = ss_path
+
+        if js.get(u'Chat') is not None:
+            print "chat",
+            if chat is not None:
+                sys.stdout.write(" (start of new observation -- ")
+                (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
+                yaw, pitch, xpos, ypos, zpos, ss_path, chat, inventory, grid_absolute, grid_relative = None, None, None, None, None, None, None, None, None, None
+                sys.stdout.write(") ")
+
+            chat = js.get(u'Chat')
+            chat_history += chat
+
+        if js.get(u'BuilderInventory') is not None:
+            print "builderinventory",
+            if inventory is not None:
+                sys.stdout.write(" (start of new observation --")
+                (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
+                yaw, pitch, xpos, ypos, zpos, ss_path, chat, inventory, grid_absolute, grid_relative = None, None, None, None, None, None, None, None, None, None
+                sys.stdout.write(") ")
+
+            inventory = js.get(u'BuilderInventory')
+            print inventory
+            cws["BuilderInventory"] = []
+            for block in inventory:
+                cws["BuilderInventory"].append({"Index": block["Index"], "Type": block["Type"], "Quantity": block["Quantity"]})                
 
         if js.get(u'BuilderGridAbsolute') is not None:
             print "buildergrid",
             if grid_absolute is not None:
                 sys.stdout.write(" (start of new observation -- ")
                 (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
-                yaw, pitch, xpos, ypos, zpos, ss_path, grid_absolute, grid_relative, chat = None, None, None, None, None, None, None, None, []
+                yaw, pitch, xpos, ypos, zpos, ss_path, chat, inventory, grid_absolute, grid_relative = None, None, None, None, None, None, None, None, None, None
                 sys.stdout.write(") ")
 
             grid_absolute = js.get(u'BuilderGridAbsolute')
@@ -185,6 +202,11 @@ def processObservation(observations, string_to_write, chat_history):
     return (string_to_write, world_states)
 
 def createNewWorldState(world_states, cws, timestamp, grid_absolute, grid_relative, stw):
+    if not jsonIsComplete(cws, grid_absolute, grid_relative):
+        print "Last observation is missing information -- polling again..."
+        last_ws = cws
+        return (cws, stw)
+
     print "Creating world state...",
     recordGridCoordinates(cws, grid_absolute, grid_relative)
     world_states.append(cws)
@@ -209,14 +231,17 @@ def recordGridCoordinates(cws, grid_absolute, grid_relative):
     cws["BlocksInside"] = blocks_inside
     cws["ChatLog"] = copy.deepcopy(chat_history)
 
-def checkJson(cws):
-    return cws["Timestamp"] is not None and cws["BuilderPosition"] is not None and cws["ScreenshotPath"] is not None and cws["ChatLog"] is not None and cws["BlocksInside"] is not None and cws["BlocksOutside"] is not None
+def jsonIsComplete(cws, grid_absolute, grid_relative):
+    return cws["Timestamp"] is not None and cws["BuilderPosition"] is not None and cws["ScreenshotPath"] is not None and cws["BuilderInventory"] is not None and grid_absolute is not None and grid_relative is not None
 
 def writeToString(cws, stw):
     stw += "\n"+"-"*20+"\n[Timestamp] "+cws["Timestamp"]+"\n[Builder Position] (x, y, z): ("+str(cws["BuilderPosition"]["X"])+", "+str(cws["BuilderPosition"]["Y"])+", "+str(cws["BuilderPosition"]["Z"])+") " + \
            "(yaw, pitch): ("+str(cws["BuilderPosition"]["Yaw"])+", "+str(cws["BuilderPosition"]["Pitch"])+")\n[Screenshot Path] "+cws["ScreenshotPath"]+"\n\n[Chat Log]\n"
     for utterance in cws["ChatLog"]:
         stw += "\t"+utterance+"\n"
+    stw += "\n[Builder Inventory]"
+    for block in cws["BuilderInventory"]:
+        stw += "\tType: "+block["Type"]+" Index: "+str(block["Index"])+" Quantity: "+str(block["Quantity"])+"\n"
     stw += "\n[Blocks Inside]\n"
     for block in cws["BlocksInside"]:
         stw += "\tType: "+block["Type"]+"  Absolute (x, y, z): ("+str(block["AbsoluteCoordinates"]["X"])+", "+str(block["AbsoluteCoordinates"]["Y"])+", "+str(block["AbsoluteCoordinates"]["Z"])+")  Perspective (x, y, z): " + \
@@ -234,7 +259,7 @@ def prettyPrintJson(cws):
             print len(cws[element]), "values",
         elif element == 'Timestamp' or element == 'ScreenshotPath':
             print cws[element],
-        elif element == 'BuilderPosition' or element == 'BlocksInside':
+        elif element == 'BuilderPosition' or element == 'BlocksInside' or element == 'BuilderInventory':
             print cws[element],
         else:
             for value in cws[element]:
