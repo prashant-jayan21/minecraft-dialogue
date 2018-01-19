@@ -112,6 +112,10 @@ def getPerspectiveCoordinates(x, y, z, yaw, pitch):
     z_final = v_final.item(2)
     return (x_final, y_final, z_final)
 
+# The idea behind this method is that it iterates through all the observations received from polling the most recent world state and populates the output JSON with their respective fields
+# depending on what is available in the input JSON(s). This method is designed to handle cases where there may be 3+ JSONs corresponding to 2+ observations in a single poll (which happens
+# if a user takes more than one action before the polling can pull those observations), and does this by identifying if a field is about to be overwritten by a subsequent input JSON. If 
+# this happens, the method flushes the current output JSON to the list of world states and begins a new ouptut JSON with the new data.
 def processObservation(observations, string_to_write, chat_history):
     # print "Processing observation..."
     timestamp, yaw, pitch, xpos, ypos, zpos, ss_path, chat, inventory, grid_absolute, grid_relative = None, None, None, None, None, None, None, None, None, None, None
@@ -122,6 +126,7 @@ def processObservation(observations, string_to_write, chat_history):
     for observation in observations:
         print "Processing observation:",
 
+        # Timestamp
         if timestamp is None:
             print "timestamp",
             timestamp = observation.timestamp.replace(microsecond=0).isoformat(' ')
@@ -129,6 +134,7 @@ def processObservation(observations, string_to_write, chat_history):
 
         js = json.loads(observation.text)
 
+        # Builder position
         if js.get(u'Yaw') is not None: 
             print "ypxyzpos",
             if yaw is not None:
@@ -144,6 +150,7 @@ def processObservation(observations, string_to_write, chat_history):
             zpos = js.get(u'ZPos')
             cws["BuilderPosition"] = {"X": xpos, "Y": ypos, "Z": zpos, "Yaw": yaw, "Pitch": pitch}
 
+        # Screenshot path
         if js.get(u'ScreenshotPath') is not None:
             print "screenshotpath",
             if ss_path is not None:
@@ -155,6 +162,7 @@ def processObservation(observations, string_to_write, chat_history):
             ss_path = js.get(u'ScreenshotPath')
             cws["ScreenshotPath"] = ss_path
 
+        # Chat (if any)
         if js.get(u'Chat') is not None:
             print "chat",
             if chat is not None:
@@ -166,6 +174,7 @@ def processObservation(observations, string_to_write, chat_history):
             chat = js.get(u'Chat')
             chat_history += chat
 
+        # Builder's inventory
         if js.get(u'BuilderInventory') is not None:
             print "builderinventory",
             if inventory is not None:
@@ -180,6 +189,7 @@ def processObservation(observations, string_to_write, chat_history):
             for block in inventory:
                 cws["BuilderInventory"].append({"Index": block["Index"], "Type": block["Type"], "Quantity": block["Quantity"]})                
 
+        # Builder grid (absolute and relative)
         if js.get(u'BuilderGridAbsolute') is not None:
             print "buildergrid",
             if grid_absolute is not None:
@@ -194,14 +204,19 @@ def processObservation(observations, string_to_write, chat_history):
         print
 
     (ts, string_to_write) = createNewWorldState(world_states, cws, None, grid_absolute, grid_relative, string_to_write)
+
     prettyPrintString(string_to_write)
     print "World states:" 
     for ws in world_states:
         prettyPrintJson(ws)
         print
+
     return (string_to_write, world_states)
 
+# Calculates the absolute and perspective coordinates of each block in the builder's grid, adds them to the world state JSON, and adds the world state JSON to the running list of world states.
+# Returns a new JSON initialized with the input timestamp.
 def createNewWorldState(world_states, cws, timestamp, grid_absolute, grid_relative, stw):
+    # Something went wrong. Maybe we polled too quickly, and we're missing part of the observation JSON. Save the state of the working JSON and poll again.
     if not jsonIsComplete(cws, grid_absolute, grid_relative):
         print "Last observation is missing information -- polling again..."
         last_ws = cws
@@ -213,6 +228,8 @@ def createNewWorldState(world_states, cws, timestamp, grid_absolute, grid_relati
     stw = writeToString(cws, stw)
     return ({"Timestamp": str(timestamp)}, stw)
 
+# Records the blocks in the builder's grid, separated by outside vs. inside blocks. Also calculates their perspective coordinates.
+# Appends these block information, as well as the chat history, to the world state JSON.
 def recordGridCoordinates(cws, grid_absolute, grid_relative):
     yaw, pitch = cws["BuilderPosition"]["Yaw"], cws["BuilderPosition"]["Pitch"]
     blocks_inside, blocks_outside = [], []
@@ -231,9 +248,11 @@ def recordGridCoordinates(cws, grid_absolute, grid_relative):
     cws["BlocksInside"] = blocks_inside
     cws["ChatLog"] = copy.deepcopy(chat_history)
 
+# Helper method to check if a world state JSON is complete (i.e., is not missing some required information from the observations).
 def jsonIsComplete(cws, grid_absolute, grid_relative):
     return cws["Timestamp"] is not None and cws["BuilderPosition"] is not None and cws["ScreenshotPath"] is not None and cws["BuilderInventory"] is not None and grid_absolute is not None and grid_relative is not None
 
+# Generates a string representation of the world state JSON's contents and adds it to stw.
 def writeToString(cws, stw):
     stw += "\n"+"-"*20+"\n[Timestamp] "+cws["Timestamp"]+"\n[Builder Position] (x, y, z): ("+str(cws["BuilderPosition"]["X"])+", "+str(cws["BuilderPosition"]["Y"])+", "+str(cws["BuilderPosition"]["Z"])+") " + \
            "(yaw, pitch): ("+str(cws["BuilderPosition"]["Yaw"])+", "+str(cws["BuilderPosition"]["Pitch"])+")\n[Screenshot Path] "+cws["ScreenshotPath"]+"\n\n[Chat Log]\n"
@@ -252,6 +271,7 @@ def writeToString(cws, stw):
         str(block["PerspectiveCoordinates"]["X"])+", "+str(block["PerspectiveCoordinates"]["Y"])+", "+str(block["PerspectiveCoordinates"]["Z"])+")\n"
     return stw
 
+# Helper method to print a shortened, prettier version of the JSON's contents.
 def prettyPrintJson(cws):
     for element in cws:
         sys.stdout.write("\t"+element+": ")
@@ -267,11 +287,12 @@ def prettyPrintJson(cws):
         print
     print
 
+# Helper method to print a shortened, prettier version of the string to be written
 def prettyPrintString(stw):
     sys.stdout.write("\n\n")
-
     begin = True
     num_lines = 0
+
     for line in stw.split("\n"):
         if line.strip().startswith('Type:'):
             num_lines += 1
@@ -446,13 +467,14 @@ def cwc_all_obs_and_save_data(args):
                 timed_out = True
 
             elif i == 0 and world_state.number_of_observations_since_last_state > 0:
+                # Usually observations come in twos. If there are an odd number of observations, there's a small chance we need to poll once more for a lagging
+                # observation that accompanies the last polled set.
                 if world_state.number_of_observations_since_last_state % 2 != 0:
                     time.sleep(1)
                     nextws = ah.getWorldState()
                     print "Odd number of observations received. After waiting, appending", len(nextws.observations),"more observations"
                     world_state.observations.extend(nextws.observations)
-                # for observation in world_state.observations:
-                #     print observation
+
                 (string_to_write, world_states) = processObservation(world_state.observations, string_to_write, chat_history)
                 if world_states:
                     for ws in world_states:
