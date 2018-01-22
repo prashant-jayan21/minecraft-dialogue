@@ -30,7 +30,7 @@ public class CwCUtils {
         if (!screenshotDir.exists()) screenshotDir.mkdir();
     }
 
-    private static boolean disableScreenshots = true;
+    private static boolean disableScreenshots = false;
 
     /**
      * Creates a unique PNG file in the given directory named by a timestamp.  Handles cases where the timestamp alone

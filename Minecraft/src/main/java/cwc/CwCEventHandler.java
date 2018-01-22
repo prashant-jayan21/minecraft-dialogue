@@ -276,7 +276,7 @@ public class CwCEventHandler {
                 CwCMod.network.sendToServer(new CwCPositionMessage());
 
                 // once the Architect's y-coordinate position differs from the Builder's, teleport him to a neutral position
-                if (player.posY < builderCurrentY-0.5) {
+                if (player.posY < builderCurrentY-0.1) {
                     KeyBinding.unPressAllKeys();
                     CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 5, -5, 0, 45, true, true, true, true, true));
                     resetArchitectFollowFields();
