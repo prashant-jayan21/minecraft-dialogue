@@ -49,7 +49,7 @@ public class CwCEventHandler {
     protected static boolean updatePlayerTick = false, updateRenderTick = false;                 // wait for the second update/render tick of a pickup action before taking a screenshot
     protected static boolean disablePutdown = false, disablePickup = false;                      // disallows Builder to putdown/pickup until a screenshot of the last action has been taken
 
-    private static boolean following = false, sneaking = false;  // resets the architect's position after his chat box is closed
+    private static boolean following = false, sneaking = false, teleporting = false;  // resets the architect's position after his chat box is closed
     protected static double builderCurrentY = Double.MIN_VALUE;
 
     /**
@@ -278,8 +278,13 @@ public class CwCEventHandler {
                 // once the Architect's y-coordinate position differs from the Builder's, teleport him to a neutral position
                 if (player.posY != builderCurrentY) {
                     KeyBinding.unPressAllKeys();
+                    teleporting = true;
+                }
+
+                if (teleporting) {
                     CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 5, -5, 0, 45, true, true, true, true, true));
-                    resetArchitectFollowFields();
+                    if (player.posX == 0 && player.posY == 5 && player.posZ == -5)
+                        resetArchitectFollowFields();
                 }
             }
 
@@ -474,6 +479,7 @@ public class CwCEventHandler {
     private static void resetArchitectFollowFields() {
         following = false;
         sneaking = false;
+        teleporting = false;
         builderCurrentY = Double.MIN_VALUE;
     }
 }

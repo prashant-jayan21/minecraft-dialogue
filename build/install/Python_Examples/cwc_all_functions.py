@@ -339,9 +339,9 @@ def cwc_all_obs_and_save_data(args):
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10001))
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10002))
     else:
+        client_pool.add(MalmoPython.ClientInfo(args["architect_ip_addr"], 10001))
         client_pool.add(MalmoPython.ClientInfo(args["builder_ip_addr"], 10000))
         client_pool.add(MalmoPython.ClientInfo(args["architect_ip_addr"], 10000))
-        client_pool.add(MalmoPython.ClientInfo(args["architect_ip_addr"], 10001))
 
     # Create mission xmls
 
