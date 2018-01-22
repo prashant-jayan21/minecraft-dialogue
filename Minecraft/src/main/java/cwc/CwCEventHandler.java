@@ -83,7 +83,10 @@ public class CwCEventHandler {
         if (!(event.getEntity() instanceof EntityPlayer || event.getEntity() instanceof EntityFallingBlock || event.getEntity() instanceof EntityItem))
             event.setCanceled(true);
 
-        if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
+        if (event.getEntity().getEntityWorld().isRemote)
+            Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
+
+        else if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
             EntityPlayerMP player = (EntityPlayerMP) event.getEntity();
             System.out.println("onEntitySpawn: " + player.getName());
             CwCMod.network.sendToServer(new CwCQuitMessage(false));  // reset the quit field to start anew
@@ -135,7 +138,10 @@ public class CwCEventHandler {
      */
     @SubscribeEvent
     public void onPlayerClone(PlayerEvent.Clone event) {
-        if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
+        if (event.getEntity().getEntityWorld().isRemote)
+            Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
+
+        else if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
             EntityPlayerMP player = (EntityPlayerMP) event.getEntityPlayer();
             System.out.println("onPlayerClone: " + player.getName());
             CwCMod.network.sendToServer(new CwCQuitMessage(false));  // reset the quit field to start anew
