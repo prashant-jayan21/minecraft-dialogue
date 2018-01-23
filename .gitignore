@@ -215,3 +215,21 @@ Schemas/xs3p.xsl
 Minecraft/run/config/malmomodCLIENT.cfg
 Minecraft/Minecraft_Client.launch
 
+*.csproj
+*.iml
+*.jar
+*.json
+*.png
+Minecraft/run/crash-reports
+*.gz
+*.cfg
+*.dat
+*.mca
+*.lock
+*.dat_old
+Minecraft/out/production/Minecraft_main
+*.ipr
+*.iws
+Minecraft/run
+*.index
+*.properties
