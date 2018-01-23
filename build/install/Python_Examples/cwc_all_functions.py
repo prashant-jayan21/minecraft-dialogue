@@ -114,7 +114,7 @@ def getPerspectiveCoordinates(x, y, z, yaw, pitch):
 
 # The idea behind this method is that it iterates through all the observations received from polling the most recent world state and populates the output JSON with their respective fields
 # depending on what is available in the input JSON(s). This method is designed to handle cases where there may be 3+ JSONs corresponding to 2+ observations in a single poll (which happens
-# if a user takes more than one action before the polling can pull those observations), and does this by identifying if a field is about to be overwritten by a subsequent input JSON. If 
+# if a user takes more than one action before the polling can pull those observations), and does this by identifying if a field is about to be overwritten by a subsequent input JSON. If
 # this happens, the method flushes the current output JSON to the list of world states and begins a new ouptut JSON with the new data.
 def processObservation(observations, string_to_write, chat_history):
     # print "Processing observation..."
@@ -135,7 +135,7 @@ def processObservation(observations, string_to_write, chat_history):
         js = json.loads(observation.text)
 
         # Builder position
-        if js.get(u'Yaw') is not None: 
+        if js.get(u'Yaw') is not None:
             print "ypxyzpos",
             if yaw is not None:
                 sys.stdout.write(" (start of new observation -- ")
@@ -187,7 +187,7 @@ def processObservation(observations, string_to_write, chat_history):
             print inventory
             cws["BuilderInventory"] = []
             for block in inventory:
-                cws["BuilderInventory"].append({"Index": block["Index"], "Type": block["Type"], "Quantity": block["Quantity"]})                
+                cws["BuilderInventory"].append({"Index": block["Index"], "Type": block["Type"], "Quantity": block["Quantity"]})
 
         # Builder grid (absolute and relative)
         if js.get(u'BuilderGridAbsolute') is not None:
@@ -206,7 +206,7 @@ def processObservation(observations, string_to_write, chat_history):
     (ts, string_to_write) = createNewWorldState(world_states, cws, None, grid_absolute, grid_relative, string_to_write)
 
     prettyPrintString(string_to_write)
-    print "World states:" 
+    print "World states:"
     for ws in world_states:
         prettyPrintJson(ws)
         print
@@ -315,6 +315,8 @@ def cwc_all_obs_and_save_data(args):
 
     # Create agent hosts:
     agent_hosts = [MalmoPython.AgentHost(), MalmoPython.AgentHost(), MalmoPython.AgentHost()]
+    if args["lan"]:
+        agent_hosts.append(MalmoPython.AgentHost())
 
     # Set observation policy for builder
     agent_hosts[0].setObservationsPolicy(MalmoPython.ObservationsPolicy.KEEP_ALL_OBSERVATIONS)
@@ -340,6 +342,7 @@ def cwc_all_obs_and_save_data(args):
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10002))
     else:
         client_pool.add(MalmoPython.ClientInfo(args["architect_ip_addr"], 10001))
+        client_pool.add(MalmoPython.ClientInfo(args["builder_ip_addr"], 10001))
         client_pool.add(MalmoPython.ClientInfo(args["builder_ip_addr"], 10000))
         client_pool.add(MalmoPython.ClientInfo(args["architect_ip_addr"], 10000))
 
@@ -451,6 +454,38 @@ def cwc_all_obs_and_save_data(args):
     my_mission_oracle = MalmoPython.MissionSpec(missionXML_oracle, True)
 
     safeStartMission(agent_hosts[2], my_mission_oracle, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission_oracle")
+    if args["lan"]:
+        missionXML_empty='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+                    <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+                      <About>
+                        <Summary>''' + experiment_id + '''</Summary>
+                      </About>
+
+                      <ServerSection>
+                        <ServerInitialConditions>
+                          <Time>
+                            <StartTime>1000</StartTime>
+                            <AllowPassageOfTime>false</AllowPassageOfTime>
+                          </Time>
+                          <Weather>clear</Weather>
+                        </ServerInitialConditions>
+                        <ServerHandlers>
+                          <FlatWorldGenerator generatorString="3;241;1;" forceReset="true" destroyAfterUse="false"/>
+                          <ServerQuitWhenAnyAgentFinishes/>
+                        </ServerHandlers>
+                      </ServerSection>
+
+                      <AgentSection mode="Spectator">
+                        <Name>Empty</Name>
+                        <AgentStart>
+                          <Placement x = "100" y = "5" z = "95" pitch="45"/>
+                        </AgentStart>
+                        <AgentHandlers/>
+                      </AgentSection>
+                    </Mission>'''
+        my_mission_empty = MalmoPython.MissionSpec(missionXML_empty, True)
+        safeStartMission(agent_hosts[3], my_mission_empty, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission_empty")
     safeStartMission(agent_hosts[0], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission")
     safeStartMission(agent_hosts[1], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 1, "cwc_dummy_mission")
 
