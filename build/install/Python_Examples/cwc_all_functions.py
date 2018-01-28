@@ -32,8 +32,6 @@ y_max_goal = y_max_build # NOTE: Do not change this relation without thought!
 z_min_goal = z_min_build + displacement
 z_max_goal = z_max_build + displacement
 
-chat_history = []
-last_ws = None
 
 def safeStartMission(agent_host, my_mission, my_client_pool, my_mission_record, role, expId):
     used_attempts = 0
@@ -112,125 +110,78 @@ def getPerspectiveCoordinates(x, y, z, yaw, pitch):
     z_final = v_final.item(2)
     return (x_final, y_final, z_final)
 
-# The idea behind this method is that it iterates through all the observations received from polling the most recent world state and populates the output JSON with their respective fields
-# depending on what is available in the input JSON(s). This method is designed to handle cases where there may be 3+ JSONs corresponding to 2+ observations in a single poll (which happens
-# if a user takes more than one action before the polling can pull those observations), and does this by identifying if a field is about to be overwritten by a subsequent input JSON. If 
-# this happens, the method flushes the current output JSON to the list of world states and begins a new ouptut JSON with the new data.
-def processObservation(observations, string_to_write, chat_history):
-    # print "Processing observation..."
-    timestamp, yaw, pitch, xpos, ypos, zpos, ss_path, chat, inventory, grid_absolute, grid_relative = None, None, None, None, None, None, None, None, None, None, None
-    world_states, cws = [], {}
-    if last_ws is not None:
-        cws = last_ws
-
+def processObservations(all_world_states, observations):
     for observation in observations:
-        print "Processing observation:",
+        # print "Processing observation:", observation
+        obs_dict = reformatJson(observation)
+        all_world_states = mergeObservations(all_world_states, obs_dict)
 
-        # Timestamp
-        if timestamp is None:
-            print "timestamp",
-            timestamp = observation.timestamp.replace(microsecond=0).isoformat(' ')
-            cws["Timestamp"] = str(timestamp)
+    return all_world_states
 
-        js = json.loads(observation.text)
+def reformatJson(observation):
+    obs_dict = {}
+    obs_dict["Timestamp"] = observation.timestamp.replace(microsecond=0).isoformat(' ')
+    js = json.loads(observation.text)
 
-        # Builder position
-        if js.get(u'Yaw') is not None: 
-            print "ypxyzpos",
-            if yaw is not None:
-                sys.stdout.write(" (start of new observation -- ")
-                (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
-                yaw, pitch, xpos, ypos, zpos, ss_path, chat, inventory, grid_absolute, grid_relative = None, None, None, None, None, None, None, None, None, None
-                sys.stdout.write(") ")
+    if js.get(u'Yaw') is not None:
+        yaw = js.get(u'Yaw')
+        pitch = js.get(u'Pitch')
+        xpos = js.get(u'XPos')
+        ypos = js.get(u'YPos')
+        zpos = js.get(u'ZPos')
+        obs_dict["BuilderPosition"] = {"X": xpos, "Y": ypos, "Z": zpos, "Yaw": yaw, "Pitch": pitch}
 
-            yaw = js.get(u'Yaw')
-            pitch = js.get(u'Pitch')
-            xpos = js.get(u'XPos')
-            ypos = js.get(u'YPos')
-            zpos = js.get(u'ZPos')
-            cws["BuilderPosition"] = {"X": xpos, "Y": ypos, "Z": zpos, "Yaw": yaw, "Pitch": pitch}
+    if js.get(u'ScreenshotPath') is not None:
+        obs_dict["ScreenshotPath"] = js.get(u'ScreenshotPath')
 
-        # Screenshot path
-        if js.get(u'ScreenshotPath') is not None:
-            print "screenshotpath",
-            if ss_path is not None:
-                sys.stdout.write(" (start of new observation -- ")
-                (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
-                yaw, pitch, xpos, ypos, zpos, ss_path, chat, inventory, grid_absolute, grid_relative = None, None, None, None, None, None, None, None, None, None
-                sys.stdout.write(") ")
+    if js.get(u'Chat') is not None:
+        obs_dict["ChatHistory"] = js.get(u'Chat')
 
-            ss_path = js.get(u'ScreenshotPath')
-            cws["ScreenshotPath"] = ss_path
+    if js.get(u'BuilderInventory') is not None:
+        obs_dict["BuilderInventory"] = []
+        inventory = js.get(u'BuilderInventory')
+        for block in inventory:
+            obs_dict["BuilderInventory"].append({"Index": block["Index"], "Type": block["Type"], "Quantity": block["Quantity"]})
 
-        # Chat (if any)
-        if js.get(u'Chat') is not None:
-            print "chat",
-            if chat is not None:
-                sys.stdout.write(" (start of new observation -- ")
-                (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
-                yaw, pitch, xpos, ypos, zpos, ss_path, chat, inventory, grid_absolute, grid_relative = None, None, None, None, None, None, None, None, None, None
-                sys.stdout.write(") ")
+    if js.get(u'BuilderGridAbsolute') is not None:
+        obs_dict["BuilderGridAbsolute"] = js.get(u'BuilderGridAbsolute')
+        obs_dict["BuilderGridRelative"] = js.get(u'BuilderGridRelative')
 
-            chat = js.get(u'Chat')
-            chat_history += chat
+    return obs_dict
 
-        # Builder's inventory
-        if js.get(u'BuilderInventory') is not None:
-            print "builderinventory",
-            if inventory is not None:
-                sys.stdout.write(" (start of new observation --")
-                (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
-                yaw, pitch, xpos, ypos, zpos, ss_path, chat, inventory, grid_absolute, grid_relative = None, None, None, None, None, None, None, None, None, None
-                sys.stdout.write(") ")
+def mergeObservations(all_world_states, obs_dict):
+    if len(all_world_states) == 0:
+        all_world_states.append(obs_dict)
 
-            inventory = js.get(u'BuilderInventory')
-            print inventory
-            cws["BuilderInventory"] = []
-            for block in inventory:
-                cws["BuilderInventory"].append({"Index": block["Index"], "Type": block["Type"], "Quantity": block["Quantity"]})                
+    else:
+        last_ws = all_world_states[-1]
+        last_ws_keys = set(last_ws.keys())
+        obs_keys = set(obs_dict.keys())
+        obs_keys.remove("Timestamp")
 
-        # Builder grid (absolute and relative)
-        if js.get(u'BuilderGridAbsolute') is not None:
-            print "buildergrid",
-            if grid_absolute is not None:
-                sys.stdout.write(" (start of new observation -- ")
-                (cws, string_to_write) = createNewWorldState(world_states, cws, observation.timestamp.replace(microsecond=0).isoformat(' '), grid_absolute, grid_relative, string_to_write)
-                yaw, pitch, xpos, ypos, zpos, ss_path, chat, inventory, grid_absolute, grid_relative = None, None, None, None, None, None, None, None, None, None
-                sys.stdout.write(") ")
+        if len(last_ws_keys.intersection(obs_keys)) > 0:
+            all_world_states.append(obs_dict)
+        else:
+            all_world_states[-1] = dict(obs_dict, **last_ws)
 
-            grid_absolute = js.get(u'BuilderGridAbsolute')
-            grid_relative = js.get(u'BuilderGridRelative')
+    return all_world_states
 
-        print
+def postprocess(all_world_states):
+    chat_history = []
+    string_to_write = ""
+    for world_state in all_world_states:
+        if world_state.get("ChatHistory") is not None:
+            chat_history += world_state["ChatHistory"]
+        world_state["ChatHistory"] = copy.deepcopy(chat_history)
+        recordGridCoordinates(world_state)
+        string_to_write = writeToString(world_state, string_to_write)
 
-    (ts, string_to_write) = createNewWorldState(world_states, cws, None, grid_absolute, grid_relative, string_to_write)
-
-    prettyPrintString(string_to_write)
-    print "World states:" 
-    for ws in world_states:
-        prettyPrintJson(ws)
-        print
-
-    return (string_to_write, world_states)
-
-# Calculates the absolute and perspective coordinates of each block in the builder's grid, adds them to the world state JSON, and adds the world state JSON to the running list of world states.
-# Returns a new JSON initialized with the input timestamp.
-def createNewWorldState(world_states, cws, timestamp, grid_absolute, grid_relative, stw):
-    # Something went wrong. Maybe we polled too quickly, and we're missing part of the observation JSON. Save the state of the working JSON and poll again.
-    if not jsonIsComplete(cws, grid_absolute, grid_relative):
-        print "Last observation is missing information -- polling again..."
-        last_ws = cws
-        return (cws, stw)
-
-    print "Creating world state...",
-    recordGridCoordinates(cws, grid_absolute, grid_relative)
-    world_states.append(cws)
-    stw = writeToString(cws, stw)
-    return ({"Timestamp": str(timestamp)}, stw)
+    return string_to_write
 
 # Records the blocks in the builder's grid, separated by outside vs. inside blocks. Also calculates their perspective coordinates.
 # Appends these block information, as well as the chat history, to the world state JSON.
-def recordGridCoordinates(cws, grid_absolute, grid_relative):
+def recordGridCoordinates(cws):
+    grid_absolute, grid_relative = cws.pop("BuilderGridAbsolute"), cws.pop("BuilderGridRelative")
     yaw, pitch = cws["BuilderPosition"]["Yaw"], cws["BuilderPosition"]["Pitch"]
     blocks_inside, blocks_outside = [], []
     for i in range(len(grid_absolute)):
@@ -246,17 +197,12 @@ def recordGridCoordinates(cws, grid_absolute, grid_relative):
 
     cws["BlocksOutside"] = blocks_outside
     cws["BlocksInside"] = blocks_inside
-    cws["ChatLog"] = copy.deepcopy(chat_history)
-
-# Helper method to check if a world state JSON is complete (i.e., is not missing some required information from the observations).
-def jsonIsComplete(cws, grid_absolute, grid_relative):
-    return cws["Timestamp"] is not None and cws["BuilderPosition"] is not None and cws["ScreenshotPath"] is not None and cws["BuilderInventory"] is not None and grid_absolute is not None and grid_relative is not None
 
 # Generates a string representation of the world state JSON's contents and adds it to stw.
 def writeToString(cws, stw):
     stw += "\n"+"-"*20+"\n[Timestamp] "+cws["Timestamp"]+"\n[Builder Position] (x, y, z): ("+str(cws["BuilderPosition"]["X"])+", "+str(cws["BuilderPosition"]["Y"])+", "+str(cws["BuilderPosition"]["Z"])+") " + \
            "(yaw, pitch): ("+str(cws["BuilderPosition"]["Yaw"])+", "+str(cws["BuilderPosition"]["Pitch"])+")\n[Screenshot Path] "+cws["ScreenshotPath"]+"\n\n[Chat Log]\n"
-    for utterance in cws["ChatLog"]:
+    for utterance in cws["ChatHistory"]:
         stw += "\t"+utterance+"\n"
     stw += "\n[Builder Inventory]"
     for block in cws["BuilderInventory"]:
@@ -275,7 +221,7 @@ def writeToString(cws, stw):
 def prettyPrintJson(cws):
     for element in cws:
         sys.stdout.write("\t"+element+": ")
-        if element == 'BlocksOutside':
+        if element == 'BlocksOutside' or element == 'BuilderGridAbsolute' or element == 'BuilderGridRelative':
             print len(cws[element]), "values",
         elif element == 'Timestamp' or element == 'ScreenshotPath':
             print cws[element],
@@ -312,24 +258,14 @@ def prettyPrintString(stw):
     sys.stdout.write('\t('+str(num_lines)+' values)\n\n')
 
 def cwc_all_obs_and_save_data(args):
+    chat_history = []
+    last_ws = None
 
     # Create agent hosts:
     agent_hosts = [MalmoPython.AgentHost(), MalmoPython.AgentHost(), MalmoPython.AgentHost()]
 
     # Set observation policy for builder
     agent_hosts[0].setObservationsPolicy(MalmoPython.ObservationsPolicy.KEEP_ALL_OBSERVATIONS)
-
-    # sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
-
-    # Parse CLAs
-    # parser = argparse.ArgumentParser(description="Run a python mission.")
-    # parser.add_argument("--lan", help="whether you want to play over lan or on a single machine", action="store_true")
-    # parser.add_argument("--builder_ip_addr", help="IP address of the builder in case you choose --lan")
-    # parser.add_argument("--builder_id", help="ID of the builder in case you choose --lan")
-    # parser.add_argument("--architect_ip_addr", help="IP address of the architect in case you choose --lan")
-    # parser.add_argument("--architect_id", help="ID of the architect in case you choose --lan")
-    # parser.add_argument("--gold_config", help="file that contains the gold configuration aka goal structure")
-    # args = parser.parse_args()
 
     # Set up a client pool
     client_pool = MalmoPython.ClientPool()
@@ -467,20 +403,16 @@ def cwc_all_obs_and_save_data(args):
                 timed_out = True
 
             elif i == 0 and world_state.number_of_observations_since_last_state > 0:
-                # Usually observations come in twos. If there are an odd number of observations, there's a small chance we need to poll once more for a lagging
-                # observation that accompanies the last polled set.
-                if world_state.number_of_observations_since_last_state % 2 != 0:
-                    time.sleep(1)
-                    nextws = ah.getWorldState()
-                    print "Odd number of observations received. After waiting, appending", len(nextws.observations),"more observations"
-                    world_state.observations.extend(nextws.observations)
-
-                (string_to_write, world_states) = processObservation(world_state.observations, string_to_write, chat_history)
-                if world_states:
-                    for ws in world_states:
-                        all_world_states.append(ws)
+                all_world_states = processObservations(all_world_states, world_state.observations)
 
         time.sleep(1)
+
+    print
+    print "Postprocessing world states...\n",
+    string_to_write = postprocess(all_world_states)
+
+    for ws in all_world_states:
+        prettyPrintJson(ws)
 
     # write data
     print
@@ -501,10 +433,6 @@ def cwc_all_obs_and_save_data(args):
 
     obs_file_name = "cwc_pilot-" + config_id + "-" + experiment_time # for the json data files
 
-    # print "with filename:",obs_file_name
-
-    # screenshots_dir = "../../../Minecraft/run/screenshots/" + experiment_id # the screenshots dir populated on the mod side
-
     # human readable log
     txt_log = open("logs/"+player_ids+"/"+config_id+"/txt/"+obs_file_name + ".txt", "w")
     txt_log.write(string_to_write)
@@ -514,11 +442,6 @@ def cwc_all_obs_and_save_data(args):
     obs_data_dict = {"WorldStates": all_world_states}
     with open("logs/"+player_ids+"/"+config_id+"/json/"+obs_file_name + ".json", "w") as json_log:
         json.dump(obs_data_dict, json_log)
-
-    # machine readable log -- aligned w/ screenshots
-    # obs_data_dict_aligned = align(obs_data_dict, screenshots_dir)
-    # with open(obs_file_name + "_aligned" + ".json", "w") as json_log_aligned:
-    #     json.dump(obs_data_dict_aligned, json_log_aligned)
 
     print "Done!"
     print
