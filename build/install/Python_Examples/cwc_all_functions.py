@@ -263,6 +263,8 @@ def cwc_all_obs_and_save_data(args):
 
     # Create agent hosts:
     agent_hosts = [MalmoPython.AgentHost(), MalmoPython.AgentHost(), MalmoPython.AgentHost()]
+    if args["lan"]:
+        agent_hosts.append(MalmoPython.AgentHost())
 
     # Set observation policy for builder
     agent_hosts[0].setObservationsPolicy(MalmoPython.ObservationsPolicy.KEEP_ALL_OBSERVATIONS)
@@ -276,6 +278,7 @@ def cwc_all_obs_and_save_data(args):
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10002))
     else:
         client_pool.add(MalmoPython.ClientInfo(args["architect_ip_addr"], 10001))
+        client_pool.add(MalmoPython.ClientInfo(args["builder_ip_addr"], 10001))
         client_pool.add(MalmoPython.ClientInfo(args["builder_ip_addr"], 10000))
         client_pool.add(MalmoPython.ClientInfo(args["architect_ip_addr"], 10000))
 
@@ -387,6 +390,39 @@ def cwc_all_obs_and_save_data(args):
     my_mission_oracle = MalmoPython.MissionSpec(missionXML_oracle, True)
 
     safeStartMission(agent_hosts[2], my_mission_oracle, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission_oracle")
+    if args["lan"]:
+        # ensure builder's second client always has an "empty" mission
+        missionXML_empty='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+                    <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+                      <About>
+                        <Summary>''' + experiment_id + '''</Summary>
+                      </About>
+
+                      <ServerSection>
+                        <ServerInitialConditions>
+                          <Time>
+                            <StartTime>1000</StartTime>
+                            <AllowPassageOfTime>false</AllowPassageOfTime>
+                          </Time>
+                          <Weather>clear</Weather>
+                        </ServerInitialConditions>
+                        <ServerHandlers>
+                          <FlatWorldGenerator generatorString="3;241;1;" forceReset="true" destroyAfterUse="false"/>
+                          <ServerQuitWhenAnyAgentFinishes/>
+                        </ServerHandlers>
+                      </ServerSection>
+
+                      <AgentSection mode="Spectator">
+                        <Name>Empty</Name>
+                        <AgentStart>
+                          <Placement x = "100" y = "5" z = "95" pitch="45"/>
+                        </AgentStart>
+                        <AgentHandlers/>
+                      </AgentSection>
+                    </Mission>'''
+        my_mission_empty = MalmoPython.MissionSpec(missionXML_empty, True)
+        safeStartMission(agent_hosts[3], my_mission_empty, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission_empty") # safe to access agent_hosts[3] as this is only under the lan setting when we have 4 agent hosts
     safeStartMission(agent_hosts[0], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission")
     safeStartMission(agent_hosts[1], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 1, "cwc_dummy_mission")
 
