@@ -390,6 +390,7 @@ def cwc_all_obs_and_save_data(args):
     my_mission_oracle = MalmoPython.MissionSpec(missionXML_oracle, True)
 
     safeStartMission(agent_hosts[2], my_mission_oracle, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission_oracle")
+    
     if args["lan"]:
         # ensure builder's second client always has an "empty" mission
         missionXML_empty='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
@@ -423,6 +424,7 @@ def cwc_all_obs_and_save_data(args):
                     </Mission>'''
         my_mission_empty = MalmoPython.MissionSpec(missionXML_empty, True)
         safeStartMission(agent_hosts[3], my_mission_empty, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission_empty") # safe to access agent_hosts[3] as this is only under the lan setting when we have 4 agent hosts
+    
     safeStartMission(agent_hosts[0], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission")
     safeStartMission(agent_hosts[1], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 1, "cwc_dummy_mission")
 
