@@ -72,7 +72,7 @@
     6. Add a new environment variable `MALMO_XSD_PATH` and set it to the path to `MalmoPlatform\Schemas`. You will need to open a fresh command prompt for this to take effect.
     7. `mkdir build`
     8. `cd build`
-    9. `cmake -G "Visual Studio 12 2013 Win64" ..`
+    9. `cmake -G "Visual Studio 12 2013 Win64" -DBOOST_ROOT=path/to/boost ..`
     10. If it fails to find things, use `cmake-gui ..` and give hints, as described above.  
         If you have cygwin installed, check that cmake isn't using the cygwin python and lua executables.
     11. For a Debug build: `msbuild INSTALL.vcxproj`  
