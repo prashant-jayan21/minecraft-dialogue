@@ -10,11 +10,11 @@
     3. Add `C:\ffmpeg\bin` to your `PATH` ([How To](https://support.microsoft.com/en-us/kb/310519))
     4. Check that typing `ffmpeg` at a command prompt works.
 
-3. Install git and Visual Studio and [Python 2.7 (64-bit)](https://www.python.org/ftp/python/2.7.12/python-2.7.12.amd64.msi) and the JDK (64-bit). Hints:
+3. Install git and Visual Studio 2013 and [Python 2.7 (64-bit)](https://www.python.org/ftp/python/2.7.12/python-2.7.12.amd64.msi) and the JDK (64-bit). Hints:
     1. Get the latest Windows git from https://git-scm.com/downloads
     2. Check that git and msbuild and python are on your path.  
        N.B. MSBuild lives in an odd place: e.g. `C:\Program Files (x86)\MSBuild\12.0\Bin`
-    3. Set JAVA_HOME to be the location of the JDK installation, e.g. `C:\Program Files\Java\jdk1.8.0_71`
+    3. Set JAVA_HOME to be the location of the JDK installation, e.g. `C:\Program Files\Java\jdk1.8.0_71`. Important: this should point to the JDK, not the JRE.
     4. Add e.g. `C:\Program Files\Java\jdk1.8.0_71\bin` to your PATH variable. ([How To](https://support.microsoft.com/en-us/kb/310519))
     5. Check that `java -version` and `javac -version` and `set JAVA_HOME` all report the same 64-bit version.
     
@@ -23,28 +23,28 @@
     2. Run the exe to install.
 
 5. Download and install ZLib
-    1. Download e.g. `zlib-1.2.8.zip` from http://zlib.net/
-    2. Extract to `C:\zlib-1.2.8\`
+    1. Download e.g. `zlib-1.2.11.zip` from http://zlib.net/
+    2. Extract to `C:\zlib-1.2.11\`
     3. Open a Visual Studio 2013 x64 command prompt with Admin rights ([How-To](https://technet.microsoft.com/en-us/library/cc947813(v=ws.10).aspx))
-    4. `cd C:\zlib-1.2.8\`
+    4. `cd C:\zlib-1.2.11\`
     5. `cmake -G "Visual Studio 12 2013 Win64" .`
     6. `cmake --build . --config Debug --target install`
     7. `cmake --build . --config Release --target install`
     8. Add `C:\Program Files\zlib\bin` to your PATH ([How To](https://support.microsoft.com/en-us/kb/310519))
 
-6. Install and build Boost 1.59.0 or later: (NOTE - if you have Python31 installed, ensure that it isn't picked up by the boost build - make sure it comes _after_ Python27 in your path)
+6. Install and build Boost 1.59.0: (NOTE - if you have Python31 installed, ensure that it isn't picked up by the boost build - make sure it comes _after_ Python27 in your path)
     1. Download e.g. `boost_1_59_0.zip` from http://boost.org
     2. Extract to `c:\boost`
     3. Open a Visual Studio 2013 x64 command prompt with Admin rights ([How-To](https://technet.microsoft.com/en-us/library/cc947813(v=ws.10).aspx))
     4. e.g. `cd c:\boost\boost_1_59_0`
     5. `bootstrap.bat`
-    6. `b2.exe toolset=msvc-12.0 address-model=64 -sZLIB_SOURCE="C:\zlib-1.2.8"`   
+    6. `b2.exe toolset=msvc-12.0 address-model=64 -sZLIB_SOURCE="C:\zlib-1.2.11"`   
     7. For more information on installing Boost with ZLib support, see [here](http://www.boost.org/doc/libs/1_59_0/libs/iostreams/doc/installation.html)
 
 7. Install SWIG
     1. Browse to http://swig.org/download.html and download the latest version of `swigwin`.
     2. Unzip the directory and copy it to your `C:\` drive.
-    3. Add (e.g.) `C:\swigwin-3.0.7` to your PATH. CMake should then find swig automatically.
+    3. Add (e.g.) `C:\swigwin-3.0.12` to your PATH. CMake should then find swig automatically.
     
 8. Install CodeSynthesis XSD to its default location (`C:\Program Files (x86)\CodeSynthesis XSD 4.0\`):
     1. Download from: http://www.codesynthesis.com/products/xsd/download.xhtml
