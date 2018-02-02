@@ -170,6 +170,7 @@ def postprocess(all_world_states):
     chat_history = []
     string_to_write = ""
     for world_state in all_world_states:
+        print "---\n", world_state
         if world_state.get("ChatHistory") is not None:
             chat_history += world_state["ChatHistory"]
         world_state["ChatHistory"] = copy.deepcopy(chat_history)
@@ -285,7 +286,7 @@ def cwc_all_obs_and_save_data(args):
     # Create mission xmls
 
     # experiment ID
-    experiment_time = str(datetime.datetime.now())
+    experiment_time = str(int(round(time.time()*1000)))
     player_ids = "B"+args["builder_id"] + "-A" + args["architect_id"]
     config_id = os.path.basename(args["gold_config"]).replace(".xml","")
     experiment_id = player_ids + "-" + config_id + "-" + experiment_time

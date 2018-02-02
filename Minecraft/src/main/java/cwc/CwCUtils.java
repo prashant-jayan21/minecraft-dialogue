@@ -18,7 +18,7 @@ public class CwCUtils {
     protected static String[] architectOverlay = {"Inspecting...", "Type an instruction...", "Builder is building..."};     // architect status overlay strings (for indicating current game state)
     protected static String[] builderOverlay = { "Architect is inspecting...", "Architect is thinking...", "Building..."};  // builder status overlay strings (for indicating current game state)
 
-    public static boolean useTimestamps = false;    // whether or not to include timestamps as part of screenshot names
+    public static boolean useTimestamps = true;    // whether or not to include timestamps as part of screenshot names
     private static String summary;
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");  // timestamp date format
     private static int index = 1;        // if not using timestamps, index prefix of screenshots taken
@@ -32,6 +32,7 @@ public class CwCUtils {
 
     private static boolean disableScreenshots = false;
     private static String slash = System.getProperty("os.name").toLowerCase().contains("win") ? "\\" : "/";
+    private static long startTime = Long.MIN_VALUE;
 
     /**
      * Creates a unique PNG file in the given directory named by a timestamp.  Handles cases where the timestamp alone
@@ -74,7 +75,9 @@ public class CwCUtils {
         }
 
         // prefix with either timestamp or screenshot index
-        String prefix = (summary == null ? "" : summary+slash) + (timestamp ? CwCUtils.getTimestampedFileForDirectory(screenshotDir) : index+"");
+        long time = System.currentTimeMillis();
+        if (startTime == Long.MIN_VALUE) startTime = time;
+        String prefix = (summary == null ? "" : summary+slash) + (timestamp ? time-startTime : index);
         // suffix with type of triggering event
         String suffix = type.name().toLowerCase();
 
@@ -97,6 +100,7 @@ public class CwCUtils {
      */
     protected static void reset() {
         CwCMod.screenshots = new ArrayList<String>();
+        startTime = Long.MIN_VALUE;
         index = 1;
     }
 }

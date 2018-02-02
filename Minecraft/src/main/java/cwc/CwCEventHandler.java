@@ -235,17 +235,18 @@ public class CwCEventHandler {
 
         // exit mob-view when chat window is closed
         Minecraft minecraft = Minecraft.getMinecraft();
-        if (minecraft != null && minecraft.player != null && minecraft.player.getName().equals(MalmoMod.ARCHITECT)
-                && following && !minecraft.ingameGUI.getChatGUI().getChatOpen()) {
+        if (minecraft != null && minecraft.player != null && minecraft.player.getName().equals(MalmoMod.ARCHITECT)) {
             if (minecraft.ingameGUI.getChatGUI().getSentMessages().size() > sentChatMessages) {
                 CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT);
                 sentChatMessages = minecraft.ingameGUI.getChatGUI().getSentMessages().size();
                 resetChatFields();
             }
 
-            KeyBinding.setKeyBindState(minecraft.gameSettings.keyBindSneak.getKeyCode(), true);
-            minecraft.gameSettings.thirdPersonView = 0;
-            sneaking = true;
+            if (following && !minecraft.ingameGUI.getChatGUI().getChatOpen()) {
+                KeyBinding.setKeyBindState(minecraft.gameSettings.keyBindSneak.getKeyCode(), true);
+                minecraft.gameSettings.thirdPersonView = 0;
+                sneaking = true;
+            }
         }
 
         if (minecraft != null && minecraft.player != null) {
