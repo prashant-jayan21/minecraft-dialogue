@@ -1756,7 +1756,7 @@ public class ClientStateMachine extends StateMachine implements IMalmoMessageLis
                 JsonObject json = new JsonObject();
                 currentMissionBehaviour().observationProducer.writeObservationsToJSON(json, currentMissionInit());
                 data = json.toString();
-                if (data.length() > 2) System.out.println("Wrote JSON: "+data);
+//                if (data.length() > 2) System.out.println("Wrote JSON: "+data);
             }
             Minecraft.getMinecraft().mcProfiler.endStartSection("malmoSendTCPObservations");
 

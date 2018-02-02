@@ -31,6 +31,7 @@ public class CwCUtils {
     }
 
     private static boolean disableScreenshots = false;
+    private static String slash = System.getProperty("os.name").toLowerCase().contains("win") ? "\\" : "/";
 
     /**
      * Creates a unique PNG file in the given directory named by a timestamp.  Handles cases where the timestamp alone
@@ -73,7 +74,7 @@ public class CwCUtils {
         }
 
         // prefix with either timestamp or screenshot index
-        String prefix = (summary == null ? "" : summary+"/") + (timestamp ? CwCUtils.getTimestampedFileForDirectory(screenshotDir) : index+"");
+        String prefix = (summary == null ? "" : summary+slash) + (timestamp ? CwCUtils.getTimestampedFileForDirectory(screenshotDir) : index+"");
         // suffix with type of triggering event
         String suffix = type.name().toLowerCase();
 
@@ -82,7 +83,7 @@ public class CwCUtils {
             ScreenShotHelper.saveScreenshot(CwCUtils.loggingDir, prefix+"-"+mc.player.getName()+"-"+suffix+".png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
 
         // save screenshot filename to list
-        CwCMod.screenshots.add(CwCUtils.screenshotDir+"/"+prefix+"-"+mc.player.getName()+"-"+suffix+".png");
+        CwCMod.screenshots.add(CwCUtils.screenshotDir+slash+prefix+"-"+mc.player.getName()+"-"+suffix+".png");
         System.out.println("Screenshot: "+CwCMod.screenshots.get(CwCMod.screenshots.size()-1));
         index++;
 

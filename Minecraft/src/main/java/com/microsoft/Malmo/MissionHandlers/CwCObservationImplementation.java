@@ -232,6 +232,7 @@ public class CwCObservationImplementation extends ObservationFromServer
     @Override
     public void prepare(MissionInit missionInit) {
         super.prepare(missionInit);
+        reset();
         MinecraftForge.EVENT_BUS.register(this);
     }
 
@@ -270,5 +271,12 @@ public class CwCObservationImplementation extends ObservationFromServer
                 initialized = true;
             }
         }
+    }
+
+    private void reset() {
+        lastScreenshotPath = "";
+        actionPerformed = false;
+        waitTickAfterInit = 0;
+        initialized = false;
     }
 }
