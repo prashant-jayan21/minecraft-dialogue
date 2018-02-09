@@ -58,10 +58,10 @@ public class CwCUtils {
     /**
      * Takes a screenshot with the appropriate filename.
      * @param mc Minecraft client
-     * @param timestamp Whether or not to use timestamp in the screenshot filename
+     * @param useTimestamps Whether or not to use timestamp in the screenshot filename
      * @param type Type of event that triggered this screenshot action
      */
-    protected static void takeScreenshot(Minecraft mc, boolean timestamp, CwCScreenshotEventType type) {
+    protected static void takeScreenshot(Minecraft mc, boolean useTimestamps, CwCScreenshotEventType type) {
         // get the mission summary
         if (MalmoMod.instance.getClient() != null && MalmoMod.instance.getClient().getStateMachine().currentMissionInit() != null &&
                 (summary == null || !summary.equals(MalmoMod.instance.getClient().getStateMachine().currentMissionInit().getMission().getAbout().getSummary()))) {
@@ -77,16 +77,17 @@ public class CwCUtils {
         // prefix with either timestamp or screenshot index
         long time = System.currentTimeMillis();
         if (startTime == Long.MIN_VALUE) startTime = time;
-        String prefix = (summary == null ? "" : summary+slash) + (timestamp ? time-startTime : index);
+        String prefix = (summary == null ? "" : summary+slash);
+        String timestamp = ""+(useTimestamps ? time-startTime : index);
         // suffix with type of triggering event
         String suffix = type.name().toLowerCase();
 
         // take the screenshot
         if (!disableScreenshots)
-            ScreenShotHelper.saveScreenshot(CwCUtils.loggingDir, prefix+"-"+mc.player.getName()+"-"+suffix+".png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
+            ScreenShotHelper.saveScreenshot(CwCUtils.loggingDir, prefix+timestamp+"-"+mc.player.getName()+"-"+suffix+".png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
 
         // save screenshot filename to list
-        CwCMod.screenshots.add(CwCUtils.screenshotDir+slash+prefix+"-"+mc.player.getName()+"-"+suffix+".png");
+        CwCMod.screenshots.add(timestamp+"-"+mc.player.getName()+"-"+suffix+".png");
         System.out.println("Screenshot: "+CwCMod.screenshots.get(CwCMod.screenshots.size()-1));
         index++;
 

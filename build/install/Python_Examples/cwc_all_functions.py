@@ -464,18 +464,11 @@ def cwc_all_obs_and_save_data(args):
     if not os.path.isdir("logs/"):
         os.makedirs("logs/")
 
-    if not os.path.isdir("logs/"+player_ids):
-        os.makedirs("logs/"+player_ids+"/")
-
-    if not os.path.isdir("logs/"+player_ids+"/"+config_id+"/"):
-        os.makedirs("logs/"+player_ids+"/"+config_id+"/")
-        os.makedirs("logs/"+player_ids+"/"+config_id+"/json/")
-        os.makedirs("logs/"+player_ids+"/"+config_id+"/txt/")
-
-    obs_file_name = "cwc_pilot-" + config_id + "-" + experiment_time # for the json data files
+    if not os.path.isdir("logs/"+experiment_id):
+        os.makedirs("logs/"+experiment_id)
 
     # human readable log
-    txt_log = open("logs/"+player_ids+"/"+config_id+"/txt/"+obs_file_name + ".txt", "w")
+    txt_log = open("logs/"+experiment_id+"/log.txt", "w")
     txt_log.write(string_to_write)
     txt_log.close()
 
@@ -483,7 +476,7 @@ def cwc_all_obs_and_save_data(args):
 
     # machine readable log -- unalinged
     obs_data_dict = {"WorldStates": all_world_states, "TimeElapsed": time_elapsed}
-    with open("logs/"+player_ids+"/"+config_id+"/json/"+obs_file_name + ".json", "w") as json_log:
+    with open("logs/"+experiment_id+"/observations.json", "w") as json_log:
         json.dump(obs_data_dict, json_log)
 
     m, s = divmod(time_elapsed, 60)
