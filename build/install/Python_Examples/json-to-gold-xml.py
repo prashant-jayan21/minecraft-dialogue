@@ -10,15 +10,16 @@ with open(sys.argv[1]) as jd:
 if not os.path.isdir("gold-configurations/"):
 	os.makedirs("gold-configurations/")
 
-gf = "gold-configurations/"+ (sys.argv[1].replace(".json","") if len(sys.argv) < 3 else sys.argv[2])+".xml"
+gfn = "/".join(sys.argv[1].split("/")[-2:])
+gf = "gold-configurations/"+ (gfn.replace(".json","") if len(sys.argv) < 3 else sys.argv[2])+".xml"
 gold = open(gf, 'w')
 
-conf = log["all_world_states"][len(log["all_world_states"])-1]["blocks_structure"]
+conf = log["WorldStates"][len(log["WorldStates"])-1]["BlocksInside"]
 for block in conf:
-	bt = str(block["type"])
-	bx = str(block["coordinates_absolute"]["x"]+100)
-	by = str(block["coordinates_absolute"]["y"])
-	bz = str(block["coordinates_absolute"]["z"]+100)
+	bt = str(block["Type"])
+	bx = str(block["AbsoluteCoordinates"]["X"]+100)
+	by = str(block["AbsoluteCoordinates"]["Y"])
+	bz = str(block["AbsoluteCoordinates"]["Z"]+100)
 	gold.write("<DrawBlock type=\"cwcmod:"+bt+"\" x=\""+bx+"\" y=\""+by+"\" z=\""+bz+"\"/>\n")
 
 gold.close()

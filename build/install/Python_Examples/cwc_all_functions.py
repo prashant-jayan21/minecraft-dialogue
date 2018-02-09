@@ -170,7 +170,7 @@ def postprocess(all_world_states):
     chat_history = []
     string_to_write = ""
     for world_state in all_world_states:
-        print "---\n", world_state
+        # print "---\n", world_state
         if world_state.get("ChatHistory") is not None:
             chat_history += world_state["ChatHistory"]
         world_state["ChatHistory"] = copy.deepcopy(chat_history)
@@ -452,23 +452,25 @@ def cwc_all_obs_and_save_data(args):
     print "Postprocessing world states...\n",
     string_to_write = postprocess(all_world_states)
 
-    for ws in all_world_states:
-        prettyPrintJson(ws)
+    # for ws in all_world_states:
+    #     prettyPrintJson(ws)
 
     # write data
+    experiment_log = "logs/"+experiment_id
+
     print
-    print "Writing collected data to files...",
+    print "Writing collected data to:", experiment_log,
 
     # FIXME: Parameterize all of these magic strings
 
     if not os.path.isdir("logs/"):
         os.makedirs("logs/")
 
-    if not os.path.isdir("logs/"+experiment_id):
-        os.makedirs("logs/"+experiment_id)
+    if not os.path.isdir(experiment_log):
+        os.makedirs(experiment_log)
 
     # human readable log
-    txt_log = open("logs/"+experiment_id+"/log.txt", "w")
+    txt_log = open(experiment_log+"/log.txt", "w")
     txt_log.write(string_to_write)
     txt_log.close()
 
@@ -476,7 +478,7 @@ def cwc_all_obs_and_save_data(args):
 
     # machine readable log -- unalinged
     obs_data_dict = {"WorldStates": all_world_states, "TimeElapsed": time_elapsed}
-    with open("logs/"+experiment_id+"/observations.json", "w") as json_log:
+    with open(experiment_log+"/observations.json", "w") as json_log:
         json.dump(obs_data_dict, json_log)
 
     m, s = divmod(time_elapsed, 60)
