@@ -1,5 +1,21 @@
 import re
 
+def add_architect_screenshots(json, aligned_pairs):
+    all_states = json["WorldStates"]
+    all_states_processed = []
+
+    for state in all_states:
+        builder_screenshot = state["ScreenshotPath"].split("\\")[-1]
+        architect_screenshot = get_architect_screenshot(builder_screenshot, aligned_pairs)
+        if architect_screenshot is not None:
+            del state["ScreenshotPath"]
+            state["BuilderScreenshotPath"] = builder_screenshot
+            state["ArchitectScreenshotPath"] = architect_screenshot
+        all_states_processed.append(state)
+
+    json["WorldStates"] = all_states_processed
+    return json
+
 def get_architect_screenshot(builder_screenshot, aligned_pairs):
     for pair in aligned_pairs:
         if pair[1] == builder_screenshot:
