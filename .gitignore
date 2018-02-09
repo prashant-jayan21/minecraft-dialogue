@@ -233,3 +233,7 @@ Minecraft/out/production/Minecraft_main
 Minecraft/run
 *.index
 *.properties
+
+*.cmake
+*.make
+Minecraft/*

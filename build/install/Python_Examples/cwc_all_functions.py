@@ -259,6 +259,8 @@ def prettyPrintString(stw):
     sys.stdout.write('\t('+str(num_lines)+' values)\n\n')
 
 def cwc_all_obs_and_save_data(args):
+    start_time = time.time()
+
     chat_history = []
     last_ws = None
 
@@ -477,12 +479,16 @@ def cwc_all_obs_and_save_data(args):
     txt_log.write(string_to_write)
     txt_log.close()
 
+    time_elapsed = time.time()-start_time
+
     # machine readable log -- unalinged
-    obs_data_dict = {"WorldStates": all_world_states}
+    obs_data_dict = {"WorldStates": all_world_states, "TimeElapsed": time_elapsed}
     with open("logs/"+player_ids+"/"+config_id+"/json/"+obs_file_name + ".json", "w") as json_log:
         json.dump(obs_data_dict, json_log)
 
-    print "Done!"
+    m, s = divmod(time_elapsed, 60)
+    h, m = divmod(m, 60)
+    print "Done! Mission time elapsed: %d:%02d:%02d (%.2fs)" % (h, m, s, time_elapsed)
     print
 
     print "Waiting for mission to end..."
