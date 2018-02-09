@@ -1,54 +1,71 @@
-# Align observations and screenshots
+import re
 
-import json
-from pprint import pprint
-from os import listdir
-from os.path import join
+def get_architect_screenshot(builder_screenshot, aligned_pairs):
+    for pair in aligned_pairs:
+        if pair[1] == builder_screenshot:
+            return pair[0]
+    return None
 
-def align(obs_data_unalinged, screenshots_dir):
+def align_fixed(architect_filenames, builder_filenames):
+    all_filenames = architect_filenames + builder_filenames
 
-    # get states from json data
-    all_world_states = obs_data_unalinged["all_world_states"]
+    grouping = {}
+    for filename in all_filenames:
+        key = get_key(filename)[1]
+        if key not in grouping:
+            grouping[key] = []
+        grouping[key].append(filename)
 
-    # get screenshots
-    screenshots = listdir(screenshots_dir)
+    aligned_pairs = get_pairs(grouping)
 
-    screenshots = list(filter(lambda x: x.endswith(".png"), screenshots))
-    assert len(screenshots)%2 == 0 # test that there are even number of screenshots (equal number from builder and architect)
+    all_aligned_filenames = [item for pair in aligned_pairs for item in pair]
+    all_unaligned_filenames = set(all_filenames) - set(all_aligned_filenames)
+    print "UNALIGNED SCREENSHOTS: " + str(all_unaligned_filenames)
 
-    screenshots.sort()
+    return aligned_pairs
 
-    screenshots_paired = [] # each pair will be (architect screenshot, builder screenshot)
-    for screenshots_pair in zip(screenshots[::2], screenshots[1::2]):
-        assert "Architect" in screenshots_pair[0] # test that first screenshot is architect's
-        assert "Builder" in screenshots_pair[1] # test that second screenshot is builder's
-        screenshots_pair_dict = {
-            "architect" : join(screenshots_dir, screenshots_pair[0]), # also finally obtain full path
-            "builder": join(screenshots_dir, screenshots_pair[1]) # also finally obtain full path
-        }
-        screenshots_paired.append(screenshots_pair_dict)
+def get_pairs(grouping):
+    aligned_pairs = []
 
-    # align
-    prev_game_state = ""
-    all_world_states_aligned = []
-    screenshots_paired_counter = 0
+    for action, all_filenames_for_action in grouping.iteritems():
+        # split into builder and architect screenshots
+        architect_filenames = filter(lambda x: "Architect" in x, all_filenames_for_action)
+        builder_filenames = filter(lambda x: "Builder" in x, all_filenames_for_action)
+        # create graph
+        graph = []
+        for a in architect_filenames:
+            for b in builder_filenames:
+                weight = get_weight(a, b)
+                graph.append((a, b, weight))
+        # process graph
+        while graph:
+            # select edge with min weight
+            a_min, b_min, w_min = min(graph, key = lambda x: x[2])
+            aligned_pairs.append((a_min, b_min))
+            # deletions
+            graph = filter(lambda x: x[0] != a_min and x[1] != b_min, graph)
 
-    for world_state in all_world_states:
+    return aligned_pairs
 
-        current_game_state = world_state["state"]
+def get_weight(architect_filename, builder_filename):
+    architect_timestamp, architect_action = get_key(architect_filename)
+    builder_timestamp, builder_action = get_key(builder_filename)
+    return abs(float(architect_timestamp) - float(builder_timestamp))
 
-        if current_game_state != prev_game_state:
-            # game state change only -- no screenshot to align to -- TODO: implement using state deltas once you have them as part of the state
-            prev_game_state = current_game_state
-            world_state["screenshots"] = {}
-        else:
-            # no game state change -- screenshots to align to
-            world_state["screenshots"] = screenshots_paired[screenshots_paired_counter] # will also test if there are missing screenshots in case of an index out of bound error
-            screenshots_paired_counter += 1
+def get_key(filename):
+    return (re.split(r"[-.]",filename)[0], re.split(r"[-.]",filename)[2])
 
-        all_world_states_aligned.append(world_state)
+import os
+import pprint
 
-    assert screenshots_paired_counter == len(screenshots_paired) # test that there are no extra screenshots
+architect_dir = "/Users/prashant/Desktop/B1-A2-blue-original-L-1517603132657_a"
+builder_dir = "/Users/prashant/Desktop/B1-A2-blue-original-L-1517603132657_b"
 
-    # return aligned json data
-    return {"all_world_states_aligned": all_world_states_aligned}
+architect_filenames = filter(lambda x: x.endswith(".png"), os.listdir(architect_dir))
+builder_filenames = filter(lambda x: x.endswith(".png"), os.listdir(builder_dir))
+
+results = align_fixed(architect_filenames, builder_filenames)
+
+pp = pprint.PrettyPrinter()
+pp.pprint(results)
+print(len(results))
