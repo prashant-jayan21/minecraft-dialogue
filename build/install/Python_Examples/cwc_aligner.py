@@ -2,14 +2,15 @@ import re
 import os
 import json
 from os.path import join, isdir, isfile
+import argparse
 
-def postprocess_missions(logs_super_dir, screenshots_super_dir):
-    all_log_dirs = filter(lambda x: isdir(join(logs_super_dir, x)), os.listdir(logs_super_dir))
+def postprocess_missions(logs_root_dir, screenshots_root_dir):
+    all_log_dirs = filter(lambda x: isdir(join(logs_root_dir, x)), os.listdir(logs_root_dir))
 
     for log_dir in all_log_dirs:
-        if os.path.isfile(join(logs_super_dir, log_dir, "observations_postprocessed.json")):
+        if os.path.isfile(join(logs_root_dir, log_dir, "observations_postprocessed.json")):
             continue
-        postprocess_observations(join(logs_super_dir, log_dir), join(screenshots_super_dir, log_dir))
+        postprocess_observations(join(logs_root_dir, log_dir), join(screenshots_root_dir, log_dir))
 
 def postprocess_observations(logs_dir, screenshots_dir):
     all_filenames = filter(lambda x: x.endswith(".png"), os.listdir(screenshots_dir))
@@ -96,24 +97,10 @@ def get_key(filename):
     # get timestamp and action for screenshot
     return (re.split(r"[-.]",filename)[0], re.split(r"[-.]",filename)[2])
 
-def temp_test():
-    import os
-    import pprint
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Postprocess observations for screenshot alignment")
+    parser.add_argument("logs_root_dir", help="Root directory for all log data")
+    parser.add_argument("screenshots_root_dir", help="Root directory for all screenshot data")
+    args = parser.parse_args()
 
-    # screenshots_dir = "/Users/prashant/Desktop/B1-A2-blue-original-L-1517603132657"
-    # all_filenames = filter(lambda x: x.endswith(".png"), os.listdir(screenshots_dir))
-    #
-    # results = align(all_filenames)
-    # pprint.PrettyPrinter().pprint(results)
-
-    # postprocess_observations(
-    #     screenshots_dir = "/Users/prashant/Work/cwc-minecraft/Minecraft/run/screenshots/B2-A1-blue-original-L-1518302043792",
-    #     logs_dir = "/Users/prashant/Work/cwc-minecraft/build/install/Python_Examples/logs/B2-A1-blue-original-L-1518302043792"
-    # )
-
-    postprocess_missions(
-        logs_super_dir = "/Users/prashant/Work/cwc-minecraft/build/install/Python_Examples/logs",
-        screenshots_super_dir = "/Users/prashant/Work/cwc-minecraft/Minecraft/run/screenshots"
-    )
-
-temp_test()
+    postprocess_missions(args.logs_root_dir, args.screenshots_root_dir)
