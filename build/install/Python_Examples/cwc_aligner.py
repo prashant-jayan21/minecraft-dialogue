@@ -1,11 +1,34 @@
 import re
+import os
+import json
+from os.path import join, isdir, isfile
+
+def postprocess_missions(logs_super_dir, screenshots_super_dir):
+    all_log_dirs = filter(lambda x: isdir(join(logs_super_dir, x)), os.listdir(logs_super_dir))
+
+    for log_dir in all_log_dirs:
+        if os.path.isfile(join(logs_super_dir, log_dir, "observations_postprocessed.json")):
+            continue
+        postprocess_observations(join(logs_super_dir, log_dir), join(screenshots_super_dir, log_dir))
+
+def postprocess_observations(logs_dir, screenshots_dir):
+    all_filenames = filter(lambda x: x.endswith(".png"), os.listdir(screenshots_dir))
+    aligned_pairs = align(all_filenames)
+
+    with open(join(logs_dir, "observations.json")) as observations:
+	       observations_dict = json.load(observations)
+
+    observations_dict = add_architect_screenshots(observations_dict, aligned_pairs)
+
+    with open(join(logs_dir, "observations_postprocessed.json"), "w") as observations_processed:
+        json.dump(observations_dict, observations_processed)
 
 def add_architect_screenshots(json, aligned_pairs):
     all_states = json["WorldStates"]
     all_states_processed = []
 
     for state in all_states:
-        builder_screenshot = state["ScreenshotPath"].split("\\")[-1]
+        builder_screenshot = state["ScreenshotPath"]
         architect_screenshot = get_architect_screenshot(builder_screenshot, aligned_pairs)
         if architect_screenshot is not None:
             del state["ScreenshotPath"]
@@ -77,10 +100,20 @@ def temp_test():
     import os
     import pprint
 
-    screenshots_dir = "/Users/prashant/Desktop/B1-A2-blue-original-L-1517603132657"
-    all_filenames = filter(lambda x: x.endswith(".png"), os.listdir(screenshots_dir))
+    # screenshots_dir = "/Users/prashant/Desktop/B1-A2-blue-original-L-1517603132657"
+    # all_filenames = filter(lambda x: x.endswith(".png"), os.listdir(screenshots_dir))
+    #
+    # results = align(all_filenames)
+    # pprint.PrettyPrinter().pprint(results)
 
-    results = align(all_filenames)
-    pprint.PrettyPrinter().pprint(results)
+    # postprocess_observations(
+    #     screenshots_dir = "/Users/prashant/Work/cwc-minecraft/Minecraft/run/screenshots/B2-A1-blue-original-L-1518302043792",
+    #     logs_dir = "/Users/prashant/Work/cwc-minecraft/build/install/Python_Examples/logs/B2-A1-blue-original-L-1518302043792"
+    # )
+
+    postprocess_missions(
+        logs_super_dir = "/Users/prashant/Work/cwc-minecraft/build/install/Python_Examples/logs",
+        screenshots_super_dir = "/Users/prashant/Work/cwc-minecraft/Minecraft/run/screenshots"
+    )
 
 temp_test()
