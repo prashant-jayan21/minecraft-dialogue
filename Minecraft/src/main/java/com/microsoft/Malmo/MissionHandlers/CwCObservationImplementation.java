@@ -266,7 +266,7 @@ public class CwCObservationImplementation extends ObservationFromServer
         if (this.missionIsRunning) {
             if (waitTickAfterInit < 50) waitTickAfterInit++;
             else if (!initialized) {
-                if (Minecraft.getMinecraft().player.getName().equals(MalmoMod.BUILDER))
+                if (Minecraft.getMinecraft().player.getName().equals(CwCMod.BUILDER))
                     Minecraft.getMinecraft().player.sendChatMessage("Mission has started.");
                 initialized = true;
             }

@@ -36,6 +36,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
 
 import com.microsoft.Malmo.Schemas.*;
+import cwc.CwCMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.GuiDisconnected;
@@ -1578,7 +1579,11 @@ public class ClientStateMachine extends StateMachine implements IMalmoMessageLis
             this.videoHook.start(currentMissionInit(), currentMissionBehaviour().videoProducer);
 
             // Make sure we have mouse control:
-            ClientStateMachine.this.inputController.setInputType(InputType.HUMAN); // FIXME: now initiates missions with human control -- modified from original Malmo code
+            // FIXME: now initiates missions with human control (unless fixed viewer) -- modified from original Malmo code
+            if (Minecraft.getMinecraft().player.getName().equals(CwCMod.FIXED_VIEWER))
+                ClientStateMachine.this.inputController.setInputType(InputType.AI);
+            else
+                ClientStateMachine.this.inputController.setInputType(InputType.HUMAN);
             Minecraft.getMinecraft().inGameHasFocus = true; // Otherwise auto-repeat won't work for mouse clicks.
 
             // Overclocking:

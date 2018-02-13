@@ -29,6 +29,11 @@ public class CwCMod {
 	@SidedProxy(clientSide="cwc.ClientOnlyProxy", serverSide="cwc.DedicatedServerProxy")
 	public static CommonProxy proxy;			 // mod proxy
 
+	public static final String ARCHITECT = "Architect";
+	public static final String BUILDER = "Builder";
+	public static final String ORACLE = "Oracle";
+	public static final String FIXED_VIEWER = "FixedViewer";
+
 	public static boolean enableAIToggle = false;		// whether or not the original Malmo AI/Human toggle option is enabled
 	public static boolean unlimitedInventory = false;	// whether or not Builder has unlimited inventory of blocks
 	public static final int MAX_INVENTORY_SIZE = 5;		// maximum number of blocks that can be held at a time by the Builder (if limited inventory)

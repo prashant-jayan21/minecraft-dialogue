@@ -1,6 +1,7 @@
 package cwc;
 
 import io.netty.buffer.ByteBuf;
+import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 
 /**
@@ -9,15 +10,26 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
  */
 public class CwCScreenshotMessage implements IMessage {
     private CwCScreenshotEventType type;  // type of event that triggered the screenshot message
+    private String blockName;
 
     public CwCScreenshotMessage() {}
-    public CwCScreenshotMessage(CwCScreenshotEventType type) { this.type = type; }
+    public CwCScreenshotMessage(CwCScreenshotEventType type, String blockName) {
+        this.type = type;
+        this.blockName = blockName;
+    }
 
     @Override
-    public void fromBytes(ByteBuf buf) { this.type = CwCScreenshotEventType.values()[buf.readInt()]; }
+    public void fromBytes(ByteBuf buf) {
+        this.type = CwCScreenshotEventType.values()[buf.readInt()];
+        this.blockName = ByteBufUtils.readUTF8String(buf);
+    }
 
     @Override
-    public void toBytes(ByteBuf buf) { buf.writeInt(this.type.ordinal()); }
+    public void toBytes(ByteBuf buf) {
+        buf.writeInt(this.type.ordinal());
+        ByteBufUtils.writeUTF8String(buf, this.blockName);
+    }
 
     public CwCScreenshotEventType getType() { return this.type; }
+    public String getBlockName() { return this.blockName; }
 }

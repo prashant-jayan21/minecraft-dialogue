@@ -63,7 +63,7 @@ public class CwCPositionMessageHandler implements IMessageHandler<CwCPositionMes
      * @param minecraft Minecraft client instance
      */
     void processMessageOnClient(CwCPositionMessage message, Minecraft minecraft) {
-        if (minecraft.player.getName().equals(MalmoMod.BUILDER))
+        if (minecraft.player.getName().equals(CwCMod.BUILDER))
             CwCMod.network.sendToServer(new CwCPositionMessage(minecraft.player.posY));
         else CwCEventHandler.builderCurrentY = message.y();
     }

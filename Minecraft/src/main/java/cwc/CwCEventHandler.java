@@ -1,12 +1,12 @@
 package cwc;
 
-import com.microsoft.Malmo.MalmoMod;
 import com.microsoft.Malmo.MissionHandlers.AbsoluteMovementCommandsImplementation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.GuiChat;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.entity.EntityTracker;
 import net.minecraft.entity.item.EntityFallingBlock;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
@@ -15,6 +15,7 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.SPacketHeldItemChange;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
@@ -25,6 +26,7 @@ import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent.*;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
@@ -40,34 +42,40 @@ import java.util.List;
  */
 public class CwCEventHandler {
 
-    // used to indicate mission should be quit
+    // mission quit
     protected static boolean quit = false;
 
+    // initialization indicators for server and client
+    private static boolean initializedOnServer = false;
+    private static boolean initializedOnClient = false;
+
+    // indicates whether the current player or their dialogue partner is chatting
     protected static boolean chatting = false;
     protected static boolean partnerIsChatting = false;
 
-    // used to handle screenshot logic
-    protected static boolean receivedChat = false, renderedChat = false;                         // chat is received & rendered
-    protected static boolean placedBlock = false, pickedUpBlock = false, renderedBlock = false;  // block is placed/picked up & rendered
-    protected static boolean updatePlayerTick = false, updateRenderTick = false;                 // wait for the second update/render tick of a pickup action before taking a screenshot
-    protected static boolean disablePutdown = false, disablePickup = false;                      // disallows Builder to putdown/pickup until a screenshot of the last action has been taken
+    // for screenshot logic
+    private static boolean receivedChat = false, renderedChat = false;            // chat is received & rendered
+    private static int sentChatMessages = 0;                                      // number of chat messages sent (by Architect)
+    protected static boolean placedBlock = false, pickedUpBlock = false;          // block is placed or picked up
+    private static boolean renderedBlock = false;                                 // block is rendered
+    private static boolean updatePlayerTick = false, updateRenderTick = false;    // wait for the second update/render tick of a pickup action before taking a screenshot
+    protected static boolean disablePutdown = false, disablePickup = false;       // disallows Builder to putdown/pickup until a screenshot of the last action has been taken
+    protected static String manipulatedBlockName = null;                          // name of block picked up/put down (for screenshot naming purposes)
 
+    // for Architect follow logic
     private static boolean following = false, sneaking = false;  // resets the architect's position after his chat box is closed
-    protected static double builderCurrentY = Double.MIN_VALUE;
-
-    private static int sentChatMessages = 0;
+    protected static double builderCurrentY = Double.MIN_VALUE;  // keeps track of Builder's current Y-value
 
     /**
      * Resets the necessary boolean fields.
      */
     protected static void reset() {
-        disablePutdown = false;
-        disablePickup = false;
-
         resetChatFields();
         resetPlaceBlockFields();
         resetBreakBlockFields();
         resetArchitectFollowFields();
+        resetInitializationFields();
+        resetManipulatedBlockName();
     }
 
     /**
@@ -88,8 +96,13 @@ public class CwCEventHandler {
         if (!(event.getEntity() instanceof EntityPlayer || event.getEntity() instanceof EntityFallingBlock || event.getEntity() instanceof EntityItem))
             event.setCanceled(true);
 
-        if (event.getEntity().getEntityWorld().isRemote)
-            Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
+        if (event.getEntity().getEntityWorld().isRemote) {
+            Minecraft minecraft = Minecraft.getMinecraft();
+            GameSettings gs = minecraft.gameSettings;
+            gs.thirdPersonView = 0;
+            if (minecraft.player.getName().equals(CwCMod.FIXED_VIEWER))
+                gs.chatVisibility = EntityPlayer.EnumChatVisibility.HIDDEN;
+        }
 
         else if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
             EntityPlayerMP player = (EntityPlayerMP) event.getEntity();
@@ -103,15 +116,15 @@ public class CwCEventHandler {
             System.out.println("\t-- flying capabilities ON, damage OFF");
 
             // spawn with empty hand (if possible)
-            if (player.getName().equals(MalmoMod.BUILDER)) {
+            if (player.getName().equals(CwCMod.BUILDER)) {
                 int es = player.inventory.getFirstEmptyStack();
                 player.inventory.currentItem = es < 0 ? 0 : es;
                 player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
             }
 
             // initialize Architect, Builder (if limited inventory) with empty inventory
-            if (player.getName().equals(MalmoMod.ARCHITECT) || player.getName().equals(MalmoMod.ORACLE) ||
-                    (player.getName().equals(MalmoMod.BUILDER) && !CwCMod.unlimitedInventory)) {
+            if (player.getName().equals(CwCMod.ARCHITECT) || player.getName().equals(CwCMod.ORACLE) || player.getName().equals(CwCMod.FIXED_VIEWER) ||
+                    (player.getName().equals(CwCMod.BUILDER) && !CwCMod.unlimitedInventory)) {
                 for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++)
                     player.inventory.setInventorySlotContents(i, ItemStack.EMPTY);
                 return;
@@ -158,7 +171,7 @@ public class CwCEventHandler {
             System.out.println("\t-- flying capabilities ON, damage OFF");
 
             // spawn with empty hand (if possible)
-            if (player.getName().equals(MalmoMod.BUILDER)) {
+            if (player.getName().equals(CwCMod.BUILDER)) {
                 int es = player.inventory.getFirstEmptyStack();
                 player.inventory.currentItem = es < 0 ? 0 : es;
                 player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
@@ -181,7 +194,7 @@ public class CwCEventHandler {
         EntityPlayerSP player = minecraft.player;
 
         // Builder keybinds
-        if (player.getName().equals(MalmoMod.BUILDER)) {
+        if (player.getName().equals(CwCMod.BUILDER)) {
             // ignore regular set of keypresses while building (e.g. dropping items, swapping hands, inventory, etc.)
             if (gs.keyBindDrop.isPressed() || gs.keyBindSwapHands.isPressed() || gs.keyBindUseItem.isPressed() ||
                     gs.keyBindInventory.isPressed() || gs.keyBindPlayerList.isPressed() || gs.keyBindCommand.isPressed() ||
@@ -190,12 +203,12 @@ public class CwCEventHandler {
         }
 
         // Architect keybinds
-        else if (player.getName().equals(MalmoMod.ARCHITECT)) {
+        else if (player.getName().equals(CwCMod.ARCHITECT)) {
             // assume third-person mob-view of Builder when initiating a chat
             if (gs.keyBindChat.isPressed()) {
                 EntityPlayer builder = null;
                 for (EntityPlayer ep : minecraft.world.playerEntities)
-                    if (ep.getName().equals(MalmoMod.BUILDER)) builder = ep;
+                    if (ep.getName().equals(CwCMod.BUILDER)) builder = ep;
 
                 CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(builder.posX, builder.posY, builder.posZ, 0, 0, true, true, true, true, true));
                 minecraft.playerController.attackEntity(Minecraft.getMinecraft().player, builder);
@@ -212,6 +225,28 @@ public class CwCEventHandler {
 
             // ignore hotbar keypresses (in vanilla Minecraft, this would switch the spectator's choice of mob-view)
             for (KeyBinding kb : gs.keyBindsHotbar) if (kb.isPressed()) ;
+        }
+
+        else if (player.getName().equals(CwCMod.ORACLE)) {
+            // ignore regular set of keypresses while building (e.g. dropping items, swapping hands, inventory, etc.)
+            if (gs.keyBindDrop.isPressed() || gs.keyBindSwapHands.isPressed() || gs.keyBindUseItem.isPressed() ||
+                    gs.keyBindInventory.isPressed() || gs.keyBindPlayerList.isPressed() || gs.keyBindCommand.isPressed() ||
+                    gs.keyBindScreenshot.isPressed() || gs.keyBindTogglePerspective.isPressed() || gs.keyBindSmoothCamera.isPressed() ||
+                    gs.keyBindSpectatorOutlines.isPressed() || gs.keyBindChat.isPressed()) ;
+        }
+
+        else if (player.getName().equals(CwCMod.FIXED_VIEWER)) {
+            // ignore regular set of keypresses while building (e.g. dropping items, swapping hands, inventory, etc.) and disable movement
+            if (gs.keyBindDrop.isPressed() || gs.keyBindSwapHands.isPressed() || gs.keyBindUseItem.isPressed() ||
+                    gs.keyBindInventory.isPressed() || gs.keyBindPlayerList.isPressed() || gs.keyBindCommand.isPressed() ||
+                    gs.keyBindScreenshot.isPressed() || gs.keyBindTogglePerspective.isPressed() || gs.keyBindSmoothCamera.isPressed() ||
+                    gs.keyBindSpectatorOutlines.isPressed() || gs.keyBindChat.isPressed() ||
+                    gs.keyBindForward.isPressed() || gs.keyBindBack.isPressed() || gs.keyBindLeft.isPressed() || gs.keyBindRight.isPressed() ||
+                    gs.keyBindJump.isPressed() || gs.keyBindSneak.isPressed()) ;
+
+            if (gs.keyBindForward.isKeyDown() || gs.keyBindBack.isKeyDown() || gs.keyBindLeft.isKeyDown() || gs.keyBindRight.isKeyDown() ||
+                    gs.keyBindJump.isKeyDown() || gs.keyBindSneak.isKeyDown())
+                KeyBinding.unPressAllKeys();
         }
     }
 
@@ -235,9 +270,9 @@ public class CwCEventHandler {
 
         // exit mob-view when chat window is closed
         Minecraft minecraft = Minecraft.getMinecraft();
-        if (minecraft != null && minecraft.player != null && minecraft.player.getName().equals(MalmoMod.ARCHITECT)) {
+        if (minecraft != null && minecraft.player != null && minecraft.player.getName().equals(CwCMod.ARCHITECT)) {
             if (minecraft.ingameGUI.getChatGUI().getSentMessages().size() > sentChatMessages) {
-                CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT);
+                CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT, null);
                 sentChatMessages = minecraft.ingameGUI.getChatGUI().getSentMessages().size();
                 resetChatFields();
             }
@@ -259,8 +294,8 @@ public class CwCEventHandler {
             }
         }
 
-        if (partnerIsChatting) {
-            String partner = minecraft.player.getName().equals(MalmoMod.ARCHITECT) ? "Builder" : "Architect";
+        if (partnerIsChatting && !minecraft.player.getName().equals(CwCMod.FIXED_VIEWER)) {
+            String partner = minecraft.player.getName().equals(CwCMod.ARCHITECT) ? "Builder" : "Architect";
             minecraft.ingameGUI.setOverlayMessage(partner + " is typing...", true);
         } else minecraft.ingameGUI.setOverlayMessage("", false);
     }
@@ -288,7 +323,7 @@ public class CwCEventHandler {
             Minecraft minecraft = Minecraft.getMinecraft();
 
             // Architect sneaking to break mob-view
-            if (player.getName().equals(MalmoMod.ARCHITECT) && sneaking) {
+            if (player.getName().equals(CwCMod.ARCHITECT) && sneaking) {
                 CwCMod.network.sendToServer(new CwCPositionMessage());
 
                 // once the Architect's y-coordinate position differs from the Builder's, teleport him to a neutral position
@@ -299,15 +334,20 @@ public class CwCEventHandler {
                 }
             }
 
+            if (player.getName().equals(CwCMod.FIXED_VIEWER) && !initializedOnClient) {
+                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 8, -7, 0, 50, true, true, true, true, true));
+                initializedOnClient = true;
+            }
+
             // take a screenshot when a chat message has been received and rendered by the client
             if (receivedChat && renderedChat) {
-                CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT);
+                if (!player.getName().equals(CwCMod.FIXED_VIEWER)) CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT, null);
                 resetChatFields();
             }
 
             // take a screenshot when a block place event has been received and rendered by the client
             if (placedBlock && renderedBlock) {
-                CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.PUTDOWN);
+                CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.PUTDOWN, manipulatedBlockName);
                 resetPlaceBlockFields();
             }
 
@@ -316,8 +356,25 @@ public class CwCEventHandler {
 
                 // take a screenshot when a block break event has been received and rendered by the client
             else if (pickedUpBlock && renderedBlock && updatePlayerTick && updateRenderTick) {
-                CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.PICKUP);
+                CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.PICKUP, manipulatedBlockName);
                 resetBreakBlockFields();
+            }
+        }
+
+        // hide the Architect and FixedViewer floating heads from each other by telling the server to stop tracking them
+        else if (!initializedOnServer) {
+            EntityPlayer fv = FMLCommonHandler.instance().getMinecraftServerInstance().getEntityWorld().getPlayerEntityByName(CwCMod.FIXED_VIEWER);
+            if (fv != null) {
+                WorldServer world = (WorldServer) fv.world;
+                EntityTracker et = world.getEntityTracker();
+
+                for (EntityPlayer pe : FMLCommonHandler.instance().getMinecraftServerInstance().getEntityWorld().playerEntities) {
+                    EntityPlayerMP entity = (EntityPlayerMP) pe;
+                    if (entity.getName().equals(CwCMod.FIXED_VIEWER) || entity.getName().equals(CwCMod.ARCHITECT))
+                        et.untrack(entity);
+                }
+
+                initializedOnServer = true;
             }
         }
     }
@@ -336,7 +393,7 @@ public class CwCEventHandler {
             event.setCanceled(true);
 
         Minecraft minecraft = Minecraft.getMinecraft();
-        if (minecraft.player.getName().equals(MalmoMod.ARCHITECT) && event.getType().equals(ElementType.HOTBAR))
+        if (minecraft.player.getName().equals(CwCMod.ARCHITECT) && event.getType().equals(ElementType.HOTBAR))
             event.setCanceled(true);
 
         // register the rendering of an action after player update
@@ -361,7 +418,7 @@ public class CwCEventHandler {
         // take a screenshot if message is non-system message
         if (event.getType() == 0) {
             List<String> sentMessages = minecraft.ingameGUI.getChatGUI().getSentMessages();
-            if (player.getName().equals(MalmoMod.BUILDER) || (player.getName().equals(MalmoMod.ARCHITECT) && (sentMessages.size() == 0 ||
+            if (player.getName().equals(CwCMod.BUILDER) || (player.getName().equals(CwCMod.ARCHITECT) && (sentMessages.size() == 0 ||
                     sentMessages.size() > 0 && !event.getMessage().getUnformattedText().equals("<Architect> " + sentMessages.get(sentMessages.size() - 1)))))
                 receivedChat = true;
         }
@@ -386,7 +443,7 @@ public class CwCEventHandler {
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onBlockClicked(PlayerInteractEvent.LeftClickBlock event) {
-        if (event.getEntity() instanceof EntityPlayer && event.getEntity().getName().equals(MalmoMod.BUILDER)) {
+        if (event.getEntity() instanceof EntityPlayer && event.getEntity().getName().equals(CwCMod.BUILDER)) {
             EntityPlayer player = (EntityPlayer) event.getEntity();
 
             // count the number of items currently in his inventory (hotbar)
@@ -411,7 +468,7 @@ public class CwCEventHandler {
     public void onBlockPlace(BlockEvent.PlaceEvent event) {
         if (!event.getPlayer().getEntityWorld().isRemote && event.getPlayer() instanceof EntityPlayerMP) {
             EntityPlayerMP player = (EntityPlayerMP) event.getPlayer();
-            CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PUTDOWN));
+            CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PUTDOWN, event.getPlacedBlock().getBlock().getLocalizedName()));
 
             // don't allow any more blocks to be placed until the screenshot has been taken
             disablePutdown = true;
@@ -454,7 +511,7 @@ public class CwCEventHandler {
                 // let the server know that the held item has been changed
                 // (and also notify server to inform clients to prepare to take a screenshot)
                 player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
-                CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PICKUP));
+                CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PICKUP, event.getItem().getEntityItem().getDisplayName()));
             }
         }
     }
@@ -476,6 +533,9 @@ public class CwCEventHandler {
     private static void resetChatFields() {
         receivedChat = false;
         renderedChat = false;
+        sentChatMessages = 0;
+        chatting = false;
+        partnerIsChatting = false;
     }
 
     /**
@@ -484,6 +544,7 @@ public class CwCEventHandler {
     private static void resetPlaceBlockFields() {
         placedBlock = false;
         renderedBlock = false;
+        disablePutdown = false;
     }
 
     /**
@@ -494,6 +555,7 @@ public class CwCEventHandler {
         renderedBlock = false;
         updatePlayerTick = false;
         updateRenderTick = false;
+        disablePickup = false;
     }
 
     /**
@@ -503,5 +565,15 @@ public class CwCEventHandler {
         following = false;
         sneaking = false;
         builderCurrentY = Double.MIN_VALUE;
+    }
+
+    private static void resetInitializationFields() {
+        initializedOnServer = false;
+        initializedOnClient = false;
+        quit = false;
+    }
+
+    private static void resetManipulatedBlockName() {
+        manipulatedBlockName = null;
     }
 }
