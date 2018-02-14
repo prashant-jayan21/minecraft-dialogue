@@ -236,4 +236,5 @@ Minecraft/run
 
 *.cmake
 *.make
-Minecraft/*
+Minecraft/Malmo
+Minecraft/CMake*
