@@ -238,3 +238,10 @@ Minecraft/run
 *.make
 Minecraft/Malmo
 Minecraft/CMake*
+Minecraft/Makefile
+Minecraft/DartConfiguration.tcl
+Minecraft/Schemas
+Minecraft/Minecraft*
+Minecraft/doc
+Minecraft/sample_missions
+Minecraft/scripts
