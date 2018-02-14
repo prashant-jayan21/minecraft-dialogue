@@ -265,8 +265,11 @@ public class CwCEventHandler {
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (quit) return;
 
+        Minecraft minecraft = Minecraft.getMinecraft();
+
         // Quits the mission if Ctrl-C is pressed by either player, killing all connected players.
-        if (CwCKeybinds.quitKeyC.isKeyDown() && CwCKeybinds.quitCtrl.isKeyDown()) {
+        if (CwCKeybinds.quitKeyC.isKeyDown() && CwCKeybinds.quitCtrl.isKeyDown() &&
+                (minecraft.player.getName().equals(CwCMod.ARCHITECT) || minecraft.player.getName().equals(CwCMod.BUILDER))) {
             System.out.println("CwCMod: Quitting the mission...");
             CwCMod.network.sendToServer(new CwCQuitMessage());
             // Unpress the keys
@@ -274,8 +277,6 @@ public class CwCEventHandler {
         }
 
         // exit mob-view when chat window is closed
-        Minecraft minecraft = Minecraft.getMinecraft();
-
         if (minecraft != null && minecraft.player != null && minecraft.player.getName().equals(CwCMod.ARCHITECT)) {
             if (minecraft.ingameGUI.getChatGUI().getSentMessages().size() > sentChatMessages) {
                 CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT);

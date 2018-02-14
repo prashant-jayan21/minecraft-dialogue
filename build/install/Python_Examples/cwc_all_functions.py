@@ -268,7 +268,7 @@ def cwc_all_obs_and_save_data(args):
     agent_hosts = [MalmoPython.AgentHost(), MalmoPython.AgentHost(), MalmoPython.AgentHost(), MalmoPython.AgentHost()]
 
     # Set observation policy for builder
-    agent_hosts[0].setObservationsPolicy(MalmoPython.ObservationsPolicy.KEEP_ALL_OBSERVATIONS)
+    agent_hosts[1].setObservationsPolicy(MalmoPython.ObservationsPolicy.KEEP_ALL_OBSERVATIONS)
 
     # Set up a client pool
     client_pool = MalmoPython.ClientPool()
@@ -410,14 +410,14 @@ def cwc_all_obs_and_save_data(args):
     timed_out = False
 
     while not timed_out:
-        for i in range(2):
+        for i in range(4):
             ah = agent_hosts[i]
             world_state = ah.getWorldState()
 
             if not world_state.is_mission_running:
                 timed_out = True
 
-            elif i == 0 and world_state.number_of_observations_since_last_state > 0:
+            elif i == 1 and world_state.number_of_observations_since_last_state > 0:
                 all_world_states = processObservations(all_world_states, world_state.observations)
 
         time.sleep(1)
@@ -433,7 +433,7 @@ def cwc_all_obs_and_save_data(args):
     experiment_log = "logs/"+experiment_id
 
     print
-    print "Writing collected data to:", experiment_log,
+    print "Writing collected data to:", experiment_log
 
     # FIXME: Parameterize all of these magic strings
 
@@ -450,7 +450,7 @@ def cwc_all_obs_and_save_data(args):
 
     time_elapsed = time.time()-start_time
 
-    # machine readable log -- unalinged
+    # machine readable log -- unaligned
     obs_data_dict = {"WorldStates": all_world_states, "TimeElapsed": time_elapsed}
     with open(experiment_log+"/observations.json", "w") as json_log:
         json.dump(obs_data_dict, json_log)
