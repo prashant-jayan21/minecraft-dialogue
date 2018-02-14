@@ -24,16 +24,21 @@ import com.google.gson.JsonPrimitive;
 import com.microsoft.Malmo.MalmoMod;
 import com.microsoft.Malmo.Schemas.*;
 import com.microsoft.Malmo.Utils.MinecraftTypeHelper;
+import cwc.CwCInitializationMessage;
 import cwc.CwCMod;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.EntityTracker;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
 import net.minecraftforge.event.world.BlockEvent;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
@@ -178,8 +183,10 @@ public class CwCObservationImplementation extends ObservationFromServer
     private ArrayList<String> chatMessagesReceived = new ArrayList<String>(); // list of chat messages received since last JSON was written
     private String lastScreenshotPath = "";                              // screenshot path sent in last JSON
     private boolean actionPerformed = false;                             // marks whether or not a write-triggering action has been performed
-    private static int waitTickAfterInit = 0;
-    private static boolean initialized = false;
+    private static int waitTickAfterMissionStart = 0;
+    private static boolean missionHasStarted = false;
+    private static boolean initializedOnServer = false;
+    public static boolean initializedOnClient = false;
 
     @Override
     public ObservationRequestMessage createObservationRequestMessage()
@@ -263,12 +270,35 @@ public class CwCObservationImplementation extends ObservationFromServer
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onEvent(TickEvent.ClientTickEvent event) {
-        if (this.missionIsRunning) {
-            if (waitTickAfterInit < 50) waitTickAfterInit++;
-            else if (!initialized) {
-                if (Minecraft.getMinecraft().player.getName().equals(CwCMod.BUILDER))
-                    Minecraft.getMinecraft().player.sendChatMessage("Mission has started.");
-                initialized = true;
+        Minecraft minecraft = Minecraft.getMinecraft();
+        if (this.missionIsRunning && minecraft.player.getName().equals(CwCMod.BUILDER)) {
+            if (!initializedOnServer) {
+                System.out.println("Initializing the server");
+                EntityPlayer fv = FMLCommonHandler.instance().getMinecraftServerInstance().getEntityWorld().getPlayerEntityByName(CwCMod.FIXED_VIEWER);
+                if (fv != null) {
+                    WorldServer world = (WorldServer) fv.world;
+                    EntityTracker et = world.getEntityTracker();
+
+                    for (EntityPlayer pe : FMLCommonHandler.instance().getMinecraftServerInstance().getEntityWorld().playerEntities) {
+                        EntityPlayerMP entity = (EntityPlayerMP) pe;
+                        if (entity.getName().equals(CwCMod.FIXED_VIEWER) || entity.getName().equals(CwCMod.ARCHITECT))
+                            et.untrack(entity);
+                    }
+                }
+
+                initializedOnServer = true;
+            }
+
+            if (!initializedOnClient) {
+                System.out.println("Sending client initialization message");
+                CwCMod.network.sendToServer(new CwCInitializationMessage());
+                initializedOnClient = true;
+            }
+
+            if (waitTickAfterMissionStart < 50) waitTickAfterMissionStart++;
+            else if (!missionHasStarted) {
+                minecraft.player.sendChatMessage("Mission has started.");
+                missionHasStarted = true;
             }
         }
     }
@@ -276,7 +306,9 @@ public class CwCObservationImplementation extends ObservationFromServer
     private void reset() {
         lastScreenshotPath = "";
         actionPerformed = false;
-        waitTickAfterInit = 0;
-        initialized = false;
+        waitTickAfterMissionStart = 0;
+        initializedOnServer = false;
+        initializedOnClient = false;
+        missionHasStarted = false;
     }
 }

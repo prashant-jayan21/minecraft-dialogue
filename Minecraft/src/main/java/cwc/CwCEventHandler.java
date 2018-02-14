@@ -46,8 +46,7 @@ public class CwCEventHandler {
     protected static boolean quit = false;
 
     // initialization indicators for server and client
-    private static boolean initializedOnServer = false;
-    private static boolean initializedOnClient = false;
+    protected static boolean initializedTimestamp = false;
 
     // indicates whether the current player or their dialogue partner is chatting
     protected static boolean chatting = false;
@@ -60,7 +59,6 @@ public class CwCEventHandler {
     private static boolean renderedBlock = false;                                 // block is rendered
     private static boolean updatePlayerTick = false, updateRenderTick = false;    // wait for the second update/render tick of a pickup action before taking a screenshot
     protected static boolean disablePutdown = false, disablePickup = false;       // disallows Builder to putdown/pickup until a screenshot of the last action has been taken
-    protected static String manipulatedBlockName = null;                          // name of block picked up/put down (for screenshot naming purposes)
 
     // for Architect follow logic
     private static boolean following = false, sneaking = false;  // resets the architect's position after his chat box is closed
@@ -70,12 +68,12 @@ public class CwCEventHandler {
      * Resets the necessary boolean fields.
      */
     protected static void reset() {
-        resetChatFields();
+        resetInitializationFields();
+        resetChatInitializationFields();
+        resetChatScreenshotFields();
+        resetArchitectFollowFields();
         resetPlaceBlockFields();
         resetBreakBlockFields();
-        resetArchitectFollowFields();
-        resetInitializationFields();
-        resetManipulatedBlockName();
     }
 
     /**
@@ -100,14 +98,14 @@ public class CwCEventHandler {
             Minecraft minecraft = Minecraft.getMinecraft();
             GameSettings gs = minecraft.gameSettings;
             gs.thirdPersonView = 0;
-            if (minecraft.player.getName().equals(CwCMod.FIXED_VIEWER))
-                gs.chatVisibility = EntityPlayer.EnumChatVisibility.HIDDEN;
+            gs.chatVisibility = EntityPlayer.EnumChatVisibility.FULL;
+            minecraft.ingameGUI.getChatGUI().clearChatMessages(true);
         }
 
         else if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
             EntityPlayerMP player = (EntityPlayerMP) event.getEntity();
             System.out.println("onEntitySpawn: " + player.getName());
-            CwCMod.network.sendToServer(new CwCQuitMessage(false));  // reset the quit field to start anew
+//            CwCMod.network.sendToServer(new CwCQuitMessage(false));  // reset the quit field to start anew
 
             // enable flying and damage immunity
             player.capabilities.allowFlying = true;
@@ -156,13 +154,18 @@ public class CwCEventHandler {
      */
     @SubscribeEvent
     public void onPlayerClone(PlayerEvent.Clone event) {
-        if (event.getEntity().getEntityWorld().isRemote)
-            Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
+        if (event.getEntity().getEntityWorld().isRemote) {
+            Minecraft minecraft = Minecraft.getMinecraft();
+            GameSettings gs = minecraft.gameSettings;
+            gs.thirdPersonView = 0;
+            gs.chatVisibility = EntityPlayer.EnumChatVisibility.FULL;
+            minecraft.ingameGUI.getChatGUI().clearChatMessages(true);
+        }
 
         else if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
             EntityPlayerMP player = (EntityPlayerMP) event.getEntityPlayer();
             System.out.println("onPlayerClone: " + player.getName());
-            CwCMod.network.sendToServer(new CwCQuitMessage(false));  // reset the quit field to start anew
+//            CwCMod.network.sendToServer(new CwCQuitMessage(false));  // reset the quit field to start anew
 
             // enable flying and damage immunity
             player.capabilities.allowFlying = true;
@@ -260,21 +263,24 @@ public class CwCEventHandler {
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
-        // Quits the mission if Ctrl-Q is pressed by either player, killing both the Builder and the Architect.
+        if (quit) return;
+
+        // Quits the mission if Ctrl-C is pressed by either player, killing all connected players.
         if (CwCKeybinds.quitKeyC.isKeyDown() && CwCKeybinds.quitCtrl.isKeyDown()) {
             System.out.println("CwCMod: Quitting the mission...");
-            CwCMod.network.sendToServer(new CwCQuitMessage(true));
+            CwCMod.network.sendToServer(new CwCQuitMessage());
             // Unpress the keys
             KeyBinding.unPressAllKeys();
         }
 
         // exit mob-view when chat window is closed
         Minecraft minecraft = Minecraft.getMinecraft();
+
         if (minecraft != null && minecraft.player != null && minecraft.player.getName().equals(CwCMod.ARCHITECT)) {
             if (minecraft.ingameGUI.getChatGUI().getSentMessages().size() > sentChatMessages) {
-                CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT, null);
+                CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT);
                 sentChatMessages = minecraft.ingameGUI.getChatGUI().getSentMessages().size();
-                resetChatFields();
+                resetChatScreenshotFields();
             }
 
             if (following && !minecraft.ingameGUI.getChatGUI().getChatOpen()) {
@@ -311,6 +317,8 @@ public class CwCEventHandler {
      */
     @SubscribeEvent
     public void onPlayerUpdate(LivingEvent.LivingUpdateEvent event) {
+        if (quit) return;
+
         EntityPlayer player = (EntityPlayer) event.getEntity();
 
         // prevent noclip through floor
@@ -334,20 +342,17 @@ public class CwCEventHandler {
                 }
             }
 
-            if (player.getName().equals(CwCMod.FIXED_VIEWER) && !initializedOnClient) {
-                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 8, -7, 0, 50, true, true, true, true, true));
-                initializedOnClient = true;
-            }
-
             // take a screenshot when a chat message has been received and rendered by the client
             if (receivedChat && renderedChat) {
-                if (!player.getName().equals(CwCMod.FIXED_VIEWER)) CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT, null);
-                resetChatFields();
+                if (!player.getName().equals(CwCMod.FIXED_VIEWER) ||
+                        (player.getName().equals(CwCMod.FIXED_VIEWER) && !initializedTimestamp))
+                    CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT);
+                resetChatScreenshotFields();
             }
 
             // take a screenshot when a block place event has been received and rendered by the client
             if (placedBlock && renderedBlock) {
-                CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.PUTDOWN, manipulatedBlockName);
+                CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.PUTDOWN);
                 resetPlaceBlockFields();
             }
 
@@ -356,25 +361,8 @@ public class CwCEventHandler {
 
                 // take a screenshot when a block break event has been received and rendered by the client
             else if (pickedUpBlock && renderedBlock && updatePlayerTick && updateRenderTick) {
-                CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.PICKUP, manipulatedBlockName);
+                CwCUtils.takeScreenshot(minecraft, CwCUtils.useTimestamps, CwCScreenshotEventType.PICKUP);
                 resetBreakBlockFields();
-            }
-        }
-
-        // hide the Architect and FixedViewer floating heads from each other by telling the server to stop tracking them
-        else if (!initializedOnServer) {
-            EntityPlayer fv = FMLCommonHandler.instance().getMinecraftServerInstance().getEntityWorld().getPlayerEntityByName(CwCMod.FIXED_VIEWER);
-            if (fv != null) {
-                WorldServer world = (WorldServer) fv.world;
-                EntityTracker et = world.getEntityTracker();
-
-                for (EntityPlayer pe : FMLCommonHandler.instance().getMinecraftServerInstance().getEntityWorld().playerEntities) {
-                    EntityPlayerMP entity = (EntityPlayerMP) pe;
-                    if (entity.getName().equals(CwCMod.FIXED_VIEWER) || entity.getName().equals(CwCMod.ARCHITECT))
-                        et.untrack(entity);
-                }
-
-                initializedOnServer = true;
             }
         }
     }
@@ -393,8 +381,6 @@ public class CwCEventHandler {
             event.setCanceled(true);
 
         Minecraft minecraft = Minecraft.getMinecraft();
-        if (minecraft.player.getName().equals(CwCMod.ARCHITECT) && event.getType().equals(ElementType.HOTBAR))
-            event.setCanceled(true);
 
         // register the rendering of an action after player update
         if (placedBlock || pickedUpBlock) renderedBlock = true;
@@ -406,6 +392,8 @@ public class CwCEventHandler {
     /**
      * Fired when a chat message is received on the client. See {@link ClientChatReceivedEvent} for more details.
      * Sets boolean field indicating a screenshot should be taken once the chat message has been rendered.
+     * For the Architect, this is calculated by checking the number of sent messages by the Architect player and comparing
+     * it to the last known number, triggering a screenshot slightly before the chat message
      *
      * @param event
      */
@@ -418,7 +406,8 @@ public class CwCEventHandler {
         // take a screenshot if message is non-system message
         if (event.getType() == 0) {
             List<String> sentMessages = minecraft.ingameGUI.getChatGUI().getSentMessages();
-            if (player.getName().equals(CwCMod.BUILDER) || (player.getName().equals(CwCMod.ARCHITECT) && (sentMessages.size() == 0 ||
+            if (player.getName().equals(CwCMod.BUILDER) || player.getName().equals(CwCMod.FIXED_VIEWER) ||
+                    (player.getName().equals(CwCMod.ARCHITECT) && (sentMessages.size() == 0 ||
                     sentMessages.size() > 0 && !event.getMessage().getUnformattedText().equals("<Architect> " + sentMessages.get(sentMessages.size() - 1)))))
                 receivedChat = true;
         }
@@ -468,7 +457,7 @@ public class CwCEventHandler {
     public void onBlockPlace(BlockEvent.PlaceEvent event) {
         if (!event.getPlayer().getEntityWorld().isRemote && event.getPlayer() instanceof EntityPlayerMP) {
             EntityPlayerMP player = (EntityPlayerMP) event.getPlayer();
-            CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PUTDOWN, event.getPlacedBlock().getBlock().getLocalizedName()));
+            CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PUTDOWN));
 
             // don't allow any more blocks to be placed until the screenshot has been taken
             disablePutdown = true;
@@ -511,7 +500,7 @@ public class CwCEventHandler {
                 // let the server know that the held item has been changed
                 // (and also notify server to inform clients to prepare to take a screenshot)
                 player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
-                CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PICKUP, event.getItem().getEntityItem().getDisplayName()));
+                CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PICKUP));
             }
         }
     }
@@ -530,9 +519,12 @@ public class CwCEventHandler {
     /**
      * Helper: reset the boolean fields associated with receiving and rendering chat.
      */
-    private static void resetChatFields() {
+    private static void resetChatScreenshotFields() {
         receivedChat = false;
         renderedChat = false;
+    }
+
+    private static void resetChatInitializationFields() {
         sentChatMessages = 0;
         chatting = false;
         partnerIsChatting = false;
@@ -568,12 +560,7 @@ public class CwCEventHandler {
     }
 
     private static void resetInitializationFields() {
-        initializedOnServer = false;
-        initializedOnClient = false;
         quit = false;
-    }
-
-    private static void resetManipulatedBlockName() {
-        manipulatedBlockName = null;
+        initializedTimestamp = false;
     }
 }

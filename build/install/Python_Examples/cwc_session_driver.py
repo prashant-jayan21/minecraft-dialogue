@@ -10,6 +10,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run a session driver.")
     parser.add_argument("user_info_spreadsheet", help="File path of the spreadsheet (.csv) containing all user info")
     parser.add_argument("gold_configs_spreadsheet", help="File path of the spreadsheet (.csv) containing all gold config file paths")
+    parser.add_argument("--fixed_viewer_ip", default="127.0.0.1", help="IP address of the Fixed Viewer client")
     args = parser.parse_args()
 
     # Read user info from spreadsheet
@@ -51,12 +52,13 @@ if __name__ == "__main__":
         all_mission_args = []
         for user_pair in user_pairs_randomized:
             mission_args = {
-                "lan": True,
+                "lan": False,
                 "builder_ip_addr": user_pair[0]["ip address"],
                 "builder_id": user_pair[0]["id"],
                 "architect_ip_addr": user_pair[1]["ip address"],
                 "architect_id": user_pair[1]["id"],
                 "gold_config": gold_config["file path"],
+                "fixed_viewer_ip_addr": args.fixed_viewer_ip,
             }
             all_mission_args.append(mission_args)
 

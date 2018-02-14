@@ -63,7 +63,5 @@ public class CwCScreenshotMessageHandler implements IMessageHandler<CwCScreensho
             CwCEventHandler.pickedUpBlock = true;
         else if (message.getType() == CwCScreenshotEventType.PUTDOWN)
             CwCEventHandler.placedBlock = true;
-
-        CwCEventHandler.manipulatedBlockName = message.getBlockName();
     }
 }

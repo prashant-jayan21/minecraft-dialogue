@@ -1,6 +1,8 @@
 package cwc;
 
+import com.microsoft.Malmo.Utils.MapFileHelper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
@@ -60,10 +62,8 @@ public class CwCQuitMessageHandler implements IMessageHandler<CwCQuitMessage, IM
      * @param minecraft Minecraft client instance
      */
     void processMessageOnClient(CwCQuitMessage message, Minecraft minecraft) {
-        CwCEventHandler.quit = message.quit();
-        if (CwCEventHandler.quit) {
-            CwCMod.reset();
-            minecraft.player.sendChatMessage("/kill");
-        }
+        CwCEventHandler.quit = true;
+        minecraft.player.sendChatMessage("/kill");
+        CwCMod.reset();
     }
 }

@@ -317,7 +317,7 @@ def cwc_all_obs_and_save_data(args):
                       <Weather>clear</Weather>
                     </ServerInitialConditions>
                     <ServerHandlers>
-                      <FlatWorldGenerator generatorString="3;241;1;" forceReset="true" destroyAfterUse="false"/>
+                      <FlatWorldGenerator generatorString="3;241;1;" forceReset="true" destroyAfterUse="true"/>
                       <DrawingDecorator>
                         <DrawCuboid type="cwcmod:cwc_orange_rn" x1="5" y1="1" z1="8" x2="1" y2="2" z2="8"/>
                         <DrawCuboid type="cwcmod:cwc_yellow_rn" x1="-1" y1="1" z1="8" x2="-5" y2="2" z2="8"/>
@@ -334,7 +334,7 @@ def cwc_all_obs_and_save_data(args):
                   <AgentSection mode="Survival">
                     <Name>Builder</Name>
                     <AgentStart>
-                      <Placement x = "0" y = "1" z = "0"/>
+                      <Placement x = "0" y = "2" z = "0"/>
                     </AgentStart>
                     <AgentHandlers>
                       <CwCObservation>
@@ -357,7 +357,7 @@ def cwc_all_obs_and_save_data(args):
                   <AgentSection mode="Spectator">
                     <Name>FixedViewer</Name>
                     <AgentStart>
-                      <Placement x = "0" y = "5" z = "-7" pitch="45"/>
+                      <Placement x = "0" y = "5" z = "-6.5" pitch="40"/>
                     </AgentStart>
                     <AgentHandlers/>
                   </AgentSection>
@@ -379,7 +379,7 @@ def cwc_all_obs_and_save_data(args):
                       <Weather>clear</Weather>
                     </ServerInitialConditions>
                     <ServerHandlers>
-                      <FlatWorldGenerator generatorString="3;241;1;" forceReset="true" destroyAfterUse="false"/>
+                      <FlatWorldGenerator generatorString="3;241;1;" forceReset="true" destroyAfterUse="true"/>
                       <DrawingDecorator>
                         <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_goal) +'''" y1="0" z1="''' + str(z_min_goal)+ '''" x2="'''+ str(x_max_goal)+'''" y2="0" z2="''' + str(z_max_goal) + '''"/>''' + gold_config_xml_substring + \
                       '''</DrawingDecorator>
@@ -390,7 +390,7 @@ def cwc_all_obs_and_save_data(args):
                   <AgentSection mode="Spectator">
                     <Name>Oracle</Name>
                     <AgentStart>
-                      <Placement x = "100" y = "5" z = "95" pitch="45"/>
+                      <Placement x = "100" y = "5" z = "94" pitch="45"/>
                     </AgentStart>
                     <AgentHandlers/>
                   </AgentSection>
@@ -468,7 +468,7 @@ def cwc_all_obs_and_save_data(args):
         hasEnded = True # assume all good
         sys.stdout.write('.')
         time.sleep(0.1)
-        for ah in agent_hosts[0:2]:
+        for ah in agent_hosts[1:3]:
             world_state = ah.getWorldState()
             if world_state.is_mission_running:
                 hasEnded = False # all not good

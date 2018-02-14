@@ -2,6 +2,7 @@ package cwc;
 
 import com.microsoft.Malmo.MalmoMod;
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ScreenShotHelper;
 
 import java.io.File;
@@ -15,13 +16,10 @@ import java.util.Date;
  * @author nrynchn2
  */
 public class CwCUtils {
-    protected static String[] architectOverlay = {"Inspecting...", "Type an instruction...", "Builder is building..."};     // architect status overlay strings (for indicating current game state)
-    protected static String[] builderOverlay = { "Architect is inspecting...", "Architect is thinking...", "Building..."};  // builder status overlay strings (for indicating current game state)
-
     public static boolean useTimestamps = true;    // whether or not to include timestamps as part of screenshot names
     private static String summary;
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");  // timestamp date format
-    private static int index = 1;        // if not using timestamps, index prefix of screenshots taken
+    private static int index = 0;        // if not using timestamps, index prefix of screenshots taken
     private static File loggingDir;      // directory of observation logs
     private static File screenshotDir;   // directory of screenshots (within logging directory)
     static {
@@ -62,6 +60,11 @@ public class CwCUtils {
      * @param type Type of event that triggered this screenshot action
      */
     protected static void takeScreenshot(Minecraft mc, boolean useTimestamps, CwCScreenshotEventType type) {
+        if (mc.player.getName().equals(CwCMod.FIXED_VIEWER) && mc.gameSettings.chatVisibility != EntityPlayer.EnumChatVisibility.HIDDEN) {
+            mc.ingameGUI.getChatGUI().clearChatMessages(true);
+            mc.gameSettings.chatVisibility = EntityPlayer.EnumChatVisibility.HIDDEN;
+        }
+
         // get the mission summary
         if (MalmoMod.instance.getClient() != null && MalmoMod.instance.getClient().getStateMachine().currentMissionInit() != null &&
                 (summary == null || !summary.equals(MalmoMod.instance.getClient().getStateMachine().currentMissionInit().getMission().getAbout().getSummary()))) {
@@ -94,6 +97,7 @@ public class CwCUtils {
         // re-enable pickup or putdown actions
         if (type == CwCScreenshotEventType.PICKUP)  CwCEventHandler.disablePickup  = false;
         if (type == CwCScreenshotEventType.PUTDOWN) CwCEventHandler.disablePutdown = false;
+        if (mc.player.getName().equals(CwCMod.FIXED_VIEWER) && !CwCEventHandler.initializedTimestamp) CwCEventHandler.initializedTimestamp = true;
     }
 
     /**
@@ -102,6 +106,6 @@ public class CwCUtils {
     protected static void reset() {
         CwCMod.screenshots = new ArrayList<String>();
         startTime = Long.MIN_VALUE;
-        index = 1;
+        index = 0;
     }
 }
