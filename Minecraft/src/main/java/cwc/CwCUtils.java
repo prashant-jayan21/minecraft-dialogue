@@ -11,15 +11,20 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import static cwc.CwCEventHandler.playerNameMatches;
+
 /**
  * General-purpose utility class.
  * @author nrynchn2
  */
 public class CwCUtils {
     public static boolean useTimestamps = true;    // whether or not to include timestamps as part of screenshot names
-    private static String summary;
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");  // timestamp date format
+    private static long startTime = Long.MIN_VALUE;
     private static int index = 0;        // if not using timestamps, index prefix of screenshots taken
+
+    private static String summary;
+    private static String slash = System.getProperty("os.name").toLowerCase().contains("win") ? "\\" : "/";
     private static File loggingDir;      // directory of observation logs
     private static File screenshotDir;   // directory of screenshots (within logging directory)
     static {
@@ -29,8 +34,6 @@ public class CwCUtils {
     }
 
     private static boolean disableScreenshots = false;
-    private static String slash = System.getProperty("os.name").toLowerCase().contains("win") ? "\\" : "/";
-    private static long startTime = Long.MIN_VALUE;
 
     /**
      * Creates a unique PNG file in the given directory named by a timestamp.  Handles cases where the timestamp alone
@@ -60,10 +63,8 @@ public class CwCUtils {
      * @param type Type of event that triggered this screenshot action
      */
     protected static void takeScreenshot(Minecraft mc, boolean useTimestamps, CwCScreenshotEventType type) {
-        if (mc.player.getName().equals(CwCMod.FIXED_VIEWER) && mc.gameSettings.chatVisibility != EntityPlayer.EnumChatVisibility.HIDDEN) {
-            mc.ingameGUI.getChatGUI().clearChatMessages(true);
+        if (playerNameMatches(mc, CwCMod.FIXED_VIEWER) && mc.gameSettings.chatVisibility != EntityPlayer.EnumChatVisibility.HIDDEN)
             mc.gameSettings.chatVisibility = EntityPlayer.EnumChatVisibility.HIDDEN;
-        }
 
         // get the mission summary
         if (MalmoMod.instance.getClient() != null && MalmoMod.instance.getClient().getStateMachine().currentMissionInit() != null &&
@@ -74,12 +75,13 @@ public class CwCUtils {
                 File dir = new File(screenshotDir, summary);
                 if (!dir.exists()) dir.mkdir();
             }
-            else System.out.println("DEBUG: Screenshots are disabled");
+            else System.out.println("[DEBUG] NOTICE: Screenshots are disabled");
         }
 
         // prefix with either timestamp or screenshot index
         long time = System.currentTimeMillis();
         if (startTime == Long.MIN_VALUE) startTime = time;
+
         String prefix = (summary == null ? "" : summary+slash);
         String timestamp = ""+(useTimestamps ? time-startTime : index);
         // suffix with type of triggering event

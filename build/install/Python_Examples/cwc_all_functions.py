@@ -24,7 +24,7 @@ z_min_build = -5
 z_max_build = 5
 
 # goal region parameters
-displacement = 100
+displacement = 0
 x_min_goal = x_min_build + displacement
 x_max_goal = x_max_build + displacement
 y_min_goal = y_min_build # NOTE: Do not change this relation without thought!
@@ -111,11 +111,18 @@ def getPerspectiveCoordinates(x, y, z, yaw, pitch):
     return (x_final, y_final, z_final)
 
 def processObservations(all_world_states, observations):
+    total = 0
     for observation in observations:
-        # print "Processing observation:", observation
+        total += len(json.loads(observation.text))
+        print "Received", len(observations), "observations. Total number of elements:", total
+
+    for observation in observations:
+        print "Processing observation:", 
+        prettyPrintObservation(json.loads(observation.text))
         obs_dict = reformatJson(observation)
         all_world_states = mergeObservations(all_world_states, obs_dict)
 
+    print
     return all_world_states
 
 def reformatJson(observation):
@@ -182,6 +189,12 @@ def postprocess(all_world_states):
 # Records the blocks in the builder's grid, separated by outside vs. inside blocks. Also calculates their perspective coordinates.
 # Appends these block information, as well as the chat history, to the world state JSON.
 def recordGridCoordinates(cws):
+    if cws.get(u'BuilderGridAbsolute') is None or cws.get(u'BuilderPosition') is None:
+        print "Something went wrong... the builder", "grid" if cws.get(u'BuilderGridAbsolute') is None else "position", "is missing. Aborting recording grid coordinates for this observation."
+        cws["BlocksOutside"] = []
+        cws["BlocksInside"]  = []
+        return 
+
     grid_absolute, grid_relative = cws.pop("BuilderGridAbsolute"), cws.pop("BuilderGridRelative")
     yaw, pitch = cws["BuilderPosition"]["Yaw"], cws["BuilderPosition"]["Pitch"]
     blocks_inside, blocks_outside = [], []
@@ -222,7 +235,7 @@ def writeToString(cws, stw):
 def prettyPrintJson(cws):
     for element in cws:
         sys.stdout.write("\t"+element+": ")
-        if element == 'BlocksOutside' or element == 'BuilderGridAbsolute' or element == 'BuilderGridRelative':
+        if element == 'BlocksOutside' or element == 'BlocksInside' or element == 'BuilderGridAbsolute' or element == 'BuilderGridRelative':
             print len(cws[element]), "values",
         elif element == 'Timestamp' or element == 'ScreenshotPath':
             print cws[element],
@@ -232,6 +245,11 @@ def prettyPrintJson(cws):
             for value in cws[element]:
                 print "\n\t\t", value,
         print
+    print
+
+def prettyPrintObservation(obs):
+    for element in obs:
+        print element,
     print
 
 # Helper method to print a shortened, prettier version of the string to be written
@@ -282,7 +300,7 @@ def cwc_all_obs_and_save_data(args):
         client_pool.add(MalmoPython.ClientInfo(args["architect_ip_addr"], 10001))
         client_pool.add(MalmoPython.ClientInfo(args["builder_ip_addr"], 10000))
         client_pool.add(MalmoPython.ClientInfo(args["architect_ip_addr"], 10000))
-        client_pool.add(MalmoPython.ClientInfo(args["fixed_viewer_ip_addr"], 10000))
+        client_pool.add(MalmoPython.ClientInfo(args["fixed_viewer_ip_addr"], 10001))
 
     # Create mission xmls
 
@@ -390,7 +408,7 @@ def cwc_all_obs_and_save_data(args):
                   <AgentSection mode="Spectator">
                     <Name>Oracle</Name>
                     <AgentStart>
-                      <Placement x = "100" y = "5" z = "94" pitch="45"/>
+                      <Placement x = "0" y = "5" z = "-6" pitch="45"/>
                     </AgentStart>
                     <AgentHandlers/>
                   </AgentSection>
@@ -426,8 +444,8 @@ def cwc_all_obs_and_save_data(args):
     print "Postprocessing world states...\n",
     string_to_write = postprocess(all_world_states)
 
-    # for ws in all_world_states:
-    #     prettyPrintJson(ws)
+    for ws in all_world_states:
+        prettyPrintJson(ws)
 
     # write data
     experiment_log = "logs/"+experiment_id
@@ -449,6 +467,9 @@ def cwc_all_obs_and_save_data(args):
     txt_log.close()
 
     time_elapsed = time.time()-start_time
+
+    for world_state in all_world_states:
+        prettyPrintJson(world_state)
 
     # machine readable log -- unaligned
     obs_data_dict = {"WorldStates": all_world_states, "TimeElapsed": time_elapsed}

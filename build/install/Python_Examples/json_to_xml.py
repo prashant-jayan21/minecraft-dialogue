@@ -17,9 +17,9 @@ gold = open(gf, 'w')
 conf = log["WorldStates"][len(log["WorldStates"])-1]["BlocksInside"]
 for block in conf:
 	bt = str(block["Type"])
-	bx = str(block["AbsoluteCoordinates"]["X"]+100)
+	bx = str(block["AbsoluteCoordinates"]["X"])
 	by = str(block["AbsoluteCoordinates"]["Y"])
-	bz = str(block["AbsoluteCoordinates"]["Z"]+100)
+	bz = str(block["AbsoluteCoordinates"]["Z"])
 	gold.write("<DrawBlock type=\"cwcmod:"+bt+"\" x=\""+bx+"\" y=\""+by+"\" z=\""+bz+"\"/>\n")
 
 gold.close()

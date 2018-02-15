@@ -11,7 +11,6 @@ public class StartupClientOnly {
 	public static void preInitClientOnly() {
 		final int DEFAULT_ITEM_SUBTYPE = 0;
 
-		// cookie loves jelly!
 		// Registers item resource locations of our custom blocks.
 		for (int i = 0; i < StartupCommon.items.size(); i++)
 			ModelLoader.setCustomModelResourceLocation(StartupCommon.items.get(i), DEFAULT_ITEM_SUBTYPE, new ModelResourceLocation("cwcmod:cwc_"+StartupCommon.breakableColors[i],"inventory"));

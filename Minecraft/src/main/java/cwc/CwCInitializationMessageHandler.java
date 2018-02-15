@@ -9,6 +9,8 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
+import static cwc.CwCEventHandler.playerNameMatches;
+
 public class CwCInitializationMessageHandler implements IMessageHandler<CwCInitializationMessage, IMessage> {
 
     /**
@@ -35,10 +37,10 @@ public class CwCInitializationMessageHandler implements IMessageHandler<CwCIniti
 
         // process message on client
         else {
-            final Minecraft minecraft = Minecraft.getMinecraft();
-            minecraft.addScheduledTask(new Runnable() {
+            final Minecraft mc = Minecraft.getMinecraft();
+            mc.addScheduledTask(new Runnable() {
                 public void run() {
-                    processMessageOnClient(message, minecraft);
+                    processMessageOnClient(message, mc);
                 }
             });
             return null;
@@ -61,18 +63,18 @@ public class CwCInitializationMessageHandler implements IMessageHandler<CwCIniti
      * Handles messages received on the client.
      *
      * @param message   Initialization message
-     * @param minecraft Minecraft client instance
+     * @param mc        Minecraft client instance
      */
-    void processMessageOnClient(CwCInitializationMessage message, Minecraft minecraft) {
+    void processMessageOnClient(CwCInitializationMessage message, Minecraft mc) {
         System.out.println("Client received: initialization message");
         CwCMod.reset();
-        if (minecraft.player.getName().equals(CwCMod.FIXED_VIEWER))
-            CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 7, -5.5, 0, 55, true, true, true, true, true));
-        if (minecraft.player.getName().equals(CwCMod.BUILDER))
+        if (playerNameMatches(mc, CwCMod.FIXED_VIEWER))
+            CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0.7, 9, -10, 0, 30, true, true, true, true, true));
+        if (playerNameMatches(mc, CwCMod.BUILDER))
             CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 1, 0, 0, 0, true, true, true, true, true));
-        if (minecraft.player.getName().equals(CwCMod.ARCHITECT))
+        if (playerNameMatches(mc, CwCMod.ARCHITECT))
             CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 5, -6, 0, 45, true, true, true, true, true));
-        if (minecraft.player.getName().equals(CwCMod.ORACLE))
-            CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(100, 5, 94, 0, 45, true, true, true, true, true));
+        if (playerNameMatches(mc, CwCMod.ORACLE))
+            CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 5, -6, 0, 45, true, true, true, true, true));
     }
 }

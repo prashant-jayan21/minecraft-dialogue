@@ -8,6 +8,8 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
+import static cwc.CwCEventHandler.playerNameMatches;
+
 /**
  * Server- & client-side handler for chat status messages.
  * @author nrynchn2
@@ -35,9 +37,9 @@ public class CwCChatMessageHandler implements IMessageHandler<CwCChatMessage, IM
 
         // process message on client
         else {
-            final Minecraft minecraft = Minecraft.getMinecraft();
-            minecraft.addScheduledTask(new Runnable() {
-                public void run() { processMessageOnClient(message, minecraft); }
+            final Minecraft mc = Minecraft.getMinecraft();
+            mc.addScheduledTask(new Runnable() {
+                public void run() { processMessageOnClient(message); }
             });
             return null;
         }
@@ -50,15 +52,14 @@ public class CwCChatMessageHandler implements IMessageHandler<CwCChatMessage, IM
      */
     void processMessageOnServer(CwCChatMessage message, EntityPlayerMP sender) {
         for (EntityPlayerMP player : sender.mcServer.getPlayerList().getPlayers())
-            if (!player.getName().equals(sender.getName())) CwCMod.network.sendTo(message, player);
+            if (!playerNameMatches(player, sender)) CwCMod.network.sendTo(message, player);
     }
 
     /**
      * Handles messages received on the client by setting the appropriate "chatting" field in {@link CwCEventHandler}.
      * @param message Chat message
-     * @param minecraft Minecraft client instance
      */
-    void processMessageOnClient(CwCChatMessage message, Minecraft minecraft) {
+    void processMessageOnClient(CwCChatMessage message) {
         CwCEventHandler.partnerIsChatting = message.chatting();
     }
 }

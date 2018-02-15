@@ -44,13 +44,11 @@ if __name__ == "__main__":
         print "\nROUND STARTED..."
         print "\nGOLD CONFIG: " + gold_config["file path"]
 
-        # randomly pair up users
-        shuffle(all_users)
-        user_pairs_randomized = zip(all_users[0::2], all_users[1::2])
+        user_pairs = zip(all_users[0::2], all_users[1::2])
 
         # create mission args list
         all_mission_args = []
-        for user_pair in user_pairs_randomized:
+        for user_pair in user_pairs:
             mission_args = {
                 "lan": False,
                 "builder_ip_addr": user_pair[0]["ip address"],

@@ -9,6 +9,8 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
+import static cwc.CwCEventHandler.playerNameMatches;
+
 public class CwCPositionMessageHandler implements IMessageHandler<CwCPositionMessage, IMessage> {
 
     /**
@@ -35,10 +37,10 @@ public class CwCPositionMessageHandler implements IMessageHandler<CwCPositionMes
 
         // process message on client
         else {
-            final Minecraft minecraft = Minecraft.getMinecraft();
-            minecraft.addScheduledTask(new Runnable() {
+            final Minecraft mc = Minecraft.getMinecraft();
+            mc.addScheduledTask(new Runnable() {
                 public void run() {
-                    processMessageOnClient(message, minecraft);
+                    processMessageOnClient(message, mc);
                 }
             });
             return null;
@@ -53,18 +55,18 @@ public class CwCPositionMessageHandler implements IMessageHandler<CwCPositionMes
      */
     void processMessageOnServer(CwCPositionMessage message, EntityPlayerMP sender) {
         for (EntityPlayerMP player : sender.mcServer.getPlayerList().getPlayers())
-            if (!player.getName().equals(sender.getName())) CwCMod.network.sendTo(message, player);
+            if (!playerNameMatches(player, sender)) CwCMod.network.sendTo(message, player);
     }
 
     /**
      * Handles messages received on the client by setting the appropriate "builder's y-coord" field in {@link CwCEventHandler}.
      *
      * @param message   Position message
-     * @param minecraft Minecraft client instance
+     * @param mc        Minecraft client instance
      */
-    void processMessageOnClient(CwCPositionMessage message, Minecraft minecraft) {
-        if (minecraft.player.getName().equals(CwCMod.BUILDER))
-            CwCMod.network.sendToServer(new CwCPositionMessage(minecraft.player.posY));
+    void processMessageOnClient(CwCPositionMessage message, Minecraft mc) {
+        if (playerNameMatches(mc, CwCMod.BUILDER))
+            CwCMod.network.sendToServer(new CwCPositionMessage(mc.player.posY));
         else CwCEventHandler.builderCurrentY = message.y();
     }
 }

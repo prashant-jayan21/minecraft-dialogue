@@ -35,8 +35,8 @@ public class CwCScreenshotMessageHandler implements IMessageHandler<CwCScreensho
 
         // process message on client
         else {
-            final Minecraft minecraft = Minecraft.getMinecraft();
-            minecraft.addScheduledTask(new Runnable() {
+            final Minecraft mc = Minecraft.getMinecraft();
+            mc.addScheduledTask(new Runnable() {
                 public void run() { processMessageOnClient(message); }
             });
             return null;
