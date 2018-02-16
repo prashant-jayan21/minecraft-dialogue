@@ -114,7 +114,8 @@ def processObservations(all_world_states, observations):
     total = 0
     for observation in observations:
         total += len(json.loads(observation.text))
-        print "Received", len(observations), "observations. Total number of elements:", total
+
+    print "Received", len(observations), "observations. Total number of elements:", total
 
     for observation in observations:
         print "Processing observation:", 
@@ -276,14 +277,27 @@ def prettyPrintString(stw):
 
     sys.stdout.write('\t('+str(num_lines)+' values)\n\n')
 
+def addFixedViewers(n):
+    fvs = ''
+
+    for i in range(n):
+        fvs += '<AgentSection mode="Spectator"> \
+                    <Name>FixedViewer'+str(i+1)+'</Name> \
+                    <AgentStart> \
+                      <Placement x = "0" y = "5" z = "-6.5" pitch="40"/> \
+                    </AgentStart> \
+                    <AgentHandlers/> \
+                  </AgentSection>\n'
+
+    return fvs
+
 def cwc_all_obs_and_save_data(args):
     start_time = time.time()
 
-    chat_history = []
-    last_ws = None
-
     # Create agent hosts:
-    agent_hosts = [MalmoPython.AgentHost(), MalmoPython.AgentHost(), MalmoPython.AgentHost(), MalmoPython.AgentHost()]
+    agent_hosts = []
+    for i in range(7):
+        agent_hosts.append(MalmoPython.AgentHost())
 
     # Set observation policy for builder
     agent_hosts[1].setObservationsPolicy(MalmoPython.ObservationsPolicy.KEEP_ALL_OBSERVATIONS)
@@ -291,23 +305,43 @@ def cwc_all_obs_and_save_data(args):
     # Set up a client pool
     client_pool = MalmoPython.ClientPool()
 
+    builder_ip = args["builder_ip_addr"]
+    builder_port = args["builder_port"]
+    architect_ip = args["architect_ip_addr"]
+    architect_port = args["architect_port"]
+    fixed_viewer_ip = args["fixed_viewer_ip_addr"]
+    fixed_viewer_port = args["fixed_viewer_port"]
+    num_fixed_viewers = args["num_fixed_viewers"]
+
     if not args["lan"]:
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10000))
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10001))
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10002))
+
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10003))
+        client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10004))
+        client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10005))
+        client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10006))
     else:
-        client_pool.add(MalmoPython.ClientInfo(args["architect_ip_addr"], 10001))
-        client_pool.add(MalmoPython.ClientInfo(args["builder_ip_addr"], 10000))
-        client_pool.add(MalmoPython.ClientInfo(args["architect_ip_addr"], 10000))
-        client_pool.add(MalmoPython.ClientInfo(args["fixed_viewer_ip_addr"], 10001))
+        print "Builder IP:", builder_ip, "\tPort:", builder_port
+        print "Architect IP:", architect_ip, "\tPort:", architect_port
+        print "FixedViewer IP:", fixed_viewer_ip, "\tPort:", fixed_viewer_port, "\tNumber of clients:", num_fixed_viewers
+
+        client_pool.add(MalmoPython.ClientInfo(architect_ip, architect_port+1))
+        client_pool.add(MalmoPython.ClientInfo(builder_ip, builder_port))
+        client_pool.add(MalmoPython.ClientInfo(architect_ip, architect_port))
+
+        client_pool.add(MalmoPython.ClientInfo(fixed_viewer_ip, fixed_viewer_port))
+        client_pool.add(MalmoPython.ClientInfo(fixed_viewer_ip, fixed_viewer_port+1))
+        client_pool.add(MalmoPython.ClientInfo(fixed_viewer_ip, fixed_viewer_port+2))
+        client_pool.add(MalmoPython.ClientInfo(fixed_viewer_ip, fixed_viewer_port+3))
 
     # Create mission xmls
 
     # experiment ID
-    experiment_time = str(int(round(time.time()*1000)))
     player_ids = "B"+args["builder_id"] + "-A" + args["architect_id"]
     config_id = os.path.basename(args["gold_config"]).replace(".xml","")
+    experiment_time = str(int(round(time.time()*1000)))
     experiment_id = player_ids + "-" + config_id + "-" + experiment_time
 
     # read gold config file and obtain xml substring
@@ -372,13 +406,7 @@ def cwc_all_obs_and_save_data(args):
                     <AgentHandlers/>
                   </AgentSection>
 
-                  <AgentSection mode="Spectator">
-                    <Name>FixedViewer</Name>
-                    <AgentStart>
-                      <Placement x = "0" y = "5" z = "-6.5" pitch="40"/>
-                    </AgentStart>
-                    <AgentHandlers/>
-                  </AgentSection>
+                  '''+addFixedViewers(num_fixed_viewers)+'''
                 </Mission>'''
 
     missionXML_oracle='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
@@ -417,18 +445,25 @@ def cwc_all_obs_and_save_data(args):
     my_mission = MalmoPython.MissionSpec(missionXML, True)
     my_mission_oracle = MalmoPython.MissionSpec(missionXML_oracle, True)
 
+    # oracle
     safeStartMission(agent_hosts[0], my_mission_oracle, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission_oracle")
     
+    # builder, architect
     safeStartMission(agent_hosts[1], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission")
     safeStartMission(agent_hosts[2], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 1, "cwc_dummy_mission")
+
+    # fixed viewers
     safeStartMission(agent_hosts[3], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 2, "cwc_dummy_mission")
+    safeStartMission(agent_hosts[4], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 3, "cwc_dummy_mission")
+    safeStartMission(agent_hosts[5], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 4, "cwc_dummy_mission")
+    safeStartMission(agent_hosts[6], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 5, "cwc_dummy_mission")
 
     safeWaitForStart(agent_hosts)
 
     timed_out = False
 
     while not timed_out:
-        for i in range(4):
+        for i in range(7):
             ah = agent_hosts[i]
             world_state = ah.getWorldState()
 

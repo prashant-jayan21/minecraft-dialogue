@@ -90,6 +90,8 @@ import com.microsoft.Malmo.Utils.TCPUtils;
 import com.microsoft.Malmo.Utils.TimeHelper;
 import com.mojang.authlib.properties.Property;
 
+import static cwc.CwCUtils.playerNameMatchesAny;
+
 /**
  * Class designed to track and control the state of the mod, especially regarding mission launching/running.<br>
  * States are defined by the MissionState enum, and control is handled by
@@ -1580,7 +1582,7 @@ public class ClientStateMachine extends StateMachine implements IMalmoMessageLis
 
             // Make sure we have mouse control:
             // FIXME: now initiates missions with human control (unless fixed viewer) -- modified from original Malmo code
-            if (Minecraft.getMinecraft().player.getName().equals(CwCMod.FIXED_VIEWER))
+            if (playerNameMatchesAny(Minecraft.getMinecraft(), CwCMod.FIXED_VIEWERS))
                 ClientStateMachine.this.inputController.setInputType(InputType.AI);
             else
                 ClientStateMachine.this.inputController.setInputType(InputType.HUMAN);

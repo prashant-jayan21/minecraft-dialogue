@@ -9,7 +9,8 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
-import static cwc.CwCEventHandler.playerNameMatches;
+import static cwc.CwCUtils.playerNameMatches;
+import static cwc.CwCUtils.playerNameMatchesAny;
 
 public class CwCInitializationMessageHandler implements IMessageHandler<CwCInitializationMessage, IMessage> {
 
@@ -68,7 +69,7 @@ public class CwCInitializationMessageHandler implements IMessageHandler<CwCIniti
     void processMessageOnClient(CwCInitializationMessage message, Minecraft mc) {
         System.out.println("Client received: initialization message");
         CwCMod.reset();
-        if (playerNameMatches(mc, CwCMod.FIXED_VIEWER))
+        if (playerNameMatchesAny(mc, CwCMod.FIXED_VIEWERS))
             CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0.7, 9, -10, 0, 30, true, true, true, true, true));
         if (playerNameMatches(mc, CwCMod.BUILDER))
             CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 1, 0, 0, 0, true, true, true, true, true));

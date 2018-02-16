@@ -26,6 +26,7 @@ import com.microsoft.Malmo.Schemas.*;
 import com.microsoft.Malmo.Utils.MinecraftTypeHelper;
 import cwc.CwCInitializationMessage;
 import cwc.CwCMod;
+import cwc.CwCUtils;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.EntityTracker;
@@ -53,8 +54,6 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.microsoft.Malmo.MissionHandlers.ObservationFromFullInventoryImplementation.getInventoryJSON;
 
 /**
  * IObservationProducer object that pings out a whole bunch of data.
@@ -272,16 +271,16 @@ public class CwCObservationImplementation extends ObservationFromServer
     public void onEvent(TickEvent.ClientTickEvent event) {
         Minecraft minecraft = Minecraft.getMinecraft();
         if (this.missionIsRunning && minecraft.player.getName().equals(CwCMod.BUILDER)) {
-            if (!initializedOnServer) {
+            if (!initializedOnServer && CwCMod.FIXED_VIEWERS.length > 0) {
                 System.out.println("Initializing the server");
-                EntityPlayer fv = FMLCommonHandler.instance().getMinecraftServerInstance().getEntityWorld().getPlayerEntityByName(CwCMod.FIXED_VIEWER);
+                EntityPlayer fv = FMLCommonHandler.instance().getMinecraftServerInstance().getEntityWorld().getPlayerEntityByName(CwCMod.FIXED_VIEWERS[0]);
                 if (fv != null) {
                     WorldServer world = (WorldServer) fv.world;
                     EntityTracker et = world.getEntityTracker();
 
                     for (EntityPlayer pe : FMLCommonHandler.instance().getMinecraftServerInstance().getEntityWorld().playerEntities) {
                         EntityPlayerMP entity = (EntityPlayerMP) pe;
-                        if (entity.getName().equals(CwCMod.FIXED_VIEWER) || entity.getName().equals(CwCMod.ARCHITECT))
+                        if (CwCUtils.playerNameMatchesAny(pe, CwCMod.FIXED_VIEWERS) || CwCUtils.playerNameMatches(pe, CwCMod.ARCHITECT))
                             et.untrack(entity);
                     }
                 }

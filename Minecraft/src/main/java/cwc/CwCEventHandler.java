@@ -32,6 +32,9 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.List;
 
+import static cwc.CwCUtils.playerNameMatches;
+import static cwc.CwCUtils.playerNameMatchesAny;
+
 /**
  * Event handler for CwC mod. Catches some events as they are triggered and modifies vanilla Minecraft behavior.
  *
@@ -112,7 +115,7 @@ public class CwCEventHandler {
             }
 
             // initialize Architect, Builder (if limited inventory) with empty inventory
-            if (playerNameMatches(player, CwCMod.ARCHITECT) || playerNameMatches(player, CwCMod.ORACLE) || playerNameMatches(player, CwCMod.FIXED_VIEWER) ||
+            if (playerNameMatches(player, CwCMod.ARCHITECT) || playerNameMatches(player, CwCMod.ORACLE) || playerNameMatchesAny(player, CwCMod.FIXED_VIEWERS) ||
                     (playerNameMatches(player, CwCMod.BUILDER) && !CwCMod.unlimitedInventory)) {
                 for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++)
                     player.inventory.setInventorySlotContents(i, ItemStack.EMPTY);
@@ -223,7 +226,7 @@ public class CwCEventHandler {
                     gs.keyBindSpectatorOutlines.isPressed() || gs.keyBindChat.isPressed()) ;
         }
 
-        else if (playerNameMatches(player, CwCMod.FIXED_VIEWER)) {
+        else if (playerNameMatchesAny(player, CwCMod.FIXED_VIEWERS)) {
             // ignore regular set of keypresses while building (e.g. dropping items, swapping hands, inventory, etc.) and disable movement
             if (gs.keyBindDrop.isPressed() || gs.keyBindSwapHands.isPressed() || gs.keyBindUseItem.isPressed() ||
                     gs.keyBindInventory.isPressed() || gs.keyBindPlayerList.isPressed() || gs.keyBindCommand.isPressed() ||
@@ -256,7 +259,7 @@ public class CwCEventHandler {
         if ((CwCKeybinds.quitKeyC.isKeyDown() && CwCKeybinds.quitCtrl.isKeyDown() &&
                 (playerNameMatches(mc, CwCMod.ARCHITECT) || playerNameMatches(mc, CwCMod.BUILDER))) ||
                 (CwCKeybinds.quitKeyQ.isKeyDown() && CwCKeybinds.quitCtrl.isKeyDown() &&
-                (playerNameMatches(mc, CwCMod.ORACLE) || playerNameMatches(mc, CwCMod.FIXED_VIEWER)))) {
+                (playerNameMatches(mc, CwCMod.ORACLE) || playerNameMatchesAny(mc, CwCMod.FIXED_VIEWERS)))) {
             System.out.println("CwCMod: Quitting the mission...");
             CwCMod.network.sendToServer(new CwCQuitMessage());
             // Unpress the keys
@@ -288,7 +291,7 @@ public class CwCEventHandler {
             }
         }
 
-        if (partnerIsChatting && !playerNameMatches(mc, CwCMod.FIXED_VIEWER)) {
+        if (partnerIsChatting && !playerNameMatchesAny(mc, CwCMod.FIXED_VIEWERS)) {
             String partner = playerNameMatches(mc, CwCMod.ARCHITECT) ? "Builder" : "Architect";
             mc.ingameGUI.setOverlayMessage(partner + " is typing...", true);
         } else mc.ingameGUI.setOverlayMessage("", false);
@@ -307,16 +310,17 @@ public class CwCEventHandler {
     public void onPlayerUpdate(LivingEvent.LivingUpdateEvent event) {
         if (quit) return;
 
-        EntityPlayer player = (EntityPlayer) event.getEntity();
+        EntityPlayer updatedPlayer = (EntityPlayer) event.getEntity();
 
         // prevent noclip through floor
-        if (player.posY < 0) {
+        if (updatedPlayer.posY < 0) {
             event.setCanceled(true);
-            player.setPositionAndUpdate(player.posX, 0, player.posZ);
+            updatedPlayer.setPositionAndUpdate(updatedPlayer.posX, 0, updatedPlayer.posZ);
         }
 
-        if (player.getEntityWorld().isRemote) {
+        if (updatedPlayer.getEntityWorld().isRemote) {
             Minecraft mc = Minecraft.getMinecraft();
+            EntityPlayer player = mc.player;
 
             // Architect sneaking to break mob-view
             if (playerNameMatches(player, CwCMod.ARCHITECT) && sneaking) {
@@ -332,8 +336,8 @@ public class CwCEventHandler {
 
             // take a screenshot when a chat message has been received and rendered by the client
             if (receivedChat && renderedChat) {
-                if (!playerNameMatches(player, CwCMod.FIXED_VIEWER) ||
-                        (playerNameMatches(player, CwCMod.FIXED_VIEWER) && !initializedTimestamp))
+                if (!playerNameMatchesAny(player, CwCMod.FIXED_VIEWERS) ||
+                        (playerNameMatchesAny(player, CwCMod.FIXED_VIEWERS) && !initializedTimestamp))
                     CwCUtils.takeScreenshot(mc, CwCUtils.useTimestamps, CwCScreenshotEventType.CHAT);
                 resetChatScreenshotFields();
             }
@@ -392,7 +396,7 @@ public class CwCEventHandler {
         // take a screenshot if message is non-system message
         if (event.getType() == 0) {
             List<String> sentMessages = mc.ingameGUI.getChatGUI().getSentMessages();
-            if (playerNameMatches(player, CwCMod.BUILDER) || playerNameMatches(player, CwCMod.FIXED_VIEWER) ||
+            if (playerNameMatches(player, CwCMod.BUILDER) || playerNameMatchesAny(player, CwCMod.FIXED_VIEWERS) ||
                     (playerNameMatches(player, CwCMod.ARCHITECT) && (sentMessages.size() == 0 ||
                     sentMessages.size() > 0 && !event.getMessage().getUnformattedText().equals("<Architect> " + sentMessages.get(sentMessages.size() - 1)))))
                 receivedChat = true;
@@ -487,18 +491,6 @@ public class CwCEventHandler {
                 CwCMod.network.sendToServer(new CwCScreenshotMessage(CwCScreenshotEventType.PICKUP));
             }
         }
-    }
-
-    protected static boolean playerNameMatches(Minecraft mc, String name) {
-        return playerNameMatches(mc.player, name);
-    }
-
-    protected static boolean playerNameMatches(EntityPlayer player, String name) {
-        return player.getName().equals(name);
-    }
-
-    protected static boolean playerNameMatches(EntityPlayer player, EntityPlayer other) {
-        return player.getName().equals(other.getName());
     }
 
     /**

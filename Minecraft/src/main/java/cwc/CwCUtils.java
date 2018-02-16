@@ -11,8 +11,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-import static cwc.CwCEventHandler.playerNameMatches;
-
 /**
  * General-purpose utility class.
  * @author nrynchn2
@@ -34,6 +32,31 @@ public class CwCUtils {
     }
 
     private static boolean disableScreenshots = false;
+
+
+    public static boolean playerNameMatches(Minecraft mc, String name) {
+        return playerNameMatches(mc.player, name);
+    }
+
+    public static boolean playerNameMatches(EntityPlayer player, String name) {
+        return player.getName().equals(name);
+    }
+
+    public static boolean playerNameMatches(EntityPlayer player, EntityPlayer other) {
+        return player.getName().equals(other.getName());
+    }
+
+    public static boolean playerNameMatchesAny(EntityPlayer player, String[] names) {
+        for (String name : names)
+            if (playerNameMatches(player, name)) return true;
+        return false;
+    }
+
+    public static boolean playerNameMatchesAny(Minecraft mc, String[] names) {
+        for (String name : names)
+            if (playerNameMatches(mc, name)) return true;
+        return false;
+    }
 
     /**
      * Creates a unique PNG file in the given directory named by a timestamp.  Handles cases where the timestamp alone
@@ -63,7 +86,7 @@ public class CwCUtils {
      * @param type Type of event that triggered this screenshot action
      */
     protected static void takeScreenshot(Minecraft mc, boolean useTimestamps, CwCScreenshotEventType type) {
-        if (playerNameMatches(mc, CwCMod.FIXED_VIEWER) && mc.gameSettings.chatVisibility != EntityPlayer.EnumChatVisibility.HIDDEN)
+        if (playerNameMatchesAny(mc, CwCMod.FIXED_VIEWERS) && mc.gameSettings.chatVisibility != EntityPlayer.EnumChatVisibility.HIDDEN)
             mc.gameSettings.chatVisibility = EntityPlayer.EnumChatVisibility.HIDDEN;
 
         // get the mission summary
@@ -99,7 +122,7 @@ public class CwCUtils {
         // re-enable pickup or putdown actions
         if (type == CwCScreenshotEventType.PICKUP)  CwCEventHandler.disablePickup  = false;
         if (type == CwCScreenshotEventType.PUTDOWN) CwCEventHandler.disablePutdown = false;
-        if (mc.player.getName().equals(CwCMod.FIXED_VIEWER) && !CwCEventHandler.initializedTimestamp) CwCEventHandler.initializedTimestamp = true;
+        if (playerNameMatchesAny(mc, CwCMod.FIXED_VIEWERS) && !CwCEventHandler.initializedTimestamp) CwCEventHandler.initializedTimestamp = true;
     }
 
     /**

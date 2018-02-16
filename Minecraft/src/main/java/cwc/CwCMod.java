@@ -32,12 +32,19 @@ public class CwCMod {
 	public static final String ARCHITECT = "Architect";
 	public static final String BUILDER = "Builder";
 	public static final String ORACLE = "Oracle";
-	public static final String FIXED_VIEWER = "FixedViewer";
+	public static String[] FIXED_VIEWERS;
 
 	public static boolean enableAIToggle = false;		// whether or not the original Malmo AI/Human toggle option is enabled
 	public static boolean unlimitedInventory = false;	// whether or not Builder has unlimited inventory of blocks
 	public static final int MAX_INVENTORY_SIZE = 5;		// maximum number of blocks that can be held at a time by the Builder (if limited inventory)
 	protected static int DEFAULT_STACK_SIZE = 1;		// stack sizes of blocks in inventory upon initialization of Builder (if unlimited inventory)
+	protected static int NUM_FIXED_VIEWERS = 4;
+
+	static {
+		FIXED_VIEWERS = new String[NUM_FIXED_VIEWERS];
+		for (int i = 0; i < NUM_FIXED_VIEWERS; i++)
+			FIXED_VIEWERS[i] = "FixedViewer"+(i+1);
+	}
 
 	public static ArrayList<String> screenshots = new ArrayList<String>();  // list of absolute paths of screenshots taken by the client
 

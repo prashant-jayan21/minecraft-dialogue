@@ -8,7 +8,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
-import static cwc.CwCEventHandler.playerNameMatches;
+import static cwc.CwCUtils.playerNameMatches;
 
 /**
  * Server- & client-side handler for chat status messages.

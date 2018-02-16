@@ -1,6 +1,5 @@
 package cwc;
 
-import com.microsoft.Malmo.MalmoMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.world.WorldServer;
@@ -9,7 +8,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
-import static cwc.CwCEventHandler.playerNameMatches;
+import static cwc.CwCUtils.playerNameMatches;
 
 public class CwCPositionMessageHandler implements IMessageHandler<CwCPositionMessage, IMessage> {
 

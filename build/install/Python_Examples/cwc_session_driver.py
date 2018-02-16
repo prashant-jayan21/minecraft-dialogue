@@ -10,7 +10,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run a session driver.")
     parser.add_argument("user_info_spreadsheet", help="File path of the spreadsheet (.csv) containing all user info")
     parser.add_argument("gold_configs_spreadsheet", help="File path of the spreadsheet (.csv) containing all gold config file paths")
-    parser.add_argument("--fixed_viewer_ip", default="127.0.0.1", help="IP address of the Fixed Viewer client")
+    parser.add_argument("--fixed_viewer_spreadsheet", default="default_fixed_viewer.csv", help="File path of the spreadsheet (.csv) containing all IP addresses of the Fixed Viewer clients")
+    parser.add_argument("--num_fixed_viewers", type=int, default=4, help="Number of fixed viewer clients per mission")
     args = parser.parse_args()
 
     # Read user info from spreadsheet
@@ -34,6 +35,12 @@ if __name__ == "__main__":
 
     num_gold_configs = len(all_gold_configs)
 
+    fixed_viewers = []
+    with open(args.fixed_viewer_spreadsheet, 'rb') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            fixed_viewers.append(row)
+
     # Spawn worker processes
     # freeze_support()
     pool = Pool(processes=num_users/2)
@@ -45,20 +52,29 @@ if __name__ == "__main__":
         print "\nGOLD CONFIG: " + gold_config["file path"]
 
         user_pairs = zip(all_users[0::2], all_users[1::2])
+        assert len(fixed_viewers) >= len(user_pairs)
+        fxidx = 0
 
         # create mission args list
         all_mission_args = []
         for user_pair in user_pairs:
+            builder_port = (10000 if user_pair[0].get("port") is None else int(user_pair[0]["port"]))
+            architect_port = (10000 if user_pair[1].get("port") is None else int(user_pair[1]["port"]))
             mission_args = {
-                "lan": False,
+                "lan": True,
                 "builder_ip_addr": user_pair[0]["ip address"],
                 "builder_id": user_pair[0]["id"],
+                "builder_port": builder_port,
                 "architect_ip_addr": user_pair[1]["ip address"],
                 "architect_id": user_pair[1]["id"],
+                "architect_port": architect_port,
                 "gold_config": gold_config["file path"],
-                "fixed_viewer_ip_addr": args.fixed_viewer_ip,
+                "fixed_viewer_ip_addr": fixed_viewers[fxidx]["ip address"],
+                "fixed_viewer_port": int(fixed_viewers[fxidx]["port"]),
+                "num_fixed_viewers": args.num_fixed_viewers
             }
             all_mission_args.append(mission_args)
+            fxidx += 1
 
         # submit mission jobs to process pool
         print "\nMISSIONS RUNNING..."
