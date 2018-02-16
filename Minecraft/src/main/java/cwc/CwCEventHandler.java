@@ -91,7 +91,7 @@ public class CwCEventHandler {
         if (!(event.getEntity() instanceof EntityPlayer || event.getEntity() instanceof EntityFallingBlock || event.getEntity() instanceof EntityItem))
             event.setCanceled(true);
 
-        if (event.getEntity().getEntityWorld().isRemote)
+        if (event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer)
             resetGameSettingsAndChatGUI();
 
         else if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
@@ -145,7 +145,7 @@ public class CwCEventHandler {
      */
     @SubscribeEvent
     public void onPlayerClone(PlayerEvent.Clone event) {
-        if (event.getEntity().getEntityWorld().isRemote)
+        if (event.getEntity().getEntityWorld().isRemote  && event.getEntity() instanceof EntityPlayer)
             resetGameSettingsAndChatGUI();
 
         else if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
