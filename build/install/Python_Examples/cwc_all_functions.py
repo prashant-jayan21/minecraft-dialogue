@@ -3,7 +3,7 @@
 # Record all observations
 
 import MalmoPython
-import os, sys, time, json, argparse, datetime, copy
+import os, sys, time, json, datetime, copy
 import numpy as np
 
 # observation grid parameters
