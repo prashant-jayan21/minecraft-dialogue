@@ -346,6 +346,12 @@ def cwc_all_obs_and_save_data(args):
     gold_config_xml_substring = gold_config_file.read()
     gold_config_file.close()
 
+    existing_config_xml_substring = ""
+    if args["existing_config"] is not None and len(args["existing_config"]) > 0:
+        existing_config_file = open(args["existing_config"], "r")
+        existing_config_xml_substring = existing_config_file.read()
+        existing_config_file.close()
+
     string_to_write = ""
     all_world_states = []
 
@@ -375,6 +381,7 @@ def cwc_all_obs_and_save_data(args):
                         <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-8" y1="1" z1="6" x2="-9" y2="2" z2="2"/>
                         <DrawCuboid type="cwcmod:cwc_red_rn" x1="-8" y1="1" z1="0" x2="-9" y2="2" z2="-4"/>
                         <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_build) +'''" y1="0" z1="''' + str(z_min_build)+ '''" x2="'''+ str(x_max_build)+'''" y2="0" z2="''' + str(z_max_build) + '''"/>
+                        ''' + existing_config_xml_substring + '''
                       </DrawingDecorator>
                       <ServerQuitWhenAnyAgentFinishes/>
                     </ServerHandlers>
