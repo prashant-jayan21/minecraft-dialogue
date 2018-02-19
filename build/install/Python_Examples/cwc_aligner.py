@@ -14,36 +14,41 @@ def postprocess_missions(logs_root_dir, screenshots_root_dir):
 
 def postprocess_observations(logs_dir, screenshots_dir):
     all_filenames = filter(lambda x: x.endswith(".png"), os.listdir(screenshots_dir))
-    aligned_pairs = align(all_filenames)
+    aligned_tuples = align(all_filenames)
 
     with open(join(logs_dir, "observations.json")) as observations:
 	       observations_dict = json.load(observations)
 
-    observations_dict = add_architect_screenshots(observations_dict, aligned_pairs)
+    observations_dict = add_other_screenshots(observations_dict, aligned_tuples)
 
     with open(join(logs_dir, "observations_postprocessed.json"), "w") as observations_processed:
         json.dump(observations_dict, observations_processed)
 
-def add_architect_screenshots(json, aligned_pairs):
+def add_other_screenshots(json, aligned_tuples):
     all_states = json["WorldStates"]
     all_states_processed = []
 
     for state in all_states:
         builder_screenshot = state["ScreenshotPath"]
-        architect_screenshot = get_architect_screenshot(builder_screenshot, aligned_pairs)
-        if architect_screenshot is not None:
-            del state["ScreenshotPath"]
-            state["BuilderScreenshotPath"] = builder_screenshot
-            state["ArchitectScreenshotPath"] = architect_screenshot
+        other_screenshots = get_other_screenshots(builder_screenshot, aligned_tuples)
+        del state["ScreenshotPath"]
+        state["BuilderScreenshotPath"] = builder_screenshot
+        if other_screenshots is not None:
+            state["ArchitectScreenshotPath"] = other_screenshots[0]
+            state["FixedViewerScreenshotPath"] = other_screenshots[1]
+            # TODO: state["FixedViewer1ScreenshotPath"] = other_screenshots[1]
+            # TODO: state["FixedViewer2ScreenshotPath"] = other_screenshots[2]
+            # TODO: state["FixedViewer3ScreenshotPath"] = other_screenshots[3]
+            # TODO: state["FixedViewer4ScreenshotPath"] = other_screenshots[4]
         all_states_processed.append(state)
 
     json["WorldStates"] = all_states_processed
     return json
 
-def get_architect_screenshot(builder_screenshot, aligned_pairs):
-    for pair in aligned_pairs:
-        if pair[1] == builder_screenshot:
-            return pair[0]
+def get_other_screenshots(builder_screenshot, aligned_tuples):
+    for t in aligned_tuples:
+        if t[1] == builder_screenshot:
+            return filter(lambda x: x != t[1], t)
     return None
 
 def align(all_screenshot_filenames):
@@ -54,21 +59,41 @@ def align(all_screenshot_filenames):
             grouping[key] = []
         grouping[key].append(filename)
 
-    aligned_pairs = get_aligned_pairs(grouping)
+    aligned_pairs_ab = get_aligned_pairs(grouping, "Architect", "Builder")
+    aligned_pairs_af = get_aligned_pairs(grouping, "Architect", "FixedViewer")
+    # TODO: aligned_pairs_af_1 = get_aligned_pairs(grouping, "Architect", "FixedViewer1")
+    # TODO: aligned_pairs_af_2 = get_aligned_pairs(grouping, "Architect", "FixedViewer2")
+    # TODO: aligned_pairs_af_3 = get_aligned_pairs(grouping, "Architect", "FixedViewer3")
+    # TODO: aligned_pairs_af_4 = get_aligned_pairs(grouping, "Architect", "FixedViewer4")
 
-    all_aligned_filenames = [item for pair in aligned_pairs for item in pair]
+    all_aligned_pairs = [aligned_pairs_ab, aligned_pairs_af] # TODO: aligned_pairs_af_1, aligned_pairs_af_2, aligned_pairs_af_3, aligned_pairs_af_4
+
+    def merge(list_1, list_2):
+        merged_tuples = []
+        for tuple_1 in list_1:
+            key = tuple_1[0]
+            try:
+                tuple_2 = next(x for x in list_2 if x[0] == key)
+            except StopIteration:
+                continue
+            merged_tuples.append(tuple_1 + tuple_2[1:])
+        return merged_tuples
+
+    aligned_tuples = reduce(merge, all_aligned_pairs)
+
+    all_aligned_filenames = [item for t in aligned_tuples for item in t]
     all_unaligned_filenames = set(all_screenshot_filenames) - set(all_aligned_filenames)
     print "UNALIGNED SCREENSHOTS: " + str(all_unaligned_filenames) + "\n"
 
-    return aligned_pairs
+    return aligned_tuples
 
-def get_aligned_pairs(grouping):
+def get_aligned_pairs(grouping, agent_name_1, agent_name_2):
     aligned_pairs = [] # list of all aligned pairs of screenshots
 
     for action, all_filenames_for_action in grouping.iteritems():
         # split into builder and architect screenshots
-        architect_filenames = filter(lambda x: "Architect" in x, all_filenames_for_action)
-        builder_filenames = filter(lambda x: "Builder" in x, all_filenames_for_action)
+        architect_filenames = filter(lambda x: agent_name_1 in x, all_filenames_for_action)
+        builder_filenames = filter(lambda x: agent_name_2 in x, all_filenames_for_action)
         # create a weighted complete bipartite graph
         # nodes in first set are architect screenshots and in second are builder ones
         # each weight is the time lag between screenshots
