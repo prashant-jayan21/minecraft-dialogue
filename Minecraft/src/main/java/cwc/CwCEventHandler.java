@@ -29,6 +29,7 @@ import net.minecraftforge.fml.common.gameevent.InputEvent.*;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.lwjgl.opengl.Display;
 
 import java.util.List;
 
@@ -94,7 +95,7 @@ public class CwCEventHandler {
         if (!(event.getEntity() instanceof EntityPlayer || event.getEntity() instanceof EntityFallingBlock || event.getEntity() instanceof EntityItem))
             event.setCanceled(true);
 
-        if (event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer)
+        if (event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer && event.getEntity().isEntityAlive())
             resetGameSettingsAndChatGUI();
 
         else if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
@@ -106,6 +107,9 @@ public class CwCEventHandler {
             player.capabilities.disableDamage = true;
             player.sendPlayerAbilities();
             System.out.println("\t-- flying capabilities ON, damage OFF");
+
+            if (playerNameMatches(player, CwCMod.ORACLE))
+                Display.setTitle(player.getName());
 
             // spawn with empty hand (if possible)
             if (playerNameMatches(player, CwCMod.BUILDER)) {
@@ -148,7 +152,7 @@ public class CwCEventHandler {
      */
     @SubscribeEvent
     public void onPlayerClone(PlayerEvent.Clone event) {
-        if (event.getEntity().getEntityWorld().isRemote  && event.getEntity() instanceof EntityPlayer)
+        if (event.getEntity().getEntityWorld().isRemote  && event.getEntity() instanceof EntityPlayer && event.getEntity().isEntityAlive())
             resetGameSettingsAndChatGUI();
 
         else if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
@@ -160,6 +164,9 @@ public class CwCEventHandler {
             player.capabilities.disableDamage = true;
             player.sendPlayerAbilities();
             System.out.println("\t-- flying capabilities ON, damage OFF");
+
+            if (playerNameMatches(player, CwCMod.ORACLE))
+                Display.setTitle(player.getName());
 
             // spawn with empty hand (if possible)
             if (playerNameMatches(player, CwCMod.BUILDER)) {

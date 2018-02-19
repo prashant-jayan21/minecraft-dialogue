@@ -292,18 +292,8 @@ def addFixedViewers(n):
     return fvs
 
 def cwc_all_obs_and_save_data(args):
+    print "Calling cwc_all_obs_and_save_data with args:", args, "\n"
     start_time = time.time()
-
-    # Create agent hosts:
-    agent_hosts = []
-    for i in range(7):
-        agent_hosts.append(MalmoPython.AgentHost())
-
-    # Set observation policy for builder
-    agent_hosts[1].setObservationsPolicy(MalmoPython.ObservationsPolicy.KEEP_ALL_OBSERVATIONS)
-
-    # Set up a client pool
-    client_pool = MalmoPython.ClientPool()
 
     builder_ip = args["builder_ip_addr"]
     builder_port = args["builder_port"]
@@ -313,15 +303,24 @@ def cwc_all_obs_and_save_data(args):
     fixed_viewer_port = args["fixed_viewer_port"]
     num_fixed_viewers = args["num_fixed_viewers"]
 
+    # Create agent hosts:
+    agent_hosts = []
+    for i in range(3+num_fixed_viewers):
+        agent_hosts.append(MalmoPython.AgentHost())
+
+    # Set observation policy for builder
+    agent_hosts[1].setObservationsPolicy(MalmoPython.ObservationsPolicy.KEEP_ALL_OBSERVATIONS)
+
+    # Set up a client pool
+    client_pool = MalmoPython.ClientPool()
+
     if not args["lan"]:
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10000))
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10001))
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10002))
 
-        client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10003))
-        client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10004))
-        client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10005))
-        client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10006))
+        for i in range(num_fixed_viewers):
+            client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10003+i))
     else:
         print "Builder IP:", builder_ip, "\tPort:", builder_port
         print "Architect IP:", architect_ip, "\tPort:", architect_port
@@ -331,10 +330,8 @@ def cwc_all_obs_and_save_data(args):
         client_pool.add(MalmoPython.ClientInfo(builder_ip, builder_port))
         client_pool.add(MalmoPython.ClientInfo(architect_ip, architect_port))
 
-        client_pool.add(MalmoPython.ClientInfo(fixed_viewer_ip, fixed_viewer_port))
-        client_pool.add(MalmoPython.ClientInfo(fixed_viewer_ip, fixed_viewer_port+1))
-        client_pool.add(MalmoPython.ClientInfo(fixed_viewer_ip, fixed_viewer_port+2))
-        client_pool.add(MalmoPython.ClientInfo(fixed_viewer_ip, fixed_viewer_port+3))
+        for i in range(num_fixed_viewers):
+            client_pool.add(MalmoPython.ClientInfo(fixed_viewer_ip, fixed_viewer_port+i))
 
     # Create mission xmls
 
@@ -371,12 +368,12 @@ def cwc_all_obs_and_save_data(args):
                     <ServerHandlers>
                       <FlatWorldGenerator generatorString="3;241;1;" forceReset="true" destroyAfterUse="true"/>
                       <DrawingDecorator>
-                        <DrawCuboid type="cwcmod:cwc_orange_rn" x1="5" y1="1" z1="8" x2="1" y2="2" z2="8"/>
-                        <DrawCuboid type="cwcmod:cwc_yellow_rn" x1="-1" y1="1" z1="8" x2="-5" y2="2" z2="8"/>
-                        <DrawCuboid type="cwcmod:cwc_green_rn" x1="8" y1="1" z1="6" x2="8" y2="2" z2="2"/>
-                        <DrawCuboid type="cwcmod:cwc_blue_rn" x1="8" y1="1" z1="0" x2="8" y2="2" z2="-4"/>
-                        <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-8" y1="1" z1="6" x2="-8" y2="2" z2="2"/>
-                        <DrawCuboid type="cwcmod:cwc_red_rn" x1="-8" y1="1" z1="0" x2="-8" y2="2" z2="-4"/>
+                        <DrawCuboid type="cwcmod:cwc_orange_rn" x1="5" y1="1" z1="8" x2="1" y2="2" z2="9"/>
+                        <DrawCuboid type="cwcmod:cwc_yellow_rn" x1="-1" y1="1" z1="8" x2="-5" y2="2" z2="9"/>
+                        <DrawCuboid type="cwcmod:cwc_green_rn" x1="8" y1="1" z1="6" x2="9" y2="2" z2="2"/>
+                        <DrawCuboid type="cwcmod:cwc_blue_rn" x1="8" y1="1" z1="0" x2="9" y2="2" z2="-4"/>
+                        <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-8" y1="1" z1="6" x2="-9" y2="2" z2="2"/>
+                        <DrawCuboid type="cwcmod:cwc_red_rn" x1="-8" y1="1" z1="0" x2="-9" y2="2" z2="-4"/>
                         <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_build) +'''" y1="0" z1="''' + str(z_min_build)+ '''" x2="'''+ str(x_max_build)+'''" y2="0" z2="''' + str(z_max_build) + '''"/>
                       </DrawingDecorator>
                       <ServerQuitWhenAnyAgentFinishes/>
@@ -453,17 +450,15 @@ def cwc_all_obs_and_save_data(args):
     safeStartMission(agent_hosts[2], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 1, "cwc_dummy_mission")
 
     # fixed viewers
-    safeStartMission(agent_hosts[3], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 2, "cwc_dummy_mission")
-    safeStartMission(agent_hosts[4], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 3, "cwc_dummy_mission")
-    safeStartMission(agent_hosts[5], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 4, "cwc_dummy_mission")
-    safeStartMission(agent_hosts[6], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 5, "cwc_dummy_mission")
+    for i in range(num_fixed_viewers):
+        safeStartMission(agent_hosts[3+i], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 2+i, "cwc_dummy_mission")
 
     safeWaitForStart(agent_hosts)
 
     timed_out = False
 
     while not timed_out:
-        for i in range(7):
+        for i in range(3+num_fixed_viewers):
             ah = agent_hosts[i]
             world_state = ah.getWorldState()
 

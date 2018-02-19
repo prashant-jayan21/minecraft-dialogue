@@ -12,6 +12,7 @@ if __name__ == "__main__":
     parser.add_argument("gold_configs_spreadsheet", help="File path of the spreadsheet (.csv) containing all gold config file paths")
     parser.add_argument("--fixed_viewer_spreadsheet", default="default_fixed_viewer.csv", help="File path of the spreadsheet (.csv) containing all IP addresses of the Fixed Viewer clients")
     parser.add_argument("--num_fixed_viewers", type=int, default=4, help="Number of fixed viewer clients per mission")
+    parser.add_argument("--lan", default=False, action="store_true", help="LAN mode")
     args = parser.parse_args()
 
     # Read user info from spreadsheet
@@ -61,7 +62,7 @@ if __name__ == "__main__":
             builder_port = (10000 if user_pair[0].get("port") is None else int(user_pair[0]["port"]))
             architect_port = (10000 if user_pair[1].get("port") is None else int(user_pair[1]["port"]))
             mission_args = {
-                "lan": True,
+                "lan": args.lan,
                 "builder_ip_addr": user_pair[0]["ip address"],
                 "builder_id": user_pair[0]["id"],
                 "builder_port": builder_port,
