@@ -3,7 +3,7 @@
 # Record all observations
 
 import MalmoPython
-import os, sys, time, json, argparse, datetime, copy
+import os, sys, time, json, datetime, copy
 import numpy as np
 
 # observation grid parameters
@@ -24,7 +24,7 @@ z_min_build = -5
 z_max_build = 5
 
 # goal region parameters
-displacement = 0
+displacement = 100
 x_min_goal = x_min_build + displacement
 x_max_goal = x_max_build + displacement
 y_min_goal = y_min_build # NOTE: Do not change this relation without thought!
@@ -436,7 +436,7 @@ def cwc_all_obs_and_save_data(args):
                   <AgentSection mode="Spectator">
                     <Name>Oracle</Name>
                     <AgentStart>
-                      <Placement x = "0" y = "5" z = "-6" pitch="45"/>
+                      <Placement x = "100" y = "5" z = "94" pitch="45"/>
                     </AgentStart>
                     <AgentHandlers/>
                   </AgentSection>
