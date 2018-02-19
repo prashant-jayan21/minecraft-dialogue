@@ -75,6 +75,6 @@ public class CwCInitializationMessageHandler implements IMessageHandler<CwCIniti
         if (playerNameMatches(mc, CwCMod.ARCHITECT))
             CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 5, -6, 0, 45, true, true, true, true, true));
         if (playerNameMatches(mc, CwCMod.ORACLE))
-            CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 5, -6, 0, 45, true, true, true, true, true));
+            CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(100, 5, 94, 0, 45, true, true, true, true, true));
     }
 }
