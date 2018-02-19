@@ -8,6 +8,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
+import org.lwjgl.opengl.Display;
 
 import static cwc.CwCUtils.playerNameMatches;
 import static cwc.CwCUtils.playerNameMatchesAny;
@@ -41,7 +42,7 @@ public class CwCInitializationMessageHandler implements IMessageHandler<CwCIniti
             final Minecraft mc = Minecraft.getMinecraft();
             mc.addScheduledTask(new Runnable() {
                 public void run() {
-                    processMessageOnClient(message, mc);
+                    processMessageOnClient(mc);
                 }
             });
             return null;
@@ -63,10 +64,9 @@ public class CwCInitializationMessageHandler implements IMessageHandler<CwCIniti
     /**
      * Handles messages received on the client.
      *
-     * @param message   Initialization message
      * @param mc        Minecraft client instance
      */
-    void processMessageOnClient(CwCInitializationMessage message, Minecraft mc) {
+    void processMessageOnClient(Minecraft mc) {
         System.out.println("Client received: initialization message");
         CwCMod.reset();
         if (playerNameMatchesAny(mc, CwCMod.FIXED_VIEWERS))
@@ -77,5 +77,6 @@ public class CwCInitializationMessageHandler implements IMessageHandler<CwCIniti
             CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 5, -6, 0, 45, true, true, true, true, true));
         if (playerNameMatches(mc, CwCMod.ORACLE))
             CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(100, 5, 94, 0, 45, true, true, true, true, true));
+        Display.setTitle(mc.player.getName());
     }
 }
