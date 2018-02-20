@@ -264,7 +264,7 @@ public class CwCEventHandler {
         // Quits the mission if Ctrl-C is pressed by either player, killing all connected players.
         if ((CwCKeybinds.quitKeyC.isKeyDown() && CwCKeybinds.quitCtrl.isKeyDown() &&
                 (playerNameMatches(mc, CwCMod.ARCHITECT) || playerNameMatches(mc, CwCMod.BUILDER))) ||
-                (CwCKeybinds.quitKeyQ.isKeyDown() && CwCKeybinds.quitCtrl.isKeyDown() &&
+                (CwCKeybinds.quitKeyD.isKeyDown() && CwCKeybinds.quitCtrl.isKeyDown() &&
                 (playerNameMatches(mc, CwCMod.ORACLE) || playerNameMatchesAny(mc, CwCMod.FIXED_VIEWERS)))) {
             System.out.println("CwCMod: Quitting the mission...");
             CwCMod.network.sendToServer(new CwCQuitMessage());
