@@ -8,9 +8,9 @@ from cwc_all_functions import cwc_all_obs_and_save_data
 if __name__ == "__main__":
     # Parse CLAs
     parser = argparse.ArgumentParser(description="Run a session driver.")
-    parser.add_argument("user_info_spreadsheet", help="File path of the spreadsheet (.csv) containing all user info")
-    parser.add_argument("configs_spreadsheet", help="File path of the spreadsheet (.csv) containing all gold, existing config file paths")
-    parser.add_argument("--fixed_viewer_spreadsheet", default=None, help="File path of the spreadsheet (.csv) containing all IP addresses of the Fixed Viewer clients")
+    parser.add_argument("user_info_csv", help="File path of the spreadsheet (.csv) containing all user info")
+    parser.add_argument("configs_csv", help="File path of the spreadsheet (.csv) containing all gold, existing config file paths")
+    parser.add_argument("--fixed_viewer_csv", default=None, help="File path of the spreadsheet (.csv) containing all IP addresses of the Fixed Viewer clients")
     parser.add_argument("--num_fixed_viewers", type=int, default=4, help="Number of fixed viewer clients per mission")
     parser.add_argument("--lan", default=False, action="store_true", help="LAN mode")
     args = parser.parse_args()
