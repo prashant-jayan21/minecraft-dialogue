@@ -18,7 +18,7 @@ if __name__ == "__main__":
     # Read user info from spreadsheet
 
     all_users = []
-    with open(args.user_info_spreadsheet, 'rb') as csvfile:
+    with open(args.user_info_csv, 'rb') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             all_users.append(row)
@@ -29,22 +29,22 @@ if __name__ == "__main__":
     # Read gold config file paths from spreadsheet
 
     all_configs = []
-    with open(args.configs_spreadsheet, 'rb') as csvfile:
+    with open(args.configs_csv, 'rb') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             all_configs.append(row)
     num_configs = len(all_configs)
 
     fixed_viewers = []
-    if args.fixed_viewer_spreadsheet is not None:
-        with open(args.fixed_viewer_spreadsheet, 'rb') as csvfile:
+    if args.fixed_viewer_csv is not None:
+        with open(args.fixed_viewer_csv, 'rb') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 fixed_viewers.append(row)
 
     if args.lan and args.num_fixed_viewers > 0:
-        if args.fixed_viewer_spreadsheet is None:
-            print "Error: In LAN mode, you must specify a --fixed_viewer_spreadsheet parameter. Consider using a default localhost, such as the specification in default_fixed_viewer.csv."
+        if args.fixed_viewer_csv is None:
+            print "Error: In LAN mode, you must specify a --fixed_viewer_csv parameter. Consider using a default localhost, such as the specification in default_fixed_viewer.csv."
             exit()
 
         if len(fixed_viewers) <= 0:
