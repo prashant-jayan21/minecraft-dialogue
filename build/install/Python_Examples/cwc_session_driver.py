@@ -42,6 +42,15 @@ if __name__ == "__main__":
             for row in reader:
                 fixed_viewers.append(row)
 
+    if args.lan and args.num_fixed_viewers > 0:
+        if args.fixed_viewer_spreadsheet is None:
+            print "Error: In LAN mode, you must specify a --fixed_viewer_spreadsheet parameter. Consider using a default localhost, such as the specification in default_fixed_viewer.csv."
+            exit()
+
+        if len(fixed_viewers) <= 0:
+            print "Error: In LAN mode, you must have at least one available Fixed Viewer client in the Fixed Viewer csv. Consider using a default localhost, such as the specification in default_fixed_viewer.csv."
+            exit()
+
     # Spawn worker processes
     # freeze_support()
     pool = Pool(processes=num_users/2)
