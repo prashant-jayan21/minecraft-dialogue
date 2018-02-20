@@ -64,19 +64,26 @@ public class CwCInitializationMessageHandler implements IMessageHandler<CwCIniti
     /**
      * Handles messages received on the client.
      *
-     * @param mc        Minecraft client instance
+     * @param mc Minecraft client instance
      */
     void processMessageOnClient(Minecraft mc) {
         System.out.println("Client received: initialization message");
         CwCMod.reset();
-        if (playerNameMatchesAny(mc, CwCMod.FIXED_VIEWERS))
-            CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0.7, 9, -10, 0, 30, true, true, true, true, true));
+        if (playerNameMatchesAny(mc, CwCMod.FIXED_VIEWERS)) { //FIXME: set FixedViewer coordinates
+            if (playerNameMatches(mc, CwCMod.FIXED_VIEWERS[0]))
+                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0.7, 7, -10, 0, 30, true, true, true, true, true));
+            if (playerNameMatches(mc, CwCMod.FIXED_VIEWERS[1]))
+                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0.7, 7, -10, 0, 30, true, true, true, true, true));
+            if (playerNameMatches(mc, CwCMod.FIXED_VIEWERS[3]))
+                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0.7, 7, -10, 0, 30, true, true, true, true, true));
+            if (playerNameMatches(mc, CwCMod.FIXED_VIEWERS[4]))
+                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0.7, 7, -10, 0, 30, true, true, true, true, true));
+        }
+        
         if (playerNameMatches(mc, CwCMod.BUILDER))
             CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 1, 0, 0, 0, true, true, true, true, true));
         if (playerNameMatches(mc, CwCMod.ARCHITECT))
             CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 5, -6, 0, 45, true, true, true, true, true));
-        if (playerNameMatches(mc, CwCMod.ORACLE))
-            CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(100, 5, 94, 0, 45, true, true, true, true, true));
         Display.setTitle(mc.player.getName());
     }
 }

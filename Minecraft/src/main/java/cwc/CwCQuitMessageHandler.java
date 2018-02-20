@@ -51,8 +51,13 @@ public class CwCQuitMessageHandler implements IMessageHandler<CwCQuitMessage, IM
      * @param sender Message sender
      */
     void processMessageOnServer(CwCQuitMessage message, EntityPlayerMP sender) {
-        for (EntityPlayerMP player : sender.mcServer.getPlayerList().getPlayers())
+        for (EntityPlayerMP player : sender.mcServer.getPlayerList().getPlayers()) {
+            player.capabilities.disableDamage = false;
+            player.sendPlayerAbilities();
+            player.addScore(100);
+            player.attackEntityFrom(new CwCDamageSource("murder"), 100.0F);
             CwCMod.network.sendTo(message, player);
+        }
     }
 
     /**
@@ -61,8 +66,6 @@ public class CwCQuitMessageHandler implements IMessageHandler<CwCQuitMessage, IM
      * @param mc Minecraft client instance
      */
     void processMessageOnClient(Minecraft mc) {
-        CwCEventHandler.quit = true;
-        mc.player.sendChatMessage("/kill");
         CwCMod.reset();
     }
 }

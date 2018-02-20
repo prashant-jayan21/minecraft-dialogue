@@ -215,21 +215,34 @@ def recordGridCoordinates(cws):
 
 # Generates a string representation of the world state JSON's contents and adds it to stw.
 def writeToString(cws, stw):
-    stw += "\n"+"-"*20+"\n[Timestamp] "+cws["Timestamp"]+"\n[Builder Position] (x, y, z): ("+str(cws["BuilderPosition"]["X"])+", "+str(cws["BuilderPosition"]["Y"])+", "+str(cws["BuilderPosition"]["Z"])+") " + \
-           "(yaw, pitch): ("+str(cws["BuilderPosition"]["Yaw"])+", "+str(cws["BuilderPosition"]["Pitch"])+")\n[Screenshot Path] "+cws["ScreenshotPath"]+"\n\n[Chat Log]\n"
-    for utterance in cws["ChatHistory"]:
-        stw += "\t"+utterance+"\n"
+    stw += "\n"+"-"*20+"\n[Timestamp] "+cws.get("Timestamp")
+    stw += "\n[Builder Position] (x, y, z): ("+("None" if cws.get("BuilderPosition") is None else str(cws["BuilderPosition"]["X"])+", "+str(cws["BuilderPosition"]["Y"])+", "+str(cws["BuilderPosition"]["Z"])+") " + \
+           "(yaw, pitch): ("+str(cws["BuilderPosition"]["Yaw"])+", "+str(cws["BuilderPosition"]["Pitch"]))
+    stw += ")\n[Screenshot Path] "+cws.get("ScreenshotPath")+"\n\n[Chat Log]\n"
+    
+    if cws.get("ChatHistory") is None:
+        stw += "\tNone\n"
+    else:
+        for utterance in cws["ChatHistory"]:
+            stw += "\t"+utterance+"\n"
+    
     stw += "\n[Builder Inventory]"
-    for block in cws["BuilderInventory"]:
-        stw += "\tType: "+block["Type"]+" Index: "+str(block["Index"])+" Quantity: "+str(block["Quantity"])+"\n"
+    if cws.get("BuilderInventory") is None:
+        stw += "\tNone\n"
+    else:
+        for block in cws["BuilderInventory"]:
+            stw += "\tType: "+block["Type"]+" Index: "+str(block["Index"])+" Quantity: "+str(block["Quantity"])+"\n"
+    
     stw += "\n[Blocks Inside]\n"
     for block in cws["BlocksInside"]:
         stw += "\tType: "+block["Type"]+"  Absolute (x, y, z): ("+str(block["AbsoluteCoordinates"]["X"])+", "+str(block["AbsoluteCoordinates"]["Y"])+", "+str(block["AbsoluteCoordinates"]["Z"])+")  Perspective (x, y, z): " + \
         str(block["PerspectiveCoordinates"]["X"])+", "+str(block["PerspectiveCoordinates"]["Y"])+", "+str(block["PerspectiveCoordinates"]["Z"])+")\n"
+    
     stw += "\n[Blocks Outside]\n"
     for block in cws["BlocksOutside"]:
         stw += "\tType: "+block["Type"]+"  Absolute (x, y, z): ("+str(block["AbsoluteCoordinates"]["X"])+", "+str(block["AbsoluteCoordinates"]["Y"])+", "+str(block["AbsoluteCoordinates"]["Z"])+")  Perspective (x, y, z): " + \
         str(block["PerspectiveCoordinates"]["X"])+", "+str(block["PerspectiveCoordinates"]["Y"])+", "+str(block["PerspectiveCoordinates"]["Z"])+")\n"
+    
     return stw
 
 # Helper method to print a shortened, prettier version of the JSON's contents.
@@ -315,6 +328,7 @@ def cwc_all_obs_and_save_data(args):
     client_pool = MalmoPython.ClientPool()
 
     if not args["lan"]:
+        print "Starting in local mode."
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10000))
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10001))
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10002))

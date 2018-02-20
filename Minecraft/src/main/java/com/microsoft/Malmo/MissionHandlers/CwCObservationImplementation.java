@@ -55,6 +55,8 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import java.util.ArrayList;
 import java.util.List;
 
+import static cwc.CwCUtils.playerNameMatches;
+
 /**
  * IObservationProducer object that pings out a whole bunch of data.
  * CwCObservation takes care of observations from chat, builder's grid, and the builder's stats (e.g. time alive, distance travelled, etc.).
@@ -269,8 +271,8 @@ public class CwCObservationImplementation extends ObservationFromServer
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onEvent(TickEvent.ClientTickEvent event) {
-        Minecraft minecraft = Minecraft.getMinecraft();
-        if (this.missionIsRunning && minecraft.player.getName().equals(CwCMod.BUILDER)) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (this.missionIsRunning && playerNameMatches(mc, CwCMod.BUILDER)) {
             if (!initializedOnServer && CwCMod.FIXED_VIEWERS.length > 0) {
                 System.out.println("Initializing the server");
                 EntityPlayer fv = FMLCommonHandler.instance().getMinecraftServerInstance().getEntityWorld().getPlayerEntityByName(CwCMod.FIXED_VIEWERS[0]);
@@ -280,7 +282,7 @@ public class CwCObservationImplementation extends ObservationFromServer
 
                     for (EntityPlayer pe : FMLCommonHandler.instance().getMinecraftServerInstance().getEntityWorld().playerEntities) {
                         EntityPlayerMP entity = (EntityPlayerMP) pe;
-                        if (CwCUtils.playerNameMatchesAny(pe, CwCMod.FIXED_VIEWERS) || CwCUtils.playerNameMatches(pe, CwCMod.ARCHITECT))
+                        if (CwCUtils.playerNameMatchesAny(pe, CwCMod.FIXED_VIEWERS) || playerNameMatches(pe, CwCMod.ARCHITECT))
                             et.untrack(entity);
                     }
                 }
@@ -296,7 +298,7 @@ public class CwCObservationImplementation extends ObservationFromServer
 
             if (waitTickAfterMissionStart < 50) waitTickAfterMissionStart++;
             else if (!missionHasStarted) {
-                minecraft.player.sendChatMessage("Mission has started.");
+                mc.player.sendChatMessage("Mission has started.");
                 missionHasStarted = true;
             }
         }

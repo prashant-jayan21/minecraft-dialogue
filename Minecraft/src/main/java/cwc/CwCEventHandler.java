@@ -43,9 +43,6 @@ import static cwc.CwCUtils.playerNameMatchesAny;
  */
 public class CwCEventHandler {
 
-    // mission quit
-    protected static boolean quit = false;
-
     // initialization indicators for server and client
     protected static boolean initializedTimestamp = false;
 
@@ -95,8 +92,13 @@ public class CwCEventHandler {
         if (!(event.getEntity() instanceof EntityPlayer || event.getEntity() instanceof EntityFallingBlock || event.getEntity() instanceof EntityItem))
             event.setCanceled(true);
 
-        if (event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer && event.getEntity().isEntityAlive())
+        if (event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer && event.getEntity().isEntityAlive()) {
             resetGameSettingsAndChatGUI();
+
+            Minecraft mc = Minecraft.getMinecraft();
+            if (playerNameMatches(mc, CwCMod.ORACLE))
+                Display.setTitle(mc.player.getName());
+        }
 
         else if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
             EntityPlayerMP player = (EntityPlayerMP) event.getEntity();
@@ -107,9 +109,6 @@ public class CwCEventHandler {
             player.capabilities.disableDamage = true;
             player.sendPlayerAbilities();
             System.out.println("\t-- flying capabilities ON, damage OFF");
-
-            if (playerNameMatches(player, CwCMod.ORACLE))
-                Display.setTitle(player.getName());
 
             // spawn with empty hand (if possible)
             if (playerNameMatches(player, CwCMod.BUILDER)) {
@@ -152,8 +151,13 @@ public class CwCEventHandler {
      */
     @SubscribeEvent
     public void onPlayerClone(PlayerEvent.Clone event) {
-        if (event.getEntity().getEntityWorld().isRemote  && event.getEntity() instanceof EntityPlayer && event.getEntity().isEntityAlive())
+        if (event.getEntity().getEntityWorld().isRemote  && event.getEntity() instanceof EntityPlayer && event.getEntity().isEntityAlive()) {
             resetGameSettingsAndChatGUI();
+
+            Minecraft mc = Minecraft.getMinecraft();
+            if (playerNameMatches(mc, CwCMod.ORACLE))
+                Display.setTitle(mc.player.getName());
+        }
 
         else if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
             EntityPlayerMP player = (EntityPlayerMP) event.getEntityPlayer();
@@ -164,9 +168,6 @@ public class CwCEventHandler {
             player.capabilities.disableDamage = true;
             player.sendPlayerAbilities();
             System.out.println("\t-- flying capabilities ON, damage OFF");
-
-            if (playerNameMatches(player, CwCMod.ORACLE))
-                Display.setTitle(player.getName());
 
             // spawn with empty hand (if possible)
             if (playerNameMatches(player, CwCMod.BUILDER)) {
@@ -258,8 +259,6 @@ public class CwCEventHandler {
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
-        if (quit) return;
-
         Minecraft mc = Minecraft.getMinecraft();
 
         // Quits the mission if Ctrl-C is pressed by either player, killing all connected players.
@@ -315,8 +314,6 @@ public class CwCEventHandler {
      */
     @SubscribeEvent
     public void onPlayerUpdate(LivingEvent.LivingUpdateEvent event) {
-        if (quit) return;
-
         EntityPlayer updatedPlayer = (EntityPlayer) event.getEntity();
 
         // prevent noclip through floor
@@ -400,8 +397,14 @@ public class CwCEventHandler {
         Minecraft mc = Minecraft.getMinecraft();
         EntityPlayer player = mc.player;
 
+        if (event.getType() == 1 && event.getMessage().getUnformattedText().contains("completed the mission"))
+            event.setCanceled(true);
+
         // take a screenshot if message is non-system message
         if (event.getType() == 0) {
+            if (playerNameMatchesAny(player, CwCMod.FIXED_VIEWERS))
+                event.setCanceled(true);
+
             List<String> sentMessages = mc.ingameGUI.getChatGUI().getSentMessages();
             if (playerNameMatches(player, CwCMod.BUILDER) || playerNameMatchesAny(player, CwCMod.FIXED_VIEWERS) ||
                     (playerNameMatches(player, CwCMod.ARCHITECT) && (sentMessages.size() == 0 ||
@@ -555,7 +558,6 @@ public class CwCEventHandler {
     }
 
     private static void resetInitializationFields() {
-        quit = false;
         initializedTimestamp = false;
     }
 
