@@ -93,11 +93,9 @@ public class CwCEventHandler {
             event.setCanceled(true);
 
         if (event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer && event.getEntity().isEntityAlive()) {
-            resetGameSettingsAndChatGUI();
-
             Minecraft mc = Minecraft.getMinecraft();
-            if (playerNameMatches(mc, CwCMod.ORACLE))
-                Display.setTitle(mc.player.getName());
+            if (playerNameMatches(mc.player, (EntityPlayer) event.getEntity())) resetGameSettingsAndChatGUI();
+            if (playerNameMatches(mc, CwCMod.ORACLE)) Display.setTitle(mc.player.getName());
         }
 
         else if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
