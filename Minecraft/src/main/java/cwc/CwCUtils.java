@@ -35,7 +35,7 @@ public class CwCUtils {
 
 
     public static boolean playerNameMatches(Minecraft mc, String name) {
-        return playerNameMatches(mc.player, name);
+        return (mc == null ? false : playerNameMatches(mc.player, name));
     }
 
     public static boolean playerNameMatches(EntityPlayer player, String name) {
