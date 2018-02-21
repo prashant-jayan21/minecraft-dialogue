@@ -39,7 +39,7 @@ public class CwCQuitMessageHandler implements IMessageHandler<CwCQuitMessage, IM
         else {
             final Minecraft mc = Minecraft.getMinecraft();
             mc.addScheduledTask(new Runnable() {
-                public void run() { processMessageOnClient(mc); }
+                public void run() { processMessageOnClient(); }
             });
             return null;
         }
@@ -54,7 +54,6 @@ public class CwCQuitMessageHandler implements IMessageHandler<CwCQuitMessage, IM
         for (EntityPlayerMP player : sender.mcServer.getPlayerList().getPlayers()) {
             player.capabilities.disableDamage = false;
             player.sendPlayerAbilities();
-            player.addScore(100);
             player.attackEntityFrom(new CwCDamageSource("murder"), 100.0F);
             CwCMod.network.sendTo(message, player);
         }
@@ -63,9 +62,6 @@ public class CwCQuitMessageHandler implements IMessageHandler<CwCQuitMessage, IM
     /**
      * Handles messages received on the client by setting the appropriate "quit" field in {@link CwCEventHandler}.
      * Kills the player attached to this client and resets the mod state.
-     * @param mc Minecraft client instance
      */
-    void processMessageOnClient(Minecraft mc) {
-        CwCMod.reset();
-    }
+    void processMessageOnClient() { CwCMod.reset(); }
 }
