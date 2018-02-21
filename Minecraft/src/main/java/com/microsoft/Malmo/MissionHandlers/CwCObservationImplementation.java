@@ -203,14 +203,48 @@ public class CwCObservationImplementation extends ObservationFromServer
     @Override
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent ev) {
-        if (this.missionIsRunning && actionPerformed) {
-            // Use the client tick to fire messages to the server to request up-to-date stats.
-            // We can then use those stats to fire back to the agent in writeObservationsToJSON.
-            ObservationRequestMessage message = createObservationRequestMessage();
-            // To make sure only the intended listener receives this message, set the id now:
-            message.id = System.identityHashCode(this);
-            MalmoMod.network.sendToServer(message);
-            actionPerformed = false;
+        if (this.missionIsRunning) {
+            if (actionPerformed) {
+                // Use the client tick to fire messages to the server to request up-to-date stats.
+                // We can then use those stats to fire back to the agent in writeObservationsToJSON.
+                ObservationRequestMessage message = createObservationRequestMessage();
+                // To make sure only the intended listener receives this message, set the id now:
+                message.id = System.identityHashCode(this);
+                MalmoMod.network.sendToServer(message);
+                actionPerformed = false;
+            }
+
+            Minecraft mc = Minecraft.getMinecraft();
+            if (playerNameMatches(mc, CwCMod.BUILDER)) {
+                if (!initializedOnServer && CwCMod.FIXED_VIEWERS.length > 0) {
+                    System.out.println("Initializing the server");
+                    EntityPlayer fv = FMLCommonHandler.instance().getMinecraftServerInstance().getEntityWorld().getPlayerEntityByName(CwCMod.FIXED_VIEWERS[0]);
+                    if (fv != null) {
+                        WorldServer world = (WorldServer) fv.world;
+                        EntityTracker et = world.getEntityTracker();
+
+                        for (EntityPlayer pe : FMLCommonHandler.instance().getMinecraftServerInstance().getEntityWorld().playerEntities) {
+                            EntityPlayerMP entity = (EntityPlayerMP) pe;
+                            if (CwCUtils.playerNameMatchesAny(pe, CwCMod.FIXED_VIEWERS) || playerNameMatches(pe, CwCMod.ARCHITECT))
+                                et.untrack(entity);
+                        }
+                    }
+
+                    initializedOnServer = true;
+                }
+
+                if (!initializedOnClient) {
+                    System.out.println("Sending client initialization message");
+                    CwCMod.network.sendToServer(new CwCInitializationMessage());
+                    initializedOnClient = true;
+                }
+
+                if (waitTickAfterMissionStart < 75) waitTickAfterMissionStart++;
+                else if (!missionHasStarted) {
+                    mc.player.sendChatMessage("Mission has started.");
+                    missionHasStarted = true;
+                }
+            }
         }
     }
 
@@ -266,42 +300,6 @@ public class CwCObservationImplementation extends ObservationFromServer
     @SubscribeEvent
     public void onEvent(BlockEvent.PlaceEvent event) {
         actionPerformed = true;
-    }
-
-    @SideOnly(Side.CLIENT)
-    @SubscribeEvent
-    public void onEvent(TickEvent.ClientTickEvent event) {
-        Minecraft mc = Minecraft.getMinecraft();
-        if (this.missionIsRunning && playerNameMatches(mc, CwCMod.BUILDER)) {
-            if (!initializedOnServer && CwCMod.FIXED_VIEWERS.length > 0) {
-                System.out.println("Initializing the server");
-                EntityPlayer fv = FMLCommonHandler.instance().getMinecraftServerInstance().getEntityWorld().getPlayerEntityByName(CwCMod.FIXED_VIEWERS[0]);
-                if (fv != null) {
-                    WorldServer world = (WorldServer) fv.world;
-                    EntityTracker et = world.getEntityTracker();
-
-                    for (EntityPlayer pe : FMLCommonHandler.instance().getMinecraftServerInstance().getEntityWorld().playerEntities) {
-                        EntityPlayerMP entity = (EntityPlayerMP) pe;
-                        if (CwCUtils.playerNameMatchesAny(pe, CwCMod.FIXED_VIEWERS) || playerNameMatches(pe, CwCMod.ARCHITECT))
-                            et.untrack(entity);
-                    }
-                }
-
-                initializedOnServer = true;
-            }
-
-            if (!initializedOnClient) {
-                System.out.println("Sending client initialization message");
-                CwCMod.network.sendToServer(new CwCInitializationMessage());
-                initializedOnClient = true;
-            }
-
-            if (waitTickAfterMissionStart < 50) waitTickAfterMissionStart++;
-            else if (!missionHasStarted) {
-                mc.player.sendChatMessage("Mission has started.");
-                missionHasStarted = true;
-            }
-        }
     }
 
     private void reset() {
