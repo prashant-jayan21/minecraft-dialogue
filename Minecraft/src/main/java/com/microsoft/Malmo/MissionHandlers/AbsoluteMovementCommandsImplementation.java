@@ -193,6 +193,7 @@ public class AbsoluteMovementCommandsImplementation extends CommandBase
 
                     EntityPlayerMP player = ctx.getServerHandler().playerEntity;
                     player.dismountRidingEntity();
+                    System.out.println("Teleporting "+player.getName()+" to X:"+message.x+" Y:"+message.y+" Z:"+message.z+" yaw:"+message.yaw+" pitch:"+message.pitch);
                     player.connection.setPlayerLocation(message.x, message.y, message.z, message.yaw, message.pitch, enumset);
                     player.setRotationYawHead(message.yaw);
                 }
