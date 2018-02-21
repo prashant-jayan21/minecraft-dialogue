@@ -69,15 +69,15 @@ public class CwCInitializationMessageHandler implements IMessageHandler<CwCIniti
     void processMessageOnClient(Minecraft mc) {
         System.out.println("Client received: initialization message");
         CwCMod.reset();
-        if (playerNameMatchesAny(mc, CwCMod.FIXED_VIEWERS)) { //FIXME: set FixedViewer coordinates
+        if (playerNameMatchesAny(mc, CwCMod.FIXED_VIEWERS)) { 
             if (playerNameMatches(mc, CwCMod.FIXED_VIEWERS[0]))
-                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0.7, 7, -10, 0, 30, true, true, true, true, true));
+                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 8, -8, 0, 40, true, true, true, true, true));
             if (playerNameMatches(mc, CwCMod.FIXED_VIEWERS[1]))
-                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0.7, 7, -10, 0, 30, true, true, true, true, true));
+                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 8, 8, 360, 40, true, true, true, true, true));
             if (playerNameMatches(mc, CwCMod.FIXED_VIEWERS[2]))
-                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0.7, 7, -10, 0, 30, true, true, true, true, true));
+                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(8, 8, 0, 90, 40, true, true, true, true, true));
             if (playerNameMatches(mc, CwCMod.FIXED_VIEWERS[3]))
-                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0.7, 7, -10, 0, 30, true, true, true, true, true));
+                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(-8, 8, 0, -90, 40, true, true, true, true, true));
         }
 
         if (playerNameMatches(mc, CwCMod.BUILDER))

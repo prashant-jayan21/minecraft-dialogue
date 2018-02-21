@@ -10,7 +10,7 @@ import numpy as np
 x_min_obs = -10
 x_max_obs = 10
 y_min_obs = 1
-y_max_obs = 11
+y_max_obs = 9
 z_min_obs = -10
 z_max_obs = 10
 
