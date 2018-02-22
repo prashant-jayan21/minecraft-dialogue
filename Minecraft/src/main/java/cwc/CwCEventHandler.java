@@ -245,10 +245,10 @@ public class CwCEventHandler {
                     gs.keyBindScreenshot.isPressed() || gs.keyBindTogglePerspective.isPressed() || gs.keyBindSmoothCamera.isPressed() ||
                     gs.keyBindSpectatorOutlines.isPressed() || gs.keyBindChat.isPressed() ||
                     gs.keyBindForward.isPressed() || gs.keyBindBack.isPressed() || gs.keyBindLeft.isPressed() || gs.keyBindRight.isPressed() ||
-                    gs.keyBindJump.isPressed() || gs.keyBindSneak.isPressed()) ;
+                    gs.keyBindSneak.isPressed()) ;
 
             if (gs.keyBindForward.isKeyDown() || gs.keyBindBack.isKeyDown() || gs.keyBindLeft.isKeyDown() || gs.keyBindRight.isKeyDown() ||
-                    gs.keyBindJump.isKeyDown() || gs.keyBindSneak.isKeyDown())
+                    gs.keyBindSneak.isKeyDown())
                 KeyBinding.unPressAllKeys();
         }
     }
@@ -324,6 +324,11 @@ public class CwCEventHandler {
         if (updatedPlayer.posY < 0) {
             event.setCanceled(true);
             updatedPlayer.setPositionAndUpdate(updatedPlayer.posX, 0, updatedPlayer.posZ);
+        }
+
+        if (playerNameMatchesAny(updatedPlayer, CwCMod.FIXED_VIEWERS) && updatedPlayer.posY > 8) {
+            event.setCanceled(true);
+            updatedPlayer.setPositionAndUpdate(updatedPlayer.posX, 8, updatedPlayer.posZ);
         }
 
         if (updatedPlayer.getEntityWorld().isRemote) {

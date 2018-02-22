@@ -295,7 +295,7 @@ def addFixedViewers(n):
     fvs = ''
     for i in range(n):
         fvs += '''<AgentSection mode="Spectator"> 
-                    <Name>FixedViewer'+str(i+1)+'</Name> 
+                    <Name>FixedViewer'''+str(i+1)+'''</Name> 
                     <AgentStart> 
                       ''' + placements[i] + '''
                       </AgentStart> 

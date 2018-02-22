@@ -26,7 +26,6 @@ import com.microsoft.Malmo.Schemas.*;
 import com.microsoft.Malmo.Utils.MinecraftTypeHelper;
 import cwc.CwCInitializationMessage;
 import cwc.CwCMod;
-import cwc.CwCUpdateDisplayMessage;
 import cwc.CwCUtils;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
@@ -237,7 +236,6 @@ public class CwCObservationImplementation extends ObservationFromServer
                 if (!initializedOnClient) {
                     System.out.println("Sending client initialization message");
                     CwCMod.network.sendToServer(new CwCInitializationMessage());
-                    CwCMod.network.sendToServer(new CwCUpdateDisplayMessage());
                     initializedOnClient = true;
                 }
 
