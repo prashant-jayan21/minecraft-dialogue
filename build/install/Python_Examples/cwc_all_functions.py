@@ -32,6 +32,7 @@ y_max_goal = y_max_build # NOTE: Do not change this relation without thought!
 z_min_goal = z_min_build + displacement
 z_max_goal = z_max_build + displacement
 
+placements = ['<Placement x = "0" y = "8" z = "-10" pitch="40"/>', '<Placement x = "0" y = "8" z = "10" pitch="40" yaw="180"/>', '<Placement x = "10" y = "8" z = "0" pitch="40" yaw="90"/>', '<Placement x = "-10" y = "8" z = "0" pitch="40" yaw="-90"/>']
 
 def safeStartMission(agent_host, my_mission, my_client_pool, my_mission_record, role, expId):
     used_attempts = 0
@@ -292,16 +293,15 @@ def prettyPrintString(stw):
 
 def addFixedViewers(n):
     fvs = ''
-
     for i in range(n):
-        fvs += '<AgentSection mode="Spectator"> \
-                    <Name>FixedViewer'+str(i+1)+'</Name> \
-                    <AgentStart> \
-                      <Placement x = "0" y = "5" z = "-6.5" pitch="40"/> \
-                    </AgentStart> \
-                    <AgentHandlers/> \
-                  </AgentSection>\n'
-
+        fvs += '''<AgentSection mode="Spectator"> 
+                    <Name>FixedViewer'+str(i+1)+'</Name> 
+                    <AgentStart> 
+                      ''' + placements[i] + '''
+                      </AgentStart> 
+                    <AgentHandlers/> 
+                  </AgentSection>
+                '''
     return fvs
 
 def cwc_all_obs_and_save_data(args):
@@ -404,7 +404,7 @@ def cwc_all_obs_and_save_data(args):
                   <AgentSection mode="Survival">
                     <Name>Builder</Name>
                     <AgentStart>
-                      <Placement x = "0" y = "2" z = "0"/>
+                      <Placement x = "0" y = "1" z = "0"/>
                     </AgentStart>
                     <AgentHandlers>
                       <CwCObservation>
@@ -419,7 +419,7 @@ def cwc_all_obs_and_save_data(args):
                   <AgentSection mode="Spectator">
                     <Name>Architect</Name>
                     <AgentStart>
-                      <Placement x = "0" y = "5" z = "-5" pitch="45"/>
+                      <Placement x = "0" y = "5" z = "-6" pitch="45"/>
                     </AgentStart>
                     <AgentHandlers/>
                   </AgentSection>

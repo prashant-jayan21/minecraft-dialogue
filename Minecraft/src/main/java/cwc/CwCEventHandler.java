@@ -96,8 +96,10 @@ public class CwCEventHandler {
             resetGameSettingsAndChatGUI();
 
             Minecraft mc = Minecraft.getMinecraft();
-            if (playerNameMatches(mc, CwCMod.ORACLE))
+            if (playerNameMatches(mc, CwCMod.ORACLE)) {
                 Display.setTitle(mc.player.getName());
+                Display.update();
+            }
         }
 
         else if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
@@ -155,8 +157,10 @@ public class CwCEventHandler {
             resetGameSettingsAndChatGUI();
 
             Minecraft mc = Minecraft.getMinecraft();
-            if (playerNameMatches(mc, CwCMod.ORACLE))
+            if (playerNameMatches(mc, CwCMod.ORACLE)) {
                 Display.setTitle(mc.player.getName());
+                Display.update();
+            }
         }
 
         else if (!event.getEntity().getEntityWorld().isRemote && event.getEntity() instanceof EntityPlayer) {
