@@ -1,6 +1,8 @@
-file path
-gold-configurations/blue-original-L.xml
-gold-configurations/bigger-original-L.xml
-gold-configurations/orange-flat-original-L.xml
-gold-configurations/diagonal-Ls.xml
-gold-configurations/composite-2Ls.xml
+gold file path,existing file path
+gold-configurations/simple_five.xml,
+gold-configurations/complex_five.xml,
+gold-configurations/blue-original-L.xml,
+gold-configurations/bigger-original-L.xml,
+gold-configurations/multiple_concepts.xml,
+gold-configurations/asterisk.xml,
+gold-configurations/embedded_fives.xml,
