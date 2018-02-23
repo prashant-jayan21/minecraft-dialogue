@@ -216,6 +216,7 @@ def recordGridCoordinates(cws):
 
 # Generates a string representation of the world state JSON's contents and adds it to stw.
 def writeToString(cws, stw):
+    print "Writing to string..."
     stw += "\n"+"-"*20+"\n[Timestamp] "+cws.get("Timestamp")
     stw += "\n[Builder Position] (x, y, z): ("+("None" if cws.get("BuilderPosition") is None else str(cws["BuilderPosition"]["X"])+", "+str(cws["BuilderPosition"]["Y"])+", "+str(cws["BuilderPosition"]["Z"])+") " + \
            "(yaw, pitch): ("+str(cws["BuilderPosition"]["Yaw"])+", "+str(cws["BuilderPosition"]["Pitch"]))
