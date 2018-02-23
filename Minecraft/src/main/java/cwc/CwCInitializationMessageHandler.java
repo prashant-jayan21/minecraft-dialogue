@@ -1,5 +1,6 @@
 package cwc;
 
+import com.microsoft.Malmo.MissionHandlers.AbsoluteMovementCommandsImplementation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.world.WorldServer;
@@ -7,20 +8,21 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
+import org.lwjgl.opengl.Display;
 
-/**
- * Server- & client-side handler for custom screenshot messages.
- * @author nrynchn2
- */
-public class CwCScreenshotMessageHandler implements IMessageHandler<CwCScreenshotMessage, IMessage> {
+import static cwc.CwCUtils.playerNameMatches;
+import static cwc.CwCUtils.playerNameMatchesAny;
+
+public class CwCInitializationMessageHandler implements IMessageHandler<CwCInitializationMessage, IMessage> {
 
     /**
      * Determines if message is received on the server or the client side and calls their respective message handlers.
-     * @param message Screenshot message
-     * @param ctx Message context
+     *
+     * @param message Initialization message
+     * @param ctx     Message context
      * @return null
      */
-    public IMessage onMessage(final CwCScreenshotMessage message, MessageContext ctx) {
+    public IMessage onMessage(final CwCInitializationMessage message, MessageContext ctx) {
         // process message on server
         if (ctx.side == Side.SERVER) {
             final EntityPlayerMP sender = ctx.getServerHandler().playerEntity;
@@ -28,7 +30,9 @@ public class CwCScreenshotMessageHandler implements IMessageHandler<CwCScreensho
 
             final WorldServer pws = sender.getServerWorld();
             pws.addScheduledTask(new Runnable() {
-                public void run() { processMessageOnServer(message, sender); }
+                public void run() {
+                    processMessageOnServer(message, sender);
+                }
             });
             return null;
         }
@@ -37,7 +41,9 @@ public class CwCScreenshotMessageHandler implements IMessageHandler<CwCScreensho
         else {
             final Minecraft mc = Minecraft.getMinecraft();
             mc.addScheduledTask(new Runnable() {
-                public void run() { processMessageOnClient(message); }
+                public void run() {
+                    processMessageOnClient(mc);
+                }
             });
             return null;
         }
@@ -45,23 +51,24 @@ public class CwCScreenshotMessageHandler implements IMessageHandler<CwCScreensho
 
     /**
      * Handles messages received on the server. Processes the message by sending it out to all connected clients.
-     * @param message Screenshot message
-     * @param sender Message sender
+     *
+     * @param message Initialization message
+     * @param sender  Message sender
      */
-    void processMessageOnServer(CwCScreenshotMessage message, EntityPlayerMP sender) {
+    void processMessageOnServer(CwCInitializationMessage message, EntityPlayerMP sender) {
+        System.out.println("Server received: initialization message by "+sender.getName());
         for (EntityPlayerMP player : sender.mcServer.getPlayerList().getPlayers())
             CwCMod.network.sendTo(message, player);
     }
 
     /**
-     * Handles messages received on the client. Processes the message by setting the appropriate boolean fields responsible for
-     * directing logic for when a screenshot should be taken.
-     * @param message Screenshot message
+     * Handles messages received on the client.
+     *
+     * @param mc Minecraft client instance
      */
-    void processMessageOnClient(CwCScreenshotMessage message) {
-        if (message.getType() == CwCScreenshotEventType.PICKUP)
-            CwCEventHandler.pickedUpBlock = true;
-        else if (message.getType() == CwCScreenshotEventType.PUTDOWN)
-            CwCEventHandler.placedBlock = true;
+    void processMessageOnClient(Minecraft mc) {
+        System.out.println("Initialization message received by "+mc.player.getName());
+        CwCMod.reset();
+        Display.setTitle(mc.player.getName());
     }
 }

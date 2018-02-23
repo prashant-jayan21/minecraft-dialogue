@@ -4,20 +4,16 @@ import com.microsoft.Malmo.Client.MalmoModClient;
 import com.microsoft.Malmo.MalmoMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.item.ItemBlock;
 import net.minecraftforge.client.model.ModelLoader;
 
 public class StartupClientOnly {
 	public static void preInitClientOnly() {
 		final int DEFAULT_ITEM_SUBTYPE = 0;
 
-		// cookie loves jelly!
 		// Registers item resource locations of our custom blocks.
-		ModelLoader.setCustomModelResourceLocation(StartupCommon.ired, DEFAULT_ITEM_SUBTYPE, new ModelResourceLocation("cwcmod:cwc_red","inventory"));
-		ModelLoader.setCustomModelResourceLocation(StartupCommon.iorange, DEFAULT_ITEM_SUBTYPE, new ModelResourceLocation("cwcmod:cwc_orange","inventory"));
-		ModelLoader.setCustomModelResourceLocation(StartupCommon.iyellow, DEFAULT_ITEM_SUBTYPE, new ModelResourceLocation("cwcmod:cwc_yellow","inventory"));
-		ModelLoader.setCustomModelResourceLocation(StartupCommon.igreen, DEFAULT_ITEM_SUBTYPE, new ModelResourceLocation("cwcmod:cwc_green","inventory"));
-		ModelLoader.setCustomModelResourceLocation(StartupCommon.iblue, DEFAULT_ITEM_SUBTYPE, new ModelResourceLocation("cwcmod:cwc_blue","inventory"));
-		ModelLoader.setCustomModelResourceLocation(StartupCommon.ipurple, DEFAULT_ITEM_SUBTYPE, new ModelResourceLocation("cwcmod:cwc_purple","inventory"));
+		for (int i = 0; i < StartupCommon.items.size(); i++)
+			ModelLoader.setCustomModelResourceLocation(StartupCommon.items.get(i), DEFAULT_ITEM_SUBTYPE, new ModelResourceLocation("cwcmod:cwc_"+StartupCommon.breakableColors[i],"inventory"));
 	}
 
 	public static void initClientOnly() {}

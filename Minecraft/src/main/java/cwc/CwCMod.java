@@ -29,12 +29,22 @@ public class CwCMod {
 	@SidedProxy(clientSide="cwc.ClientOnlyProxy", serverSide="cwc.DedicatedServerProxy")
 	public static CommonProxy proxy;			 // mod proxy
 
+	public static final String ARCHITECT = "Architect";
+	public static final String BUILDER = "Builder";
+	public static final String ORACLE = "Oracle";
+	public static String[] FIXED_VIEWERS;
+
 	public static boolean enableAIToggle = false;		// whether or not the original Malmo AI/Human toggle option is enabled
 	public static boolean unlimitedInventory = false;	// whether or not Builder has unlimited inventory of blocks
-	public static final int MAX_INVENTORY_SIZE = 5;		// maximum number of blocks that can be held at a time by the Builder (if limited inventory)
+	public static final int MAX_INVENTORY_SIZE = 10;	// maximum number of blocks that can be held at a time by the Builder (if limited inventory)
 	protected static int DEFAULT_STACK_SIZE = 1;		// stack sizes of blocks in inventory upon initialization of Builder (if unlimited inventory)
+	protected static int NUM_FIXED_VIEWERS = 4;
 
-	public static CwCState state = CwCState.INSPECTING; // mod state: initialized to "Inspecting"
+	static {
+		FIXED_VIEWERS = new String[NUM_FIXED_VIEWERS];
+		for (int i = 0; i < NUM_FIXED_VIEWERS; i++)
+			FIXED_VIEWERS[i] = "FixedViewer"+(i+1);
+	}
 
 	public static ArrayList<String> screenshots = new ArrayList<String>();  // list of absolute paths of screenshots taken by the client
 
@@ -46,17 +56,24 @@ public class CwCMod {
 		// player teleportation
 		network.registerMessage(AbsoluteMovementCommandsImplementation.TeleportMessageHandler.class, AbsoluteMovementCommandsImplementation.TeleportMessage.class, 0, Side.SERVER);
 
-		// mod state change (Inspecting -> Thinking -> Building)
-		network.registerMessage(CwCStateMessageHandler.class, CwCStateMessage.class, 1, Side.CLIENT);
-		network.registerMessage(CwCStateMessageHandler.class, CwCStateMessage.class, 2, Side.SERVER);
-
 		// screenshot triggers
-		network.registerMessage(CwCScreenshotMessageHandler.class, CwCScreenshotMessage.class, 3, Side.CLIENT);
-		network.registerMessage(CwCScreenshotMessageHandler.class, CwCScreenshotMessage.class, 4, Side.SERVER);
+		network.registerMessage(CwCScreenshotMessageHandler.class, CwCScreenshotMessage.class, 1, Side.CLIENT);
+		network.registerMessage(CwCScreenshotMessageHandler.class, CwCScreenshotMessage.class, 2, Side.SERVER);
 
 		// mission quit
-		network.registerMessage(CwCQuitMessageHandler.class, CwCQuitMessage.class, 5, Side.CLIENT);
-		network.registerMessage(CwCQuitMessageHandler.class, CwCQuitMessage.class, 6, Side.SERVER);
+		network.registerMessage(CwCQuitMessageHandler.class, CwCQuitMessage.class, 3, Side.CLIENT);
+		network.registerMessage(CwCQuitMessageHandler.class, CwCQuitMessage.class, 4, Side.SERVER);
+
+		// partner chatting
+		network.registerMessage(CwCChatMessageHandler.class, CwCChatMessage.class, 5, Side.CLIENT);
+		network.registerMessage(CwCChatMessageHandler.class, CwCChatMessage.class, 6, Side.SERVER);
+
+		// builder position
+		network.registerMessage(CwCPositionMessageHandler.class, CwCPositionMessage.class, 7, Side.CLIENT);
+		network.registerMessage(CwCPositionMessageHandler.class, CwCPositionMessage.class, 8, Side.SERVER);
+
+		network.registerMessage(CwCInitializationMessageHandler.class, CwCInitializationMessage.class, 9, Side.CLIENT);
+		network.registerMessage(CwCInitializationMessageHandler.class, CwCInitializationMessage.class, 10, Side.SERVER);
 
 		// register custom keybinds
 		CwCKeybinds.register();
@@ -72,9 +89,11 @@ public class CwCMod {
 	
 	public static String prependModID(String name) { return MODID+":"+name; }
 
+	/**
+	 * Resets all required fields associated with the mod.
+	 */
 	public static void reset() {
 		System.out.println("CwCMod: resetting...");
-		state = CwCState.INSPECTING;
 		CwCUtils.reset();
 		CwCEventHandler.reset();
 	}

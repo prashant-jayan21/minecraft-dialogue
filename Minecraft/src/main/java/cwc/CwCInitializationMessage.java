@@ -7,9 +7,9 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
  * Custom message used for quitting out of missions.
  * @author nrynchn2
  */
-public class CwCQuitMessage implements IMessage {
+public class CwCInitializationMessage implements IMessage {
 
-    public CwCQuitMessage() {}
+    public CwCInitializationMessage() {}
 
     @Override
     public void fromBytes(ByteBuf buf) { }

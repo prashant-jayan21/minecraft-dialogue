@@ -62,7 +62,8 @@ import com.microsoft.Malmo.Schemas.MissionInit;
 public abstract class ObservationFromServer extends HandlerBase implements IMalmoMessageListener, IObservationProducer
 {
 	private String latestJsonStats = "";
-	private boolean missionIsRunning = false;
+	private String lastJsonStats = ""; // keeps track of the information that was last sent from server.
+	protected boolean missionIsRunning = false;
 	
 	ObservationFromServer()
 	{
@@ -106,7 +107,7 @@ public abstract class ObservationFromServer extends HandlerBase implements IMalm
     	{
     		jsonstring = this.latestJsonStats;
 		}
-    	if (jsonstring.length() > 2)	// "{}" is the empty JSON string.
+    	if (jsonstring.length() > 2 && !jsonstring.equals(this.lastJsonStats))	// "{}" is the empty JSON string. Now, the JSON is only written if the observation from server has changed since it was last written.
     	{
     		// Parse the string into json:
     		JsonParser parser = new JsonParser();
@@ -120,6 +121,8 @@ public abstract class ObservationFromServer extends HandlerBase implements IMalm
 					json.add(entry.getKey(), entry.getValue());
 				}
     		}
+
+    		this.lastJsonStats = jsonstring;
     	}
 	}
 
@@ -154,7 +157,7 @@ public abstract class ObservationFromServer extends HandlerBase implements IMalm
     public abstract static class ObservationRequestMessage implements IMessage
     {
     	/** Identifier of the listener that will be responding to this request.*/
-    	private int id = 0;
+    	protected int id = 0;
 
     	public ObservationRequestMessage()
     	{

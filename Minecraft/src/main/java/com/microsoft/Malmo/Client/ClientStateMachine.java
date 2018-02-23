@@ -36,6 +36,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
 
 import com.microsoft.Malmo.Schemas.*;
+import cwc.CwCMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.GuiDisconnected;
@@ -88,6 +89,8 @@ import com.microsoft.Malmo.Utils.TCPSocket;
 import com.microsoft.Malmo.Utils.TCPUtils;
 import com.microsoft.Malmo.Utils.TimeHelper;
 import com.mojang.authlib.properties.Property;
+
+import static cwc.CwCUtils.playerNameMatchesAny;
 
 /**
  * Class designed to track and control the state of the mod, especially regarding mission launching/running.<br>
@@ -1578,7 +1581,11 @@ public class ClientStateMachine extends StateMachine implements IMalmoMessageLis
             this.videoHook.start(currentMissionInit(), currentMissionBehaviour().videoProducer);
 
             // Make sure we have mouse control:
-            ClientStateMachine.this.inputController.setInputType(InputType.HUMAN); // FIXME: now initiates missions with human control -- modified from original Malmo code
+            // FIXME: now initiates missions with human control (unless fixed viewer) -- modified from original Malmo code
+            if (playerNameMatchesAny(Minecraft.getMinecraft(), CwCMod.FIXED_VIEWERS))
+                ClientStateMachine.this.inputController.setInputType(InputType.AI);
+            else
+                ClientStateMachine.this.inputController.setInputType(InputType.HUMAN);
             Minecraft.getMinecraft().inGameHasFocus = true; // Otherwise auto-repeat won't work for mouse clicks.
 
             // Overclocking:
@@ -1756,6 +1763,7 @@ public class ClientStateMachine extends StateMachine implements IMalmoMessageLis
                 JsonObject json = new JsonObject();
                 currentMissionBehaviour().observationProducer.writeObservationsToJSON(json, currentMissionInit());
                 data = json.toString();
+//                if (data.length() > 2) System.out.println("Wrote JSON: "+data);
             }
             Minecraft.getMinecraft().mcProfiler.endStartSection("malmoSendTCPObservations");
 

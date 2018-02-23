@@ -1,6 +1,8 @@
 package cwc;
 
+import com.microsoft.Malmo.Utils.MapFileHelper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
@@ -35,9 +37,9 @@ public class CwCQuitMessageHandler implements IMessageHandler<CwCQuitMessage, IM
 
         // process message on client
         else {
-            final Minecraft minecraft = Minecraft.getMinecraft();
-            minecraft.addScheduledTask(new Runnable() {
-                public void run() { processMessageOnClient(message, minecraft); }
+            final Minecraft mc = Minecraft.getMinecraft();
+            mc.addScheduledTask(new Runnable() {
+                public void run() { processMessageOnClient(); }
             });
             return null;
         }
@@ -49,21 +51,17 @@ public class CwCQuitMessageHandler implements IMessageHandler<CwCQuitMessage, IM
      * @param sender Message sender
      */
     void processMessageOnServer(CwCQuitMessage message, EntityPlayerMP sender) {
-        for (EntityPlayerMP player : sender.mcServer.getPlayerList().getPlayers())
+        for (EntityPlayerMP player : sender.mcServer.getPlayerList().getPlayers()) {
+            player.capabilities.disableDamage = false;
+            player.sendPlayerAbilities();
+            player.attackEntityFrom(new CwCDamageSource("murder"), 100.0F);
             CwCMod.network.sendTo(message, player);
+        }
     }
 
     /**
      * Handles messages received on the client by setting the appropriate "quit" field in {@link CwCEventHandler}.
      * Kills the player attached to this client and resets the mod state.
-     * @param message Quit message
-     * @param minecraft Minecraft client instance
      */
-    void processMessageOnClient(CwCQuitMessage message, Minecraft minecraft) {
-        CwCEventHandler.quit = message.quit();
-        if (CwCEventHandler.quit) {
-            CwCMod.reset();
-            minecraft.player.sendChatMessage("/kill");
-        }
-    }
+    void processMessageOnClient() { CwCMod.reset(); }
 }

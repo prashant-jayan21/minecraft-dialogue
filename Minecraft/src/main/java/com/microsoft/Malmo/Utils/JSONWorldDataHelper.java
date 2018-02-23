@@ -19,7 +19,6 @@
 
 package com.microsoft.Malmo.Utils;
 
-import cwc.CwCMod;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -40,8 +39,7 @@ import com.google.gson.JsonPrimitive;
  * It can also build up a grid of the block types around the player or somewhere else in the world.
  * Call this on the Server side only.
  */
-public class JSONWorldDataHelper
-{
+public class JSONWorldDataHelper {
     /**
      * Simple class to hold the dimensions of the environment
      * that we want to return in the World Data.<br>
@@ -55,7 +53,7 @@ public class JSONWorldDataHelper
         public int zMin;
         public int zMax;
         public boolean absoluteCoords;
-        
+
         /**
          * Default constructor asks for an environment just big enough to contain
          * the player and one block all around him.
@@ -66,10 +64,11 @@ public class JSONWorldDataHelper
             this.yMin = -1; this.yMax = 2;
             this.absoluteCoords = false;
         }
-        
+
         /**
          * Convenient constructor - effectively specifies the margin around the player<br>
          * Passing (1,1,1) will have the same effect as the default constructor.
+         *
          * @param xMargin number of blocks to the left and right of the player
          * @param yMargin number of blocks above and below player
          * @param zMargin number of blocks in front of and behind player
@@ -80,10 +79,11 @@ public class JSONWorldDataHelper
             this.zMin = -zMargin; this.zMax = zMargin;
             this.absoluteCoords = false;
         }
-        
+
         /**
          * Convenient constructor for the case where all that is required is the flat patch of ground<br>
          * around the player's feet.
+         *
          * @param xMargin number of blocks around the player in the x-axis
          * @param zMargin number of blocks around the player in the z-axis
          */
@@ -93,37 +93,48 @@ public class JSONWorldDataHelper
             this.zMin = -zMargin; this.zMax = zMargin;
             this.absoluteCoords = false;
         }
-    };
-    
-    /** Builds the basic achievement world data to be used as observation signals by the listener.
+    }
+
+    ;
+
+    /**
+     * Builds the basic achievement world data to be used as observation signals by the listener.
+     * Modified: doesn't include all achievements (e.g. entities killed, damage taken/dealt) if specified.
+     *
      * @param json a JSON object into which the achievement stats will be added.
+     * @param player The  player whose achievements should be recorded.
+     * @param fullStats Whether or not to include kill/damage achievements.
      */
-    public static void buildAchievementStats(JsonObject json, EntityPlayerMP player)
-    {
+    public static void buildAchievementStats(JsonObject json, EntityPlayerMP player, boolean fullStats) {
         StatisticsManagerServer sfw = player.getStatFile();
-        json.addProperty("DistanceTravelled", 
-                sfw.readStat((StatBase)StatList.WALK_ONE_CM) 
-                + sfw.readStat((StatBase)StatList.SWIM_ONE_CM)
-                + sfw.readStat((StatBase)StatList.DIVE_ONE_CM) 
-                + sfw.readStat((StatBase)StatList.FALL_ONE_CM)
-                ); // TODO: there are many other ways of moving!
-        json.addProperty("TimeAlive", sfw.readStat((StatBase)StatList.TIME_SINCE_DEATH));
-        json.addProperty("MobsKilled", sfw.readStat((StatBase)StatList.MOB_KILLS));
-        json.addProperty("PlayersKilled", sfw.readStat((StatBase)StatList.PLAYER_KILLS));
-        json.addProperty("DamageTaken", sfw.readStat((StatBase)StatList.DAMAGE_TAKEN));
-        json.addProperty("DamageDealt", sfw.readStat((StatBase)StatList.DAMAGE_DEALT));
+        json.addProperty("DistanceTravelled",
+                sfw.readStat((StatBase) StatList.WALK_ONE_CM)
+                        + sfw.readStat((StatBase) StatList.SWIM_ONE_CM)
+                        + sfw.readStat((StatBase) StatList.DIVE_ONE_CM)
+                        + sfw.readStat((StatBase) StatList.FALL_ONE_CM)
+        ); // TODO: there are many other ways of moving!
+        json.addProperty("TimeAlive", sfw.readStat((StatBase) StatList.TIME_SINCE_DEATH));
+
+        // removed: don't really need these observations...
+        if (fullStats) {
+            json.addProperty("MobsKilled", sfw.readStat((StatBase) StatList.MOB_KILLS));
+            json.addProperty("PlayersKilled", sfw.readStat((StatBase) StatList.PLAYER_KILLS));
+            json.addProperty("DamageTaken", sfw.readStat((StatBase) StatList.DAMAGE_TAKEN));
+            json.addProperty("DamageDealt", sfw.readStat((StatBase) StatList.DAMAGE_DEALT));
+        }
 
         /* Other potential reinforcement signals that may be worth researching:
         json.addProperty("BlocksDestroyed", sfw.readStat((StatBase)StatList.objectBreakStats) - but objectBreakStats is an array of 32000 StatBase objects - indexed by block type.);
         json.addProperty("Blocked", ev.player.isMovementBlocked()) - but isMovementBlocker() is a protected method (can get round this with reflection)
         */
     }
-    
-    /** Builds the basic life world data to be used as observation signals by the listener.
+
+    /**
+     * Builds the basic life world data to be used as observation signals by the listener.
+     *
      * @param json a JSON object into which the life stats will be added.
      */
-    public static void buildLifeStats(JsonObject json, EntityPlayerMP player)
-    {
+    public static void buildLifeStats(JsonObject json, EntityPlayerMP player) {
         json.addProperty("Life", player.getHealth());
         json.addProperty("Score", player.getScore());    // Might always be the same as XP?
         json.addProperty("Food", player.getFoodStats().getFoodLevel());
@@ -132,24 +143,25 @@ public class JSONWorldDataHelper
         json.addProperty("Air", player.getAir());
         json.addProperty("Name", player.getName());
     }
-    
-    /** Builds the player position data to be used as observation signals by the listener.
+
+    /**
+     * Builds the player position data to be used as observation signals by the listener.
+     *
      * @param json a JSON object into which the positional information will be added.
      */
-    public static void buildPositionStats(JsonObject json, EntityPlayerMP player)
-    {
-        json.addProperty("XPos",  player.posX);
-        json.addProperty("YPos",  player.posY);
+    public static void buildPositionStats(JsonObject json, EntityPlayerMP player) {
+        json.addProperty("XPos", player.posX);
+        json.addProperty("YPos", player.posY);
         json.addProperty("ZPos", player.posZ);
-        json.addProperty("Pitch",  player.rotationPitch);
+        json.addProperty("Pitch", player.rotationPitch);
         json.addProperty("Yaw", player.rotationYaw);
     }
 
-    public static void buildEnvironmentStats(JsonObject json, EntityPlayerMP player)
-    {
+    public static void buildEnvironmentStats(JsonObject json, EntityPlayerMP player) {
         json.addProperty("WorldTime", player.world.getWorldTime());  // Current time in ticks
         json.addProperty("TotalTime", player.world.getTotalWorldTime());  // Total time world has been running
     }
+
     /**
      * Build a signal for the cubic block grid centred on the player.<br>
      * Default is 3x3x4. (One cube all around the player.)<br>
@@ -160,13 +172,7 @@ public class JSONWorldDataHelper
      * @param environmentDimensions object which specifies the required dimensions of the grid to be returned.
      * @param jsonName name to use for identifying the returned JSON array.
      */
-
-    /**
-     * CWC changes:
-     * Also returns a more comprehensive 1D array of all of the block information (types as well as world coordinates)
-     */
-    public static void buildGridData(JsonObject json, GridDimensions environmentDimensions, EntityPlayerMP player, String jsonName)
-    {
+    public static void buildGridData(JsonObject json, GridDimensions environmentDimensions, EntityPlayerMP player, String jsonName) {
         if (player == null || json == null)
             return;
 
@@ -174,62 +180,52 @@ public class JSONWorldDataHelper
         JsonArray blockInfoArr = new JsonArray();
         JsonArray blockInfoArr2 = new JsonArray();
         BlockPos pos = new BlockPos(player.posX, player.posY, player.posZ);
-        for (int y = environmentDimensions.yMin; y <= environmentDimensions.yMax; y++)
-        {
-            for (int z = environmentDimensions.zMin; z <= environmentDimensions.zMax; z++)
-            {
-                for (int x = environmentDimensions.xMin; x <= environmentDimensions.xMax; x++)
-                {
+        for (int y = environmentDimensions.yMin; y <= environmentDimensions.yMax; y++) {
+            for (int z = environmentDimensions.zMin; z <= environmentDimensions.zMax; z++) {
+                for (int x = environmentDimensions.xMin; x <= environmentDimensions.xMax; x++) {
                     BlockPos p;
-                    if( environmentDimensions.absoluteCoords )
+                    if (environmentDimensions.absoluteCoords)
                         p = new BlockPos(x, y, z);
                     else
                         p = pos.add(x, y, z);
                     String name = "";
                     IBlockState state = player.world.getBlockState(p);
                     Object blockName = Block.REGISTRY.getNameForObject(state.getBlock());
-                    if (blockName instanceof ResourceLocation)
-                    {
-                        name = ((ResourceLocation)blockName).getResourcePath();
+                    if (blockName instanceof ResourceLocation) {
+                        name = ((ResourceLocation) blockName).getResourcePath();
                     }
-                    JsonElement element = new JsonPrimitive(name);
-                    arr.add(element);
 
-                    JsonObject blockObj = new JsonObject();
-                    blockObj.addProperty("type", name);
-                    blockObj.addProperty("x", p.getX());
-                    blockObj.addProperty("y", p.getY());
-                    blockObj.addProperty("z", p.getZ());
-                    blockInfoArr.add(blockObj);
+                    if (!name.equals("air")) { // pruning out all that empty air saves some space maybe
+                        JsonElement element = new JsonPrimitive(name);
+                        arr.add(element);
 
-                    BlockPos p_relative;
-                    if( environmentDimensions.absoluteCoords )
-                        p_relative = new BlockPos(x, y, z).subtract(pos);
-                    else
-                        p_relative = new BlockPos(x, y, z);
+                        JsonObject blockObj = new JsonObject();
+                        blockObj.addProperty("Type", name);
+                        blockObj.addProperty("X", p.getX());
+                        blockObj.addProperty("Y", p.getY());
+                        blockObj.addProperty("Z", p.getZ());
+                        blockInfoArr.add(blockObj);
 
-                    JsonObject blockObj2 = new JsonObject();
-                    blockObj2.addProperty("type", name);
-                    blockObj2.addProperty("x", p_relative.getX());
-                    blockObj2.addProperty("y", p_relative.getY());
-                    blockObj2.addProperty("z", p_relative.getZ());
-                    blockInfoArr2.add(blockObj2);
+                        BlockPos p_relative;
+                        if (environmentDimensions.absoluteCoords)
+                            p_relative = new BlockPos(x, y, z).subtract(pos);
+                        else
+                            p_relative = new BlockPos(x, y, z);
+
+                        JsonObject blockObj2 = new JsonObject();
+                        blockObj2.addProperty("Type", name);
+                        blockObj2.addProperty("X", p_relative.getX());
+                        blockObj2.addProperty("Y", p_relative.getY());
+                        blockObj2.addProperty("Z", p_relative.getZ());
+                        blockInfoArr2.add(blockObj2);
+                    }
 
                 }
             }
         }
-        json.add(jsonName, arr);
-        json.add(jsonName + "_block_info", blockInfoArr);
-        json.add(jsonName + "_block_info_relative", blockInfoArr2);
-    }
-
-    /**
-     * Builds the basic game state data to be used as observation signals by the listener.
-     * @param json a JSON object into which the game state will be added.
-     */
-    public static void buildGameState(JsonObject json)
-    {
-        json.addProperty("GameState", CwCMod.state.name());
+//        json.add(jsonName, arr); // don't really need this...
+        json.add(jsonName + "Absolute", blockInfoArr);
+        json.add(jsonName + "Relative", blockInfoArr2);
     }
 
 }
