@@ -67,23 +67,8 @@ public class CwCInitializationMessageHandler implements IMessageHandler<CwCIniti
      * @param mc Minecraft client instance
      */
     void processMessageOnClient(Minecraft mc) {
-        System.out.println("Client received: initialization message");
+        System.out.println("Initialization message received by "+mc.player.getName());
         CwCMod.reset();
-        if (playerNameMatchesAny(mc, CwCMod.FIXED_VIEWERS)) { 
-            if (playerNameMatches(mc, CwCMod.FIXED_VIEWERS[0]))
-                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 8, -8, 0, 40, true, true, true, true, true));
-            if (playerNameMatches(mc, CwCMod.FIXED_VIEWERS[1]))
-                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 8, 8, 360, 40, true, true, true, true, true));
-            if (playerNameMatches(mc, CwCMod.FIXED_VIEWERS[2]))
-                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(8, 8, 0, 90, 40, true, true, true, true, true));
-            if (playerNameMatches(mc, CwCMod.FIXED_VIEWERS[3]))
-                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(-8, 8, 0, -90, 40, true, true, true, true, true));
-        }
-
-        if (playerNameMatches(mc, CwCMod.BUILDER))
-            CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 1, 0, 0, 0, true, true, true, true, true));
-        if (playerNameMatches(mc, CwCMod.ARCHITECT))
-            CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 5, -6, 0, 45, true, true, true, true, true));
         Display.setTitle(mc.player.getName());
     }
 }

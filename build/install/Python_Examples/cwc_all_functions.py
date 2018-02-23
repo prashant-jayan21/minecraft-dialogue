@@ -32,6 +32,7 @@ y_max_goal = y_max_build # NOTE: Do not change this relation without thought!
 z_min_goal = z_min_build + displacement
 z_max_goal = z_max_build + displacement
 
+placements = ['<Placement x = "0" y = "8" z = "-10" pitch="40"/>', '<Placement x = "0" y = "8" z = "10" pitch="40" yaw="180"/>', '<Placement x = "10" y = "8" z = "0" pitch="40" yaw="90"/>', '<Placement x = "-10" y = "8" z = "0" pitch="40" yaw="-90"/>']
 
 def safeStartMission(agent_host, my_mission, my_client_pool, my_mission_record, role, expId):
     used_attempts = 0
@@ -215,6 +216,7 @@ def recordGridCoordinates(cws):
 
 # Generates a string representation of the world state JSON's contents and adds it to stw.
 def writeToString(cws, stw):
+    print "Writing to string..."
     stw += "\n"+"-"*20+"\n[Timestamp] "+cws.get("Timestamp")
     stw += "\n[Builder Position] (x, y, z): ("+("None" if cws.get("BuilderPosition") is None else str(cws["BuilderPosition"]["X"])+", "+str(cws["BuilderPosition"]["Y"])+", "+str(cws["BuilderPosition"]["Z"])+") " + \
            "(yaw, pitch): ("+str(cws["BuilderPosition"]["Yaw"])+", "+str(cws["BuilderPosition"]["Pitch"]))
@@ -292,16 +294,15 @@ def prettyPrintString(stw):
 
 def addFixedViewers(n):
     fvs = ''
-
     for i in range(n):
-        fvs += '<AgentSection mode="Spectator"> \
-                    <Name>FixedViewer'+str(i+1)+'</Name> \
-                    <AgentStart> \
-                      <Placement x = "0" y = "5" z = "-6.5" pitch="40"/> \
-                    </AgentStart> \
-                    <AgentHandlers/> \
-                  </AgentSection>\n'
-
+        fvs += '''<AgentSection mode="Spectator"> 
+                    <Name>FixedViewer'''+str(i+1)+'''</Name> 
+                    <AgentStart> 
+                      ''' + placements[i] + '''
+                      </AgentStart> 
+                    <AgentHandlers/> 
+                  </AgentSection>
+                '''
     return fvs
 
 def cwc_all_obs_and_save_data(args):
@@ -388,12 +389,12 @@ def cwc_all_obs_and_save_data(args):
                     <ServerHandlers>
                       <FlatWorldGenerator generatorString="3;241;1;" forceReset="true" destroyAfterUse="true"/>
                       <DrawingDecorator>
-                        <DrawCuboid type="cwcmod:cwc_orange_rn" x1="5" y1="1" z1="8" x2="1" y2="2" z2="9"/>
-                        <DrawCuboid type="cwcmod:cwc_yellow_rn" x1="-1" y1="1" z1="8" x2="-5" y2="2" z2="9"/>
-                        <DrawCuboid type="cwcmod:cwc_green_rn" x1="8" y1="1" z1="6" x2="9" y2="2" z2="2"/>
-                        <DrawCuboid type="cwcmod:cwc_blue_rn" x1="8" y1="1" z1="0" x2="9" y2="2" z2="-4"/>
-                        <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-8" y1="1" z1="6" x2="-9" y2="2" z2="2"/>
-                        <DrawCuboid type="cwcmod:cwc_red_rn" x1="-8" y1="1" z1="0" x2="-9" y2="2" z2="-4"/>
+                        <DrawCuboid type="cwcmod:cwc_orange_rn" x1="5" y1="1" z1="7" x2="1" y2="2" z2="8"/>
+                        <DrawCuboid type="cwcmod:cwc_yellow_rn" x1="-1" y1="1" z1="7" x2="-5" y2="2" z2="8"/>
+                        <DrawCuboid type="cwcmod:cwc_green_rn" x1="7" y1="1" z1="6" x2="8" y2="2" z2="2"/>
+                        <DrawCuboid type="cwcmod:cwc_blue_rn" x1="7" y1="1" z1="0" x2="8" y2="2" z2="-4"/>
+                        <DrawCuboid type="cwcmod:cwc_purple_rn" x1="-7" y1="1" z1="6" x2="-8" y2="2" z2="2"/>
+                        <DrawCuboid type="cwcmod:cwc_red_rn" x1="-7" y1="1" z1="0" x2="-8" y2="2" z2="-4"/>
                         <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_build) +'''" y1="0" z1="''' + str(z_min_build)+ '''" x2="'''+ str(x_max_build)+'''" y2="0" z2="''' + str(z_max_build) + '''"/>
                         ''' + existing_config_xml_substring + '''
                       </DrawingDecorator>
@@ -404,7 +405,7 @@ def cwc_all_obs_and_save_data(args):
                   <AgentSection mode="Survival">
                     <Name>Builder</Name>
                     <AgentStart>
-                      <Placement x = "0" y = "2" z = "0"/>
+                      <Placement x = "0" y = "1" z = "0"/>
                     </AgentStart>
                     <AgentHandlers>
                       <CwCObservation>
@@ -419,7 +420,7 @@ def cwc_all_obs_and_save_data(args):
                   <AgentSection mode="Spectator">
                     <Name>Architect</Name>
                     <AgentStart>
-                      <Placement x = "0" y = "5" z = "-5" pitch="45"/>
+                      <Placement x = "0" y = "5" z = "-6" pitch="45"/>
                     </AgentStart>
                     <AgentHandlers/>
                   </AgentSection>
