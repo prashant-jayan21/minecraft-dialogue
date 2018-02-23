@@ -1,0 +1,1653 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="de" lang="de">
+
+<head>
+    <title>Forge Events</title>
+
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" />
+    <meta name="description" content="" />
+    <meta name="author" content="Vic" />
+    <meta name="keywords" content="" />
+    <meta name="generator" content="Webocton - Scriptly (www.scriptly.de)" />
+
+    <link href="style.css" type="text/css" rel="stylesheet" />
+    <style type="text/css">
+        table {
+            *border-collapse: collapse; /* IE7 and lower */
+            border-spacing: 0;
+            width: 100%;    
+        }
+
+        .bordered {
+            border: solid #ccc 1px;
+            -moz-border-radius: 6px;
+            -webkit-border-radius: 6px;
+            border-radius: 6px;
+            -webkit-box-shadow: 0 1px 1px #ccc; 
+            -moz-box-shadow: 0 1px 1px #ccc; 
+            box-shadow: 0 1px 1px #ccc;         
+        }
+        
+        .bordered tr:hover {
+            background: #fbf8e9;
+            -o-transition: all 0.1s ease-in-out;
+            -webkit-transition: all 0.1s ease-in-out;
+            -moz-transition: all 0.1s ease-in-out;
+            -ms-transition: all 0.1s ease-in-out;
+            transition: all 0.1s ease-in-out;     
+        }    
+            
+        .bordered td, .bordered th {
+            border-left: 1px solid #ccc;
+            border-top: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;    
+        }
+        
+        .bordered th {
+            background-color: #dce9f9;
+            background-image: -webkit-gradient(linear, left top, left bottom, from(#ebf3fc), to(#dce9f9));
+            background-image: -webkit-linear-gradient(top, #ebf3fc, #dce9f9);
+            background-image:    -moz-linear-gradient(top, #ebf3fc, #dce9f9);
+            background-image:     -ms-linear-gradient(top, #ebf3fc, #dce9f9);
+            background-image:      -o-linear-gradient(top, #ebf3fc, #dce9f9);
+            background-image:         linear-gradient(top, #ebf3fc, #dce9f9);
+            -webkit-box-shadow: 0 1px 0 rgba(255,255,255,.8) inset; 
+            -moz-box-shadow:0 1px 0 rgba(255,255,255,.8) inset;  
+            box-shadow: 0 1px 0 rgba(255,255,255,.8) inset;        
+            border-top: none;
+            text-shadow: 0 1px 0 rgba(255,255,255,.5); 
+        }
+        
+        .bordered td:first-child, .bordered th:first-child {
+            border-left: none;
+        }
+        
+        .bordered th:first-child {
+            -moz-border-radius: 6px 0 0 0;
+            -webkit-border-radius: 6px 0 0 0;
+            border-radius: 6px 0 0 0;
+        }
+        
+        .bordered th:last-child {
+            -moz-border-radius: 0 6px 0 0;
+            -webkit-border-radius: 0 6px 0 0;
+            border-radius: 0 6px 0 0;
+        }
+        
+        .bordered th:only-child{
+            -moz-border-radius: 6px 6px 0 0;
+            -webkit-border-radius: 6px 6px 0 0;
+            border-radius: 6px 6px 0 0;
+        }
+        
+        .bordered tr:last-child td:first-child {
+            -moz-border-radius: 0 0 0 6px;
+            -webkit-border-radius: 0 0 0 6px;
+            border-radius: 0 0 0 6px;
+        }
+        
+        .bordered tr:last-child td:last-child {
+            -moz-border-radius: 0 0 6px 0;
+            -webkit-border-radius: 0 0 6px 0;
+            border-radius: 0 0 6px 0;
+    }
+    </style>
+</head>
+
+<body>
+<table style="border: solid 1px black;" class="bordered">
+<tr>
+	<th>Event</th>
+	<th>Description</th>
+	<th>Fields</th>
+	<th>isCancelable</th>
+	<th>EventBus</th>
+</tr>
+<tr>
+	<td>InputEvent.MouseInputEvent</td>
+	<td>Fired at any mouse interaction, after the vanilla mechanic is done</td>
+	<td>-</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>InputEvent.KeyInputEvent</td>
+	<td>Fired at any key interaction, after the vanilla mechanic is done</td>
+	<td>-</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>PlayerEvent.ItemPickupEvent</td>
+	<td>Fired when any item is about to be picked up by a player</td>
+	<td>EntityPlayer player,<br/>
+        ItemStack pickedUp</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>PlayerEvent.ItemCraftedEvent</td>
+	<td>Fired when a player is about to craft an item</td>
+	<td>EntityPlayer player,<br/>
+        ItemStack crafting,<br/>
+        IInventory craftMatrix</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>PlayerEvent.ItemSmeltedEvent</td>
+	<td>Fired when a player is about to smelt an item (With SlotFurnace)</td>
+	<td>EntityPlayer player,<br/>
+        ItemStack smelting</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>PlayerEvent.PlayerLoggedInEvent</td>
+	<td>Fired when a new player is about to connect to the server</td>
+	<td>EntityPlayer player</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>PlayerEvent.PlayerLoggedOutEvent</td>
+	<td>Fired when a player is about to disconnect from the server</td>
+	<td>EntityPlayer player</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>PlayerEvent.PlayerRespawnEvent</td>
+	<td>Fired when a player died and is now to be re-spawned</td>
+	<td>EntityPlayer player</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>PlayerEvent.PlayerChangedDimensionEvent</td>
+	<td>Fired when a player is about to change dimension (Nether to Overworld...)</td>
+	<td>EntityPlayer player,<br/>
+        int fromDim,<br/>
+        int toDim</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>FMLNetworkEvent.ClientConnectedToServerEvent</td>
+	<td>Fired at the client when it is about to connect to a server</td>
+	<td>INetHandler handler,<br/>
+        NetworkManager manager,<br/>
+        Class&lt;INetHandler&gt; type,<br/>
+        boolean isLocal,<br/>
+        String connectionType</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>FMLNetworkEvent.ServerConnectionFromClientEvent</td>
+	<td>Fired at the server when a client is about to connect</td>
+	<td>INetHandler handler,<br/>
+        NetworkManager manager,<br/>
+        Class&lt;INetHandler&gt; type,<br/>
+        boolean isLocal</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>FMLNetworkEvent.ServerDisconnectionFromClientEvent</td>
+	<td>Fired at the server when a client is about to disconnect</td>
+	<td>INetHandler handler,<br/>
+        NetworkManager manager,<br/>
+        Class&lt;INetHandler&gt; type</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>FMLNetworkEvent.ClientDisconnectionFromServerEvent</td>
+	<td>Fired at the client when it is about to disconnect from a server</td>
+	<td>INetHandler handler,<br/>
+        NetworkManager manager,<br/>
+        Class&lt;INetHandler&gt; type</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>FMLNetworkEvent.CustomPacketRegistrationEvent</td>
+	<td>Fired when the REGISTER/UNREGISTER for custom channels is received</td>
+	<td>INetHandler handler,<br/>
+        NetworkManager manager,<br/>
+        Class&lt;INetHandler&gt; type,<br/>
+        ImmutableSet&lt;String&gt; registrations,<br/>
+        String operation,<br/>
+        Side side<br/></td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>FMLNetworkEvent.ClientCustomPacketEvent</td>
+	<td>Fired when a custom packet is received on the client for the channel </td>
+	<td>FMLProxyPacket packet,<br/>
+        FMLProxyPacket reply</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>FMLNetworkEvent.ServerCustomPacketEvent</td>
+	<td>Fired when a custom packet is received on the server for the channel </td>
+	<td>FMLProxyPacket packet,<br/>
+        FMLProxyPacket reply</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>FMLNetworkEvent.CustomNetworkEvent</td>
+	<td>Fired when a custom event is fired for the channel</td>
+	<td>Object wrappedEvent</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>ClientChatReceivedEvent</td>
+	<td>Fired when a chat message is about to be displayed on the client</td>
+	<td>IChatComponent message</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>DrawBlockHighlightEvent</td>
+	<td>Fired on the client when a block is about to be highlighted (mouse over) </td>
+	<td>RenderGlobal context,<br/>
+        EntityPlayer player, MovingObjectPosition target,<br/>
+        int subID,<br/>
+        ItemStack currentItem,<br/>
+        float partialTicks</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>EntityViewRenderEvent.FogDensity</td>
+	<td>Event that allows any feature to customize the fog density the player sees. NOTE: In order to make this event have an effect, you must cancel the event</td>
+	<td>EntityRenderer renderer,<br/>
+        EntityLivingBase entity,<br/>
+        Block block,<br/>
+        double renderPartialTicks,<br/>
+        float density</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>EntityViewRenderEvent.FogColors</td>
+	<td>Event that allows any feature to customize the color of fog the player sees</td>
+	<td>EntityRenderer renderer,<br/>
+        EntityLivingBase entity,<br/>
+        Block block,<br/>
+        double renderPartialTicks,<br/>
+        float red,<br/>
+        float green,<br/>
+        float blue</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>FOVUpdateEvent</td>
+	<td>Fired to get the FOV multiplier</td>
+	<td>EntityPlayerSP entity,<br/>
+        float fov,<br/>
+        float newfov</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>GuiOpenEvent</td>
+	<td>Fired when a GUI is about to be opened</td>
+	<td>GuiScreen gui</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>GuiScreenEvent.InitGuiEvent.Pre</td>
+	<td>See Forge documentation, fired just after initialization</td>
+	<td>GuiScreen gui,<br/>
+        List buttonList</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>GuiScreenEvent.InitGuiEvent.Post</td>
+	<td>See Forge documentation, fired after initGui()</td>
+	<td>GuiScreen gui,<br/>
+        List buttonList</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>GuiScreenEvent.DrawScreenEvent.Pre</td>
+	<td>Fired before drawScreen() is called</td>
+	<td>GuiScreen gui,<br/>
+        int mouseX,<br/>
+        int mouseY,<br/>
+        float renderPartialTicks</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>GuiScreenEvent.DrawScreenEvent.Post</td>
+	<td>Fired after drawScreen() is called</td>
+	<td>GuiScreen gui,<br/>
+        int mouseX,<br/>
+        int mouseY,<br/>
+        float renderPartialTicks</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>GuiScreenEvent.ActionPerformedEvent.Pre</td>
+	<td>Fired before a GuiButton is about to be pressed</td>
+	<td>GuiScreen gui,<br/>
+        GuiButton button,<br/>
+        List buttonList</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>GuiScreenEvent.ActionPerformedEvent.Post</td>
+	<td>Fired after a GuiButton was pressed</td>
+	<td>GuiScreen gui,<br/>
+        GuiButton button,<br/>
+        List buttonList</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>MouseEvent</td>
+	<td>Fired on any mouse action</td>
+	<td>int x, y, dx, dy, dwheel, button,<br/>
+        boolean buttonstate,<br/>
+        long nanoseconds</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>RenderGameOverlayEvent.Pre</td>
+	<td>Fired when GuiIngame is about to be drawn</td>
+	<td>float partialTicks,<br/>
+        ScaledResolution resolution,<br/>
+        int mouseX, mouseY,<br/>
+        ElementType type</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>RenderGameOverlayEvent.Post</td>
+	<td>Fired after GuiIngame was drawn</td>
+	<td>float partialTicks,<br/>
+        ScaledResolution resolution,<br/>
+        int mouseX, mouseY,<br/>
+        ElementType type</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>RenderGameOverlayEvent.Text</td>
+	<td>Fired when text is about to be drawn in GuiIngame</td>
+	<td>float partialTicks,<br/>
+        ScaledResolution resolution,<br/>
+        int mouseX, mouseY,<br/>
+        ElementType type,<br/>
+        ArrayList&lt;String&gt; left, right</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>RenderGameOverlayEvent.Chat</td>
+	<td>Fired when the chat is about to be drawn in GuiIngame</td>
+	<td>float partialTicks,<br/>
+        ScaledResolution resolution,<br/>
+        int mouseX, mouseY,<br/>
+        ElementType type</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>RenderHandEvent</td>
+	<td>Fired when the hand of the player is about to be drawn</td>
+	<td>RenderGlobal context,<br/>
+        float partialTicks,<br/>
+        int renderPass</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>RenderLivingEvent.Pre,<br/>
+        RenderLivingEvent.Specials.Pre</td>
+	<td>Fired when an EntityLiving is about to be drawn, Special when it has a costum renderer</td>
+	<td>EntityLivingBase entity,<br/>
+        RendererLivingEntity renderer,<br/>
+        double x, y, z</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>RenderLivingEvent.Post,<br/>
+        RenderLivingEvent.Specials.Post</td>
+	<td>Fired when an EntityLiving was drawn, Special when it has a costum renderer</td>
+	<td>EntityLivingBase entity,<br/>
+        RendererLivingEntity renderer,<br/>
+        double x, y, z</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>RenderWorldEvent.Pre</td>
+	<td>Fired when a 16x16x16 chunk is about to be draw, before the tessellator is started</td>
+	<td>WorldRenderer renderer,<br/>
+        ChunkCache chunkCache,<br/>
+        RenderBlocks renderBlocks,<br/>
+        int pass</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>RenderWorldEvent.Post</td>
+	<td>Fired after a 16x16x16 chunk was drawn, after the tessellator has stopped</td>
+	<td>WorldRenderer renderer,<br/>
+        ChunkCache chunkCache,<br/>
+        RenderBlocks renderBlocks,<br/>
+        int pass</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>RenderWorldLastEvent</td>
+	<td>Fired last before the world finished drawing</td>
+	<td>RenderGlobal context,<br/>
+        float partialTicks</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>TextureStitchEvent.Pre</td>
+	<td>See Forge documentation, fired when the TextureMap was told to refresh</td>
+	<td>TextureMap map</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>TextureStitchEvent.Post</td>
+	<td>See Forge documentation, fired when the TextureMap refresh was completed</td>
+	<td>TextureMap map</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>SoundLoadEvent</td>
+	<td>Fired by the SoundManager.loadSoundSettings</td>
+	<td>SoundManager manager</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>SoundSetupEvent</td>
+	<td>Fired by the SoundManager when it does its first setup of the SoundSystemConfig's codecs</td>
+	<td>SoundManager manager</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlaySoundEvent17<br/>
+        (about to be replaced in 1.8)</td>
+	<td>Fired when the SoundManager tries to play a normal sound</td>
+	<td>SoundManager manager,<br/>
+        String name,<br/>
+        ISound sound,<br/>
+        SoundCategory category,<br/>
+        ISound result</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlaySoundSourceEvent</td>
+	<td>Fired by the SoundManager in playSound()</td>
+	<td>SoundManager manager,<br/>
+        String name,<br/>
+        ISound sound,<br/>
+        String uuid,<br/>
+        float x, y, z</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayStreamingSourceEvent</td>
+	<td>Fired by the SoundManager in playSound(), conditional exclusion with PlaySoundSourceEvent</td>
+	<td>SoundManager manager,<br/>
+        String name,<br/>
+        ISound sound,<br/>
+        String uuid,<br/>
+        float x, y, z</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ForceChunkEvent</td>
+	<td>Fired when a chunk is about to be forced = kept loaded when there is no player around</td>
+	<td>Ticket ticket,<br/>
+        ChunkCoordIntPair location</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>UnforceChunkEvent</td>
+	<td>Fired when a chunk is about to be unforced</td>
+	<td>Ticket ticket,<br/>
+        ChunkCoordIntPair location</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>TickEvent.ServerTickEvent</td>
+	<td>Tick on server</td>
+	<td>Type type,<br/>
+        Side side,<br/>
+        Phase phase</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>TickEvent.ClientTickEvent</td>
+	<td>Tick on client</td>
+	<td>Type type,<br/>
+        Side side,<br/>
+        Phase phase</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>TickEvent.WorldTickEvent</td>
+	<td>World tick</td>
+	<td>Type type,<br/>
+        Side side,<br/>
+        Phase phase,<br/>
+        World world</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>TickEvent.PlayerTickEvent</td>
+	<td>Player tick</td>
+	<td>Type type,<br/>
+        Side side,<br/>
+        Phase phase,<br/>
+        EntityPlayer player</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>TickEvent.RenderTickEvent</td>
+	<td>Render tick</td>
+	<td>Type type,<br/>
+        Side side,<br/>
+        Phase phase,<br/>
+        float renderTickTime</td>
+	<td>false</td>
+	<td>FMLCommonHandler.bus()</td>
+</tr>
+<tr>
+	<td>AnvilUpdateEvent</td>
+	<td>Fired when a player places items in both the left and right slots of a anvil</td>
+	<td>ItemStack left, right, output,<br/>
+        String name,<br/>
+        int cost</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>CommandEvent</td>
+	<td>Fired when a command is about to be handled by the server</td>
+	<td>ICommand command,<br/>
+        ICommandSender sender,<br/>
+        String[] parameters,<br/>
+        Throwable exception</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ServerChatEvent</td>
+	<td>Fired when a chat message is about to be handled by the server</td>
+	<td>String message, username,<br/>
+        EntityPlayerMP player,<br/>
+        ChatComponentTranslation component
+</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PotionBrewedEvent</td>
+	<td>Fired when the contents of a brewing stand are about to be changed</td>
+	<td>ItemStack[] brewingStacks</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>EntityEvent.EntityConstructing</td>
+	<td>Fired by the Entity constructor</td>
+	<td>Entity entity</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>EntityEvent.CanUpdate</td>
+	<td>Fired to check if an Entity can update</td>
+	<td>Entity entity,<br/>
+        boolean canUpdate</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>EntityEvent.EnteringChunk</td>
+	<td>Fired when an Entity enters a chunk</td>
+	<td>int newChunkX, newChunkY, oldChunkX, oldChunkY</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>LivingEvent.LivingUpdateEvent<br/>
+        (extends EntityEvent)</td>
+	<td>Fired when an EntityLiving is about to update</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>LivingEvent.LivingJumpEvent<br/>
+        (extends EntityEvent)</td>
+	<td>Fired when an EntityLiving is about to jump</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>EntityJoinWorldEvent<br/>
+        (extends EntityEvent)</td>
+	<td>Fired when an Entity is placed in the world</td>
+	<td>Entity entity,<br/>
+        World world</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>EntityStruckByLightningEvent<br/>
+        (extends EntityEvent)</td>
+	<td>Fired when an Entity is struck by lightning </td>
+	<td>Entity entity,<br/>
+        EntityLightningBolt lightning</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlaySoundAtEntityEvent<br/>
+        (extends EntityEvent)</td>
+	<td>Fired when a sound is about to be played at an Entity</td>
+	<td>Entity entity,<br/>
+        String name,<br/>
+        float volume, pitch</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ItemExpireEvent<br/>
+        (extends ItemEvent, EntityEvent</td>
+	<td>Fired when an EntityItem's age has reached its maximum lifespan</td>
+	<td>Entity entity,<br/>
+        EntityItem entityItem,<br/>
+        int extraLife</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ItemTossEvent<br/>
+        (extends ItemEvent, EntityEvent</td>
+	<td>Fired henever a player tosses (Q) an item or drag-n-drops a stack of items outside the inventory GUI screens</td>
+	<td>Entity entity,<br/>
+        EntityItem entityItem,<br/>
+        EntityPlayer player</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>EnderTeleportEvent<br/>
+        (extends LivingEvent, EntityEvent)</td>
+	<td>Fired when an Enderman teleports or an ender pearl is used</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        double targetX, targetY, targetZ,<br/>
+        float attackDamage</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>LivingAttackEvent<br/>
+        (extends LivingEvent, EntityEvent)</td>
+	<td>Fired when an Entity Living is about to attack</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        DamageSource source,<br/>
+        float ammount</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>LivingDeathEvent<br/>
+    (extends LivingEvent, EntityEvent)</td>
+	<td>Fired when an EntityLiving is about to be marked as "dead"</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        DamageSource source</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>LivingDropsEvent<br/>
+        (extends LivingEvent, EntityEvent)</td>
+	<td>Fired when an EntityLiving is about to drop its drops</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        DamageSource source,<br/>
+        ArrayList&lt;EntityItem&gt; drops,<br/>
+        int lootingLevel,<br/>
+        boolean recentlyHit,<br/>
+        int specialDropValue</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>LivingFallEvent<br/>
+        (extends LivingEvent, EntityEvent)</td>
+	<td>Fired when an EntityLiving fell a certain distance</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        float distance</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>LivingHurtEvent<br/>
+        (extends LivingEvent, EntityEvent)</td>
+	<td>Fired when an EntityLiving is about to be damaged by any damage source</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        DamageSource source,<br/>
+        float ammount</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>LivingPackSizeEvent<br/>
+        (extends LivingEvent, EntityEvent)</td>
+	<td>Fired when the spawning system determines the maximum amount of the selected entity that can spawn at the same time.</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        int maxPackSize</td>
+	<td>false, has result</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>LivingSetAttackTargetEvent<br/>
+        (extends LivingEvent, EntityEvent)</td>
+	<td>Fired when an EntityLiving is about to target another EntityLiving</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving, target</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>LivingSpawnEvent.CheckSpawn<br/>
+        (extends LivingEvent, EntityEvent)</td>
+	<td>Fired before mob spawn events</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        World world,<br/>
+        float x, y, z</td>
+	<td>false, has result</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>LivingSpawnEvent.SpecialSpawn<br/>
+        (extends LivingEvent, EntityEvent)</td>
+	<td>Fired before special spawn</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        World world,<br/>
+        float x, y, z</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>LivingSpawnEvent.AllowDespawn<br/>
+        (extends LivingEvent, EntityEvent)
+    </td>
+	<td>Fired to check if an EntityLiving is allowed to be marked to despawn</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        World world,<br/>
+        float x, y, z</td>
+	<td>false, has result</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ZombieEvent.SummonAidEvent<br/>
+        (extends EntiyEvent)</td>
+	<td>Fired when an Entity is about to be replaced by a zombie (?)</td>
+	<td>Entity entity,<br/>
+        EntityZombie customSummonedAid,<br/>
+        World world,<br/>
+        float x, y, z,<br/>
+        EntityLivingBase attacker,<br/>
+        double summonChance</td>
+	<td>false, has result</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>MinecartCollisionEvent<br/>
+        (extends MinecartEvent)</td>
+	<td>Fired when a minecart is about to collide with any Entity</td>
+	<td>EntiyMinecart minecart,<br/>
+        Entity collider</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>MinecartInteractEvent<br/>
+        (extends MinecartEvent)</td>
+	<td>Fired when a player is about to interact with a minecart</td>
+	<td>EntiyMinecart minecart,<br/>
+        EntityPlayer player</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>MinecartUpdateEvent (extends MinecartEvent)</td>
+	<td>Fired when a minecart is about to change its position</td>
+	<td>EntiyMinecart minecart,<br/>
+        float x, y, z</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerEvent.HarvestCheck<br/>
+        (extends LivingEvent, EntityEvent)</td>
+	<td>Fired when a player is about to harvest a block</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        Block block,<br/>
+        boolean success </td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerEvent.BreakSpeed<br/>
+        (extends LivingEvent, EntityEvent)</td>
+	<td>Fired to determinate the players break speed</td>
+	<td>Entity entity,
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        Block block,<br/>
+        int metadata,<br/>
+        float originalSpeed,<br/>
+        newSpeed,<br/>
+        int x, y, z</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerEvent.NameFormat<br/>
+        (extends LivingEvent, EntityEvent)</td>
+	<td>Fired to determinate a players display name</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        String username,<br/>
+        String displayname</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerEvent.Clone<br/>
+        (extends LivingEvent, EntityEvent)</td>
+	<td>Fired when the EntityPlayer is cloned, typically caused by the network sending a RESPAWN_PLAYER event. Either caused by death, or by traveling from the End to the overworld.</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer, original,<br/>
+        boolean wasDeath<br/>
+</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerEvent.StartTracking<br/>
+        (extends LivingEvent, EntityEvent)</td>
+	<td>Fired when an Entity is started to be "tracked" by this player (the player receives updates about this entity, e.g. motion)</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        Entity target</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerEvent.StopTracking<br/>
+    (extends LivingEvent, EntityEvent)</td>
+	<td>Fired when an Entity is stopped to be "tracked" by this player (the player no longer receives updates about this entity, e.g. motion)</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        Entity target</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerEvent.LoadFromFile<br/>
+        (extends LivingEvent, EntityEvent)</td>
+	<td>Fired when the player is being loaded from the world save</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        File playerDirectory,<br/>
+        String playerUUID</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerEvent.SaveToFile<br/>
+        (extends LivingEvent, EntityEvent)</td>
+	<td>Fired when the player is being saved to the world save</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        File playerDirectory,<br/>
+        String playerUUID</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ArrowLooseEvent<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired when the player looses an arrow because that arrow was used</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        ItemStack bow,<br/>
+        int charge</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ArrowNockEvent<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired when the player is about to shoot</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        ItemStack result</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>AttackEntityEvent<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired when the player is about to attack an Entity</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        Entity target</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>BonemealEvent<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired when the player attempts to use bonemeal on a block</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        World world,<br/>
+        Block block,<br/>
+        int x, y, z</td>
+	<td>true, has result</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>EntityInteractEvent<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired when the player interacts with any Entity</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        Entity target</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>EntityItemPickupEvent<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired when the player is about to collide with an EntityItem</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        EntityItem item</td>
+	<td>true, has result</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>FillBucketEvent<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)
+</td>
+	<td>Fired when the player is about to use an empty bucket </td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        ItemStack current, result,<br/>
+        World world,<br/>
+        MovingObjectPosition target</td>
+	<td>true, has result</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ItemTooltipEvent<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired to check whether the advanced information on item tooltips is being shown, toggled by F3+H</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        boolean showAdvancedItemTooltips,<br/>
+        ItemStack itemStack,<br/>
+        List&lt;String&gt; toolTip</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerDestroyItemEvent<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired when an item is about to be broken by the player, e.g a sword</td>
+	<td>Entity entity,<br/>
+        EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        ItemStack original</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerDropsEvent<br/>
+        (extends LivingDropsEvent)</td>
+	<td>See LivingDropsEvent, same but for the player</td>
+	<td>See LivingDropsEvent,<br/>
+        EntityPlayer entityPlayer</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerFlyableFallEvent<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired when a player falls, but is able to fly</td>
+	<td>EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        float distance</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerInteractEvent<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired when the player is about to interact with a block</td>
+	<td>EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        Action action,<br/>
+        int x, y, z, face,<br/>
+        World world,<br/>
+        Result useBlock, useItem</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerOpenContainerEvent<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired when the player is about to interact with a container, e.g a chest</td>
+	<td>EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        boolean canIteractWith</td>
+	<td>false, has result</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerPickupXpEvent<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired when a player collides with an EntityXPOrb on the ground</td>
+	<td>EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        EntityXPOrb orb</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerSleepInBedEvent<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired when a player attempts to sleep in a bed</td>
+	<td>EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        EnumStatus result,<br/>
+        int x, y, z</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerUseItemEvent.Start<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired when a player starts 'using' an item, typically when they hold right mouse.</td>
+	<td>EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        ItemStack item,<br/>
+        int duration</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerUseItemEvent.Tick<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired every tick that a player is 'using' an item</td>
+	<td>EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        ItemStack item,<br/>
+        int duration</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerUseItemEvent.Stop<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired when a player stops using an item without the use duration timing out</td>
+	<td>EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        ItemStack item,<br/>
+        int duration</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PlayerUseItemEvent.Dinish<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired after an item has fully finished being used.</td>
+	<td>EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        ItemStack item, result<br/>
+        int duration</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>UseHoeEvent<br/>
+        (extends PlayerEvent, LivingEvent, EntityEvent)</td>
+	<td>Fired when a player attempts to use a hoe on a block</td>
+	<td>EntityLivingBase entityLiving,<br/>
+        EntityPlayer entityPlayer,<br/>
+        ItemStack current,<br/>
+        World world,<br/>
+        int x, y, z</td>
+	<td>true, has result</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>BiomeEvent.CreateDecorator</td>
+	<td>Fired when a biome is about to be decorated (trees, flowers, etc)</td>
+	<td>BiomeGenBase biome,<br/>
+        BiomeDecorator originalBiomeDecorator, newBiomeDecorator</td>
+	<td>false</td>
+	<td>MinecraftForge.TERRAIN_GEN_BUS</td>
+</tr>
+<tr>
+	<td>BiomeEvent.BiomeColor</td>
+	<td>Fired to check the color of a biome</td>
+	<td>BiomeGenBase biome,<br/>
+        int originalColor, newColor</td>
+	<td>false</td>
+	<td>MinecraftForge.TERRAIN_GEN_BUS</td>
+</tr>
+<tr>
+	<td>BiomeEvent.GetVillageBlockID</td>
+	<td>Fired when the village generator attempts to choose a block ID based on the village's biome</td>
+	<td>BiomeGenBase biome,<br/>
+        Block original, replacement,<br/>
+        int type</td>
+	<td>false, has result</td>
+	<td>MinecraftForge.TERRAIN_GEN_BUS</td>
+</tr>
+<tr>
+	<td>BiomeEvent.GetVillageBlockMeta</td>
+	<td>Fired when the village generator attempts to choose a block metadata based on the village's biome.</td>
+	<td>BiomeGenBase biome,<br/>
+        Block original,<br/>
+        int type, replacement</td>
+	<td>false, has result</td>
+	<td>MinecraftForge.TERRAIN_GEN_BUS</td>
+</tr>
+<tr>
+	<td>BiomeEvent.GetGrassColor<br/>
+        (extends BiomeColor)</td>
+	<td>Fired when a biome is queried for its grass color</td>
+	<td>BiomeGenBase biome,<br/>
+        int originalColor, newColor</td>
+	<td>false</td>
+	<td>MinecraftForge.TERRAIN_GEN_BUS</td>
+</tr>
+<tr>
+	<td>BiomeEvent.GetFoliageColor<br/>
+        (extends BiomeColor)</td>
+	<td>Fired when a biome is queried for its grass color (?)</td>
+	<td>BiomeGenBase biome,<br/>
+        int originalColor, newColor</td>
+	<td>false</td>
+	<td>MinecraftForge.TERRAIN_GEN_BUS</td>
+</tr>
+<tr>
+	<td>BiomeEvent.GetWaterColor<br/>
+        (extends BiomeColor)</td>
+	<td>Fired when a biome is queried for its water color</td>
+	<td>BiomeGenBase biome,<br/>
+        int originalColor, newColor</td>
+	<td>false</td>
+	<td>MinecraftForge.TERRAIN_GEN_BUS</td>
+</tr>
+<tr>
+	<td>ChunkProviderEvent.ReplaceBiomeBlocks</td>
+	<td>Fired when a chunks blocks are replaced by a biomes top and filler blocks</td>
+	<td>IChunkProvider chunkProvider,<br/>
+        int chunkX, chunkZ,<br/>
+        Block[] blockArray,<br/>
+        byte[] metaArray,<br/>
+        BiomeGenBase[] biomeArray</td>
+	<td>false, has result</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ChunkProviderEvent.InitNoiseField</td>
+	<td>Fired before a chunks terrain noise field is initialized</td>
+	<td>IChunkProvider chunkProvider,<br/>
+        double[] noisefield,<br/>
+        int posX, posY, posZ, sizeX, sizeY, sizeZ</td>
+	<td>false, has result</td>
+	<td>MinecraftForge.TERRAIN_GEN_BUS</td>
+</tr>
+<tr>
+	<td>DecorateBiomeEvent.Pre</td>
+	<td>Fired before a chunk is decorated with a biome feature</td>
+	<td>World world,<br/>
+        Random rand,<br/>
+        int chunkX, chunkZ</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>DecorateBiomeEvent.Post</td>
+	<td>Fired after a chunk was decorated with a biome feature</td>
+	<td>World world,<br/>
+        Random rand,<br/>
+        int chunkX, chunkZ</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>DecorateBiomeEvent.Decorate</td>
+	<td>Fired when a chunk is decorated with a biome feature</td>
+	<td>World world,<br/>
+        Random rand,<br/>
+        int chunkX, chunkZ,<br/>
+        EventType type</td>
+	<td>false, has result</td>
+	<td>MinecraftForge.TERRAIN_GEN_BUS</td>
+</tr>
+<tr>
+	<td>InitMapGenEvent</td>
+	<td>Fired when initializing the world generator</td>
+	<td>EventType type,<br/>
+        MapGenBase originalGen, newGen</td>
+	<td>false</td>
+	<td>MinecraftForge.TERRAIN_GEN_BUS</td>
+</tr>
+<tr>
+	<td>InitNoiseGensEvent</td>
+	<td>Fired when initializing the noise generators</td>
+	<td>Random rand,<br/>
+        NoiseGenerator[] originalNoiseGens, newNoiseGens</td>
+	<td>false</td>
+	<td>MinecraftForge.TERRAIN_GEN_BUS</td>
+</tr>
+<tr>
+	<td>OreGenEvent.Pre</td>
+	<td>Fired before an ore is generated in a chunk</td>
+	<td>World world,<br/>
+        Random rand,<br/>
+        int worldX, worldZ</td>
+	<td>false</td>
+	<td>MinecraftForge.ORE_GEN_BUS</td>
+</tr>
+<tr>
+	<td>OreGenEvent.Post</td>
+	<td>Fired after an ore was generated in a chunk</td>
+	<td>World world,<br/>
+        Random rand,<br/>
+        int worldX, worldZ</td>
+	<td>false</td>
+	<td>MinecraftForge.ORE_GEN_BUS</td>
+</tr>
+<tr>
+	<td>OreGenEvent.GenerateMinable</td>
+	<td>Fired when an ore is generated in a chunk</td>
+	<td>World world,<br/>
+        Random rand,<br/>
+        int worldX, worldZ,<br/>
+        EventType type,<br/>
+        WorldGenerator generator<br/></td>
+	<td>false, has result</td>
+	<td>MinecraftForge.ORE_GEN_BUS</td>
+</tr>
+<tr>
+	<td>PopulateChunkEvent.Pre<br/>
+        (extends ChunkProviderEvent)</td>
+	<td>Fired before a chunk is populated with a terrain feature</td>
+	<td>IChunkProvider chunkProvider,<br/>
+        World world,<br/>
+        Random rand,<br/>
+        int chunkX, chunkZ,<br/>
+        boolean hasVillageGenerated</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PopulateChunkEvent.Post<br/>
+        (extends ChunkProviderEvent)</td>
+	<td>Fired after chunk was populated with a terrain feature</td>
+	<td>IChunkProvider chunkProvider,<br/>
+        World world,<br/>
+        Random rand,<br/>
+        int chunkX, chunkZ,<br/>
+        boolean hasVillageGenerated</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>PopulateChunkEvent.Populate<br/>
+        (extends ChunkProviderEvent)</td>
+	<td>Fired when a chunk is populated with a terrain feature</td>
+	<td>IChunkProvider chunkProvider,<br/>
+        World world,<br/>
+        Random rand,<br/>
+        int chunkX, chunkZ,<br/>
+        boolean hasVillageGenerated,<br/>
+        EventType type</td>
+	<td>false, has result</td>
+	<td>MinecraftForge.TERRAIN_GEN_BUS</td>
+</tr>
+<tr>
+	<td>SaplingGrowTreeEvent<br/>
+        (extends WorldEvent)</td>
+	<td>Fired when a sapling grows a tree</td>
+	<td>World world,<br/>
+        int x, y, z,<br/>
+        Random random</td>
+	<td>false, has result</td>
+	<td>MinecraftForge.TERRAIN_GEN_BUS</td>
+</tr>
+<tr>
+	<td>WorldTypeEvent.BiomeSize</td>
+	<td>Fired to check the size of a biome</td>
+	<td>WorldType worldType,<br/>
+        byte originalSize,<br/>
+        byte newSize</td>
+	<td>false</td>
+	<td>MinecraftForge.TERRAIN_GEN_BUS</td>
+</tr>
+<tr>
+	<td>WorldTypeEvent.InitBiomeGens</td>
+	<td>Fired to check the biome generators</td>
+	<td>WorldType worldType,<br/>
+        long seed,<br/>
+        GenLayer[] originalBiomeGens, newBiomeGens</td>
+	<td>false</td>
+	<td>MinecraftForge.TERRAIN_GEN_BUS</td>
+</tr>
+<tr>
+	<td>BlockEvent.HarvestDropsEvent</td>
+	<td>Fired when a block its about to drop its harvested items</td>
+	<td>int x, y, z,<br/>
+        World world,<br/>
+        Block block,<br/>
+        int blockMetadata,<br/>
+        int fortuneLevel,<br/>
+        ArrayList&lt;ItemStack&gt; drops,<br/>
+        boolean isSilkTouching,<br/>
+        float dropChance,<br/>
+        EntityPlayer harvester</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>BlockEvent.BreakEvent</td>
+	<td>Fired when a block is about to be broken by a player</td>
+	<td>int x, y, z,<br/>
+        World world,<br/>
+        Block block,<br/>
+        int blockMetadata,<br/>
+        EntityPlayer player,<br/>
+        int exp</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ChunkDataEvent.Load<br/>
+        (extends ChunkEvent, WorldEvent)</td>
+	<td>Fired when a chunk is about to be loaded from the NBTTag</td>
+	<td>World world,<br/>
+        Chunk chunk,<br/>
+        NBTTagCompound data</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ChunkDataEvent.Unload<br/>
+        (extends ChunkEvent, WorldEvent)</td>
+	<td>Fired when a chunk is about to be unloaded and saved to the NBTTag</td>
+	<td>World world,<br/>
+        Chunk chunk,<br/>
+        NBTTagCompound data</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ChunkEvent.Load<br/>
+        (extends WorldEvent)</td>
+	<td>Fired when a chunk is about to be loaded</td>
+	<td>World world,<br/>
+        Chunk chunk</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ChunkEvent.Unload<br/>
+        (extends WorldEvent)</td>
+	<td>Fired when a chunk is about to be unloaded</td>
+	<td>World world,<br/>
+        Chunk chunk</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ChunkWatchEvent.Watch</td>
+	<td>Fired when a player stairs at a chunk</td>
+	<td>ChunkCoordIntPair chunk,<br/>
+        EntityPlayerMP player</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ChunkWatchEvent.UnWatch</td>
+	<td>Fired when a player stops stairing at a chunk</td>
+	<td>ChunkCoordIntPair chunk,<br/>
+        EntityPlayerMP player</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>NoteBlockEvent.Play<br/>
+        (extends BlockEvent)</td>
+	<td>Fired when a Noteblock plays its note</td>
+	<td>int x, y, z,<br/>
+        World world,<br/>
+        Block block,<br/>
+        int blockMetadata,<br/>
+        int noteId,<br/>
+        Instrument instrument</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>NoteBlockEvent.Change<br/>
+        (extends BlockEvent)</td>
+	<td>Fired when a Noteblock is changed, e.g the pitch altered</td>
+	<td>int x, y, z,<br/>
+        World world,<br/>
+        Block block,<br/>
+        int noteId<br/>
+        int blockMetadata,<br/>
+        Note oldNote,<br/>
+        Octave oldOctave</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>WorldEvent.Load</td>
+	<td>Fired when a world is about to be loaded</td>
+	<td>World world</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>WorldEvent.Unload</td>
+	<td>Fired when a world is about to be unloaded</td>
+	<td>World world</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>WorldEvent.Save</td>
+	<td>Fired when a world is about to be saved</td>
+	<td>World world</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>WorldEvent.PotentialSpawns</td>
+	<td>Fired by WorldServer to gather a list of all possible entities that can spawn at the specified location</td>
+	<td>World world,<br/>
+        EnumCreatureType type,<br/>
+        int x, y, z,<br/>
+        List&lt;SpawnListEntry&gt; list</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>FluidEvent.FluidMotionEvent</td>
+	<td>Fired when a fluid moved</td>
+	<td>FluidStack fluid,<br/>
+        int x, y, z,<br/>
+        World world</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>FluidEvent.FluidFillingEvent</td>
+	<td>Fired when a fluid is about to be filled into an IFuildTank</td>
+	<td>FluidStack fluid,<br/>
+        int x, y, z,<br/>
+        World world,<br/>
+        IFluidTank tank,<br/>
+        int amount</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>FluidEvent.FluidDrainingEvent</td>
+	<td>Fired when a fluid is about to be drained from an IFuildTank</td>
+	<td>FluidStack fluid,<br/>
+        int x, y, z,<br/>
+        World world,<br/>
+        IFluidTank tank,<br/>
+        int amount</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>FluidEvent.FluidSpilledEvent</td>
+	<td>Fired when a fluid is about to "spill", e.g when a block containing a fluid is broken</td>
+	<td>FluidStack fluid,<br/>
+        int x, y, z,<br/>
+        World world</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>FluidContainerRegisterEvent</td>
+	<td>Fired when a fluid container was registered using the FluidContainerRegistry</td>
+	<td>FluidContainerData data</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>FluidRegisterEvent</td>
+	<td>Fired when a fluid was registered using the FluidRegistry</td>
+	<td>String fluidName,<br/>
+        int fluidID</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>OreRegisterEvent</td>
+	<td>Fired when a ore was registered using the OreRegistry</td>
+	<td>String Name,<br/>
+        ItemStack ore</td>
+	<td>false</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>RenderItemInFrameEvent</td>
+	<td>Fired when an item is rendered in an item frame</td>
+	<td>ItemStack item,<br/>
+        EntityItemFrame itemFrame,<br/>
+        RenderItemFrame renderer</td>
+	<td>true</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ConfigChangedEvent.OnConfigChangedEvent</td>
+	<td>Fired when the Done button has been clicked on a GuiConfig screen</td>
+	<td>String modID,<br/>
+        boolean isWorldRunning,<br/>
+        boolean requiresMcRestart,<br/>
+        String configID</td>
+	<td>false, has result</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+<tr>
+	<td>ConfigChangedEvent.PostConfigChangedEvent</td>
+	<td>Fired after OnConfigChangedEvent if the result was not Result.DENY</td>
+	<td>String modID,<br/>
+        boolean isWorldRunning,<br/>
+        boolean requiresMcRestart,<br/>
+        String configID</td>
+	<td>false, has result</td>
+	<td>MinecraftForge.EVENT_BUS</td>
+</tr>
+</table>
+</body>
+</html>
