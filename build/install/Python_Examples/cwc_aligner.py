@@ -35,11 +35,10 @@ def add_other_screenshots(json, aligned_tuples):
         state["BuilderScreenshotPath"] = builder_screenshot
         if other_screenshots is not None:
             state["ArchitectScreenshotPath"] = other_screenshots[0]
-            state["FixedViewerScreenshotPath"] = other_screenshots[1]
-            # TODO: state["FixedViewer1ScreenshotPath"] = other_screenshots[1]
-            # TODO: state["FixedViewer2ScreenshotPath"] = other_screenshots[2]
-            # TODO: state["FixedViewer3ScreenshotPath"] = other_screenshots[3]
-            # TODO: state["FixedViewer4ScreenshotPath"] = other_screenshots[4]
+            state["FixedViewer1ScreenshotPath"] = other_screenshots[1]
+            state["FixedViewer2ScreenshotPath"] = other_screenshots[2]
+            state["FixedViewer3ScreenshotPath"] = other_screenshots[3]
+            state["FixedViewer4ScreenshotPath"] = other_screenshots[4]
         all_states_processed.append(state)
 
     json["WorldStates"] = all_states_processed
@@ -60,13 +59,12 @@ def align(all_screenshot_filenames):
         grouping[key].append(filename)
 
     aligned_pairs_ab = get_aligned_pairs(grouping, "Architect", "Builder")
-    aligned_pairs_af = get_aligned_pairs(grouping, "Architect", "FixedViewer")
-    # TODO: aligned_pairs_af_1 = get_aligned_pairs(grouping, "Architect", "FixedViewer1")
-    # TODO: aligned_pairs_af_2 = get_aligned_pairs(grouping, "Architect", "FixedViewer2")
-    # TODO: aligned_pairs_af_3 = get_aligned_pairs(grouping, "Architect", "FixedViewer3")
-    # TODO: aligned_pairs_af_4 = get_aligned_pairs(grouping, "Architect", "FixedViewer4")
+    aligned_pairs_af_1 = get_aligned_pairs(grouping, "Architect", "FixedViewer1")
+    aligned_pairs_af_2 = get_aligned_pairs(grouping, "Architect", "FixedViewer2")
+    aligned_pairs_af_3 = get_aligned_pairs(grouping, "Architect", "FixedViewer3")
+    aligned_pairs_af_4 = get_aligned_pairs(grouping, "Architect", "FixedViewer4")
 
-    all_aligned_pairs = [aligned_pairs_ab, aligned_pairs_af] # TODO: aligned_pairs_af_1, aligned_pairs_af_2, aligned_pairs_af_3, aligned_pairs_af_4
+    all_aligned_pairs = [aligned_pairs_ab, aligned_pairs_af_1, aligned_pairs_af_2, aligned_pairs_af_3, aligned_pairs_af_4]
 
     def merge(list_1, list_2):
         merged_tuples = []
@@ -74,9 +72,9 @@ def align(all_screenshot_filenames):
             key = tuple_1[0]
             try:
                 tuple_2 = next(x for x in list_2 if x[0] == key)
+                merged_tuples.append(tuple_1 + tuple_2[1:])
             except StopIteration:
-                continue
-            merged_tuples.append(tuple_1 + tuple_2[1:])
+                merged_tuples.append(tuple_1 + (None,))
         return merged_tuples
 
     aligned_tuples = reduce(merge, all_aligned_pairs)
