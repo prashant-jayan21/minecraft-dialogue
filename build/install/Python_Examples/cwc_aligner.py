@@ -72,9 +72,9 @@ def align(all_screenshot_filenames):
             key = tuple_1[0]
             try:
                 tuple_2 = next(x for x in list_2 if x[0] == key)
+                merged_tuples.append(tuple_1 + tuple_2[1:])
             except StopIteration:
-                continue
-            merged_tuples.append(tuple_1 + tuple_2[1:])
+                merged_tuples.append(tuple_1 + (None,))
         return merged_tuples
 
     aligned_tuples = reduce(merge, all_aligned_pairs)
