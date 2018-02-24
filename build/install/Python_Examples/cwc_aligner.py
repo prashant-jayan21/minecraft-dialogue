@@ -4,13 +4,14 @@ import json
 from os.path import join, isdir, isfile
 import argparse
 
-def postprocess_missions(logs_root_dir, screenshots_root_dir):
+def postprocess_missions(logs_root_dir, screenshots_root_dir, overwrite):
     all_log_dirs = filter(lambda x: isdir(join(logs_root_dir, x)), os.listdir(logs_root_dir))
 
     for log_dir in all_log_dirs:
-        if os.path.isfile(join(logs_root_dir, log_dir, "observations_postprocessed.json")):
+        if overwrite == False and os.path.isfile(join(logs_root_dir, log_dir, "observations_postprocessed.json")):
             continue
-        postprocess_observations(join(logs_root_dir, log_dir), join(screenshots_root_dir, log_dir))
+        if os.path.isdir(join(screenshots_root_dir, log_dir)):
+            postprocess_observations(join(logs_root_dir, log_dir), join(screenshots_root_dir, log_dir))
 
 def postprocess_observations(logs_dir, screenshots_dir):
     all_filenames = filter(lambda x: x.endswith(".png"), os.listdir(screenshots_dir))
@@ -32,13 +33,14 @@ def add_other_screenshots(json, aligned_tuples):
         builder_screenshot = state["ScreenshotPath"]
         other_screenshots = get_other_screenshots(builder_screenshot, aligned_tuples)
         del state["ScreenshotPath"]
-        state["BuilderScreenshotPath"] = builder_screenshot
+        state["Screenshots"] = {}
+        state["Screenshots"]["Builder"] = builder_screenshot
         if other_screenshots is not None:
-            state["ArchitectScreenshotPath"] = other_screenshots[0]
-            state["FixedViewer1ScreenshotPath"] = other_screenshots[1]
-            state["FixedViewer2ScreenshotPath"] = other_screenshots[2]
-            state["FixedViewer3ScreenshotPath"] = other_screenshots[3]
-            state["FixedViewer4ScreenshotPath"] = other_screenshots[4]
+            state["Screenshots"]["Architect"] = other_screenshots[0]
+            state["Screenshots"]["FixedViewer1"] = other_screenshots[1]
+            state["Screenshots"]["FixedViewer2"] = other_screenshots[2]
+            state["Screenshots"]["FixedViewer3"] = other_screenshots[3]
+            state["Screenshots"]["FixedViewer4"] = other_screenshots[4]
         all_states_processed.append(state)
 
     json["WorldStates"] = all_states_processed
@@ -124,6 +126,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Postprocess observations for screenshot alignment")
     parser.add_argument("logs_root_dir", help="Root directory for all log data")
     parser.add_argument("screenshots_root_dir", help="Root directory for all screenshot data")
+    parser.add_argument("--overwrite", default=False, action="store_true", help="Whether or not to overwrite previous postprocessed jsons")
     args = parser.parse_args()
 
-    postprocess_missions(args.logs_root_dir, args.screenshots_root_dir)
+    postprocess_missions(args.logs_root_dir, args.screenshots_root_dir, args.overwrite)
