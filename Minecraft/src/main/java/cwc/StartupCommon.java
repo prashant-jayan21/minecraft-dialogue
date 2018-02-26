@@ -1,6 +1,7 @@
 package cwc;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
@@ -13,17 +14,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StartupCommon {
-	protected static List<CwCBlock> blocks;
-	protected static List<ItemBlock> items;
-	protected static List<CwCUnbreakableBlock> unbreakables;
+	protected static List<CwCBlock> cwcBlocks;
+	protected static List<Block> cwcMinecraftBlocks;
+	protected static List<ItemBlock> cwcItems;
+	protected static List<ItemBlock> cwcMinecraftItems;
+	protected static List<CwCUnbreakableBlock> cwcUnbreakableBlocks;
 	protected static String[] breakableColors = {"red", "orange", "yellow", "green", "blue", "purple"};
 	private static String[] unbreakableColors = {"grey", "white"};
-	private static CwCCreativeTab cwctab;									 // cwc blocks creative tab
+	private static CwCCreativeTab cwcCreativeTab;
+
 
 	public static void preInitCommon() {
-		blocks = new ArrayList<CwCBlock>();
-		items = new ArrayList<ItemBlock>();
-		unbreakables = new ArrayList<CwCUnbreakableBlock>();
+		cwcBlocks = new ArrayList<CwCBlock>();
+		cwcMinecraftBlocks = new ArrayList<Block>();
+		cwcItems = new ArrayList<ItemBlock>();
+		cwcMinecraftItems = new ArrayList<ItemBlock>();
+		cwcUnbreakableBlocks = new ArrayList<CwCUnbreakableBlock>();
 
 		registerBreakableBlocks();
 		registerUnbreakableBlocks();
@@ -41,12 +47,22 @@ public class StartupCommon {
 			CwCBlock block = (CwCBlock)(new CwCBlock().setUnlocalizedName("cwc_"+color+"_un"));
 			block.setRegistryName("cwc_"+color+"_rn");
 			GameRegistry.register(block);
-			blocks.add(block);
+			cwcBlocks.add(block);
+
+			Block mcblock = new Block(Material.CAKE).setUnlocalizedName("cwc_minecraft_"+color+"_un");
+			mcblock.setRegistryName("cwc_minecraft_"+color+"_rn");
+			GameRegistry.register(mcblock);
+			cwcMinecraftBlocks.add(mcblock);
 
 			ItemBlock item = new ItemBlock(block);
 			item.setRegistryName(block.getRegistryName());
 			GameRegistry.register(item);
-			items.add(item);
+			cwcItems.add(item);
+
+			ItemBlock mcitem = new ItemBlock(mcblock);
+			mcitem.setRegistryName(mcblock.getRegistryName());
+			GameRegistry.register(mcitem);
+			cwcMinecraftItems.add(mcitem);
 		}
 	}
 
@@ -55,13 +71,14 @@ public class StartupCommon {
 			CwCUnbreakableBlock block = (CwCUnbreakableBlock)(new CwCUnbreakableBlock().setUnlocalizedName("cwc_unbreakable_"+color+"_un"));
 			block.setRegistryName("cwc_unbreakable_"+color+"_rn");
 			GameRegistry.register(block);
-			unbreakables.add(block);
+			cwcUnbreakableBlocks.add(block);
 		}
 	}
 
 	private static void printBlockIds() {
-		for (CwCBlock block : blocks) System.out.println(Block.getIdFromBlock(block));
-		for (CwCUnbreakableBlock block : unbreakables) System.out.println(Block.getIdFromBlock(block));
+		for (CwCBlock block : cwcBlocks) System.out.println(Block.getIdFromBlock(block));
+		for (Block block : cwcMinecraftBlocks) System.out.println(Block.getIdFromBlock(block));
+		for (CwCUnbreakableBlock block : cwcUnbreakableBlocks) System.out.println(Block.getIdFromBlock(block));
 	}
 
 	/**
@@ -71,10 +88,10 @@ public class StartupCommon {
 	 */
 	private static void initializeCreativeTabs() {
 		CreativeTabs.CREATIVE_TAB_ARRAY = new CreativeTabs[1];
-		cwctab = new CwCCreativeTab(0, "cwc_creative_tab") {
+		cwcCreativeTab = new CwCCreativeTab(0, "cwc_creative_tab") {
 			@Override
 			@SideOnly(Side.CLIENT)
-			public ItemStack getTabIconItem() { return new ItemStack(Item.getItemFromBlock(blocks.get(0))); }
+			public ItemStack getTabIconItem() { return new ItemStack(Item.getItemFromBlock(cwcBlocks.get(0))); }
 		};
 	}
 }

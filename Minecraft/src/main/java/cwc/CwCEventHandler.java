@@ -121,26 +121,9 @@ public class CwCEventHandler {
 
             // initialize Architect, Builder (if limited inventory) with empty inventory
             if (playerNameMatches(player, CwCMod.ARCHITECT) || playerNameMatches(player, CwCMod.ORACLE) || playerNameMatchesAny(player, CwCMod.FIXED_VIEWERS) ||
-                    (playerNameMatches(player, CwCMod.BUILDER) && !CwCMod.unlimitedInventory)) {
+                    (playerNameMatches(player, CwCMod.BUILDER))) {
                 for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++)
                     player.inventory.setInventorySlotContents(i, ItemStack.EMPTY);
-                return;
-            }
-
-            // unlimited inventory: check for empty inventory
-            boolean empty = true;
-            for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++) {
-                if (!player.inventory.getStackInSlot(i).isEmpty()) {
-                    empty = false;
-                    break;
-                }
-            }
-
-            // unlimited inventory: initialize the inventory with default stack sizes
-            if (empty) {
-                for (CwCBlock block : StartupCommon.blocks)
-                    player.inventory.addItemStackToInventory(new ItemStack(block, CwCMod.DEFAULT_STACK_SIZE));
-                System.out.println("\t-- inventory INITIALIZED");
             }
         }
     }
@@ -450,7 +433,7 @@ public class CwCEventHandler {
                 items += player.inventory.getStackInSlot(i).getCount();
 
             // cancel the left-click event if Builder is not allowed to pick up any more blocks at this time
-            if ((!CwCMod.unlimitedInventory && items >= CwCMod.MAX_INVENTORY_SIZE) || disablePickup)
+            if (items >= CwCMod.MAX_INVENTORY_SIZE || disablePickup)
                 event.setCanceled(true);
         }
     }
