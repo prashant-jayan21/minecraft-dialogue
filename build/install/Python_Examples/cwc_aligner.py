@@ -1,8 +1,5 @@
-import re
-import os
-import json
+import re, os, json, argparse
 from os.path import join, isdir, isfile
-import argparse
 
 def postprocess_missions(logs_root_dir, screenshots_root_dir, overwrite):
     all_log_dirs = filter(lambda x: isdir(join(logs_root_dir, x)), os.listdir(logs_root_dir))
