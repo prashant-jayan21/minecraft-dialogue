@@ -18,7 +18,7 @@ def prettyPrintWorldState(world_state):
             sys.stdout.write("\t"+element+": ")
             print world_state[element]
 
-    if len(grouped_elements) > 0:
+    if len(grouped_elements.strip()) > 0:
         print grouped_elements
     print
 

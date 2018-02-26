@@ -3,7 +3,7 @@ import os, json
 def readXMLSubstringFromFile(xml_filename):
     config_xml_substring = ""
     if xml_filename is not None and len(xml_filename) > 0:
-		print "Reading XML file", xml_filename
+        print "Reading XML file", xml_filename
         config_file = open(xml_filename, "r")
         config_xml_substring = config_file.read()
         config_file.close()
