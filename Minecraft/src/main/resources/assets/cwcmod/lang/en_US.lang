@@ -13,7 +13,6 @@ tile.cwc_minecraft_blue_un.name=CwC Minecraft Blue
 tile.cwc_minecraft_purple_un.name=CwC Minecraft Purple
 tile.cwc_unbreakable_grey_un.name=CwC Unbreakable Grey
 tile.cwc_unbreakable_white_un.name=CwC Unbreakable White
-tile.cwc_unbreakable_transparent_un.name=CwC Unbreakable Transparent
 itemGroup.cwc_creative_tab=CwC Blocks
 key.categories.cwc=CwC
 death.attack.murder=...but don't worry, you completed the mission!
