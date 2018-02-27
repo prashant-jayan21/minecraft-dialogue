@@ -1,28 +1,28 @@
 import sys
 
 # Helper method to print a shortened, prettier version of the JSON's contents.
-def prettyPrintWorldState(world_state):
+def prettyPrintObservation(observation):
     grouped_elements = "\t"
-    for element in world_state:
+    for element in observation:
         if element == 'BlocksOutside' or element == 'BlocksInside' or element == 'BuilderGridAbsolute' or element == 'BuilderGridRelative':
             sys.stdout.write("\t"+element+": ")
-            print len(world_state[element]), "values"
+            print len(observation[element]), "values"
         elif element == 'BuilderInventory':
             sys.stdout.write("\t"+element+": ")
-            for value in world_state[element]:
+            for value in observation[element]:
                 print "\n\t\t", value,
             print
         elif 'Pos' in element or element == 'Yaw' or element == 'Pitch' or element == 'TimeAlive' or element == 'DistanceTravelled':
-            grouped_elements += element+": "+str(world_state[element])+"  "
+            grouped_elements += element+": "+str(observation[element])+"  "
         else:
             sys.stdout.write("\t"+element+": ")
-            print world_state[element]
+            print observation[element]
 
     if len(grouped_elements.strip()) > 0:
         print grouped_elements
     print
 
-def prettyPrintObservation(observation):
+def printObservationElements(observation):
     for element in observation:
         print element,
     print
@@ -49,4 +49,4 @@ def prettyPrintString(string_to_write):
         elif len(line.strip()) > 0:
             sys.stdout.write(line+"\n")
 
-    sys.stdout.write('\t('+str(num_lines)+' values)\n\n')
+    sys.stdout.write('\t('+str(num_lines)+' values)\n')

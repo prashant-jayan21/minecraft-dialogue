@@ -6,35 +6,13 @@ import os, sys, time, json, datetime, copy
 import MalmoPython, numpy as np
 import cwc_mission_utils as mission_utils, cwc_debug_utils as debug_utils, cwc_io_utils as io_utils
 
-# observation grid parameters
-x_min_obs, x_max_obs = -10, 10
-y_min_obs, y_max_obs = 1, 9
-z_min_obs, z_max_obs = -10, 10
-
-# build region parameters
-# the build region is defined by the x and z bounds of the white floor and the y bounds of the observation grid
-x_min_build, x_max_build = -5, 5
-y_min_build, y_max_build = y_min_obs, y_max_obs # NOTE: Do not change this relation without thought!
-z_min_build, z_max_build = -5, 5
-
-# goal region parameters
-displacement = 100
-x_min_goal, x_max_goal = x_min_build + displacement, x_max_build + displacement
-y_min_goal, y_max_goal = y_min_build, y_max_build # NOTE: Do not change this relation without thought!
-z_min_goal, z_max_goal = z_min_build + displacement, z_max_build + displacement
-
-fv_placements = ['<Placement x = "0" y = "8" z = "-8" pitch="40"/>', 
-                 '<Placement x = "0" y = "8" z = "10" pitch="40" yaw="180"/>', 
-                 '<Placement x = "10" y = "8" z = "0" pitch="40" yaw="90"/>', 
-                 '<Placement x = "-10" y = "8" z = "0" pitch="40" yaw="-90"/>']
-
 def addFixedViewers(n):
     fvs = ''
     for i in range(n):
         fvs += '''<AgentSection mode="Spectator"> 
                     <Name>FixedViewer'''+str(i+1)+'''</Name> 
                     <AgentStart> 
-                      ''' + fv_placements[i] + '''
+                      ''' + mission_utils.fv_placements[i] + '''
                       </AgentStart> 
                     <AgentHandlers/> 
                   </AgentSection>
@@ -66,7 +44,8 @@ def generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_v
                         <DrawCuboid type="cwcmod:cwc_minecraft_blue_rn" x1="7" y1="1" z1="0" x2="8" y2="2" z2="-4"/>
                         <DrawCuboid type="cwcmod:cwc_minecraft_purple_rn" x1="-7" y1="1" z1="6" x2="-8" y2="2" z2="2"/>
                         <DrawCuboid type="cwcmod:cwc_minecraft_red_rn" x1="-7" y1="1" z1="0" x2="-8" y2="2" z2="-4"/>
-                        <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_build) +'''" y1="0" z1="''' + str(z_min_build)+ '''" x2="'''+ str(x_max_build)+'''" y2="0" z2="''' + str(z_max_build) + '''"/>
+                        <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(mission_utils.x_min_build) +'''" y1="0" z1="''' + \
+                        str(mission_utils.z_min_build)+ '''" x2="'''+ str(mission_utils.x_max_build)+'''" y2="0" z2="''' + str(mission_utils.z_max_build) + '''"/>
                         ''' + existing_config_xml_substring + '''
                       </DrawingDecorator>
                       <ServerQuitWhenAnyAgentFinishes/>
@@ -81,8 +60,8 @@ def generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_v
                     <AgentHandlers>
                       <CwCObservation>
                          <Grid name="BuilderGrid" absoluteCoords="true">
-                           <min x="'''+ str(x_min_obs) + '''" y="'''+ str(y_min_obs) + '''" z="''' + str(z_min_obs) + '''"/>
-                           <max x="'''+ str(x_max_obs) + '''" y="''' + str(y_max_obs) + '''" z="''' + str(z_max_obs) + '''"/>
+                           <min x="'''+ str(mission_utils.x_min_obs) + '''" y="'''+ str(mission_utils.y_min_obs) + '''" z="''' + str(mission_utils.z_min_obs) + '''"/>
+                           <max x="'''+ str(mission_utils.x_max_obs) + '''" y="''' + str(mission_utils.y_max_obs) + '''" z="''' + str(mission_utils.z_max_obs) + '''"/>
                          </Grid>
                       </CwCObservation>
                     </AgentHandlers>
@@ -118,7 +97,8 @@ def generateOracleXML(experiment_id, gold_config_xml_substring):
                     <ServerHandlers>
                       <FlatWorldGenerator generatorString="3;247;1;" forceReset="true" destroyAfterUse="true"/>
                       <DrawingDecorator>
-                        <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(x_min_goal) +'''" y1="0" z1="''' + str(z_min_goal)+ '''" x2="'''+ str(x_max_goal)+'''" y2="0" z2="''' + str(z_max_goal) + '''"/>''' + gold_config_xml_substring + \
+                        <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(mission_utils.x_min_goal) +'''" y1="0" z1="''' + str(mission_utils.z_min_goal)+ \
+                        '''" x2="'''+ str(mission_utils.x_max_goal)+'''" y2="0" z2="''' + str(mission_utils.z_max_goal) + '''"/>''' + gold_config_xml_substring + \
                       '''</DrawingDecorator>
                       <ServerQuitWhenAnyAgentFinishes/>
                     </ServerHandlers>
@@ -220,7 +200,7 @@ def cwc_run_mission(args):
                 print "Received", len(world_state.observations), "observations. Total number of elements:", total_elements
                 for observation in world_state.observations:
                     print "Processing observation:", 
-                    debug_utils.prettyPrintObservation(json.loads(observation.text))
+                    debug_utils.printObservationElements(json.loads(observation.text))
                     all_observations.append(observation)
 
                 print "-----"
@@ -235,7 +215,7 @@ def cwc_run_mission(args):
     for observation in all_observations:
         world_state = json.loads(observation.text)
         world_state["Timestamp"] = observation.timestamp.replace(microsecond=0).isoformat(' ')
-        debug_utils.prettyPrintWorldState(world_state)
+        debug_utils.prettyPrintObservation(world_state)
         all_world_states.append(world_state)
 
     raw_observations = {"WorldStates": all_world_states, "TimeElapsed": time_elapsed}

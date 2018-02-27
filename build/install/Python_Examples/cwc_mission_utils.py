@@ -1,6 +1,28 @@
 import MalmoPython
 import sys, time
 
+# observation grid parameters
+x_min_obs, x_max_obs = -10, 10
+y_min_obs, y_max_obs = 1, 9
+z_min_obs, z_max_obs = -10, 10
+
+# build region parameters
+# the build region is defined by the x and z bounds of the white floor and the y bounds of the observation grid
+x_min_build, x_max_build = -5, 5
+y_min_build, y_max_build = y_min_obs, y_max_obs # NOTE: Do not change this relation without thought!
+z_min_build, z_max_build = -5, 5
+
+# goal region parameters
+displacement = 100
+x_min_goal, x_max_goal = x_min_build + displacement, x_max_build + displacement
+y_min_goal, y_max_goal = y_min_build, y_max_build # NOTE: Do not change this relation without thought!
+z_min_goal, z_max_goal = z_min_build + displacement, z_max_build + displacement
+
+fv_placements = ['<Placement x = "0" y = "8" z = "-8" pitch="40"/>', 
+                 '<Placement x = "0" y = "8" z = "10" pitch="40" yaw="180"/>', 
+                 '<Placement x = "10" y = "8" z = "0" pitch="40" yaw="90"/>', 
+                 '<Placement x = "-10" y = "8" z = "0" pitch="40" yaw="-90"/>']
+
 def safeStartMission(agent_host, my_mission, my_client_pool, my_mission_record, role, expId):
     used_attempts = 0
     max_attempts = 5

@@ -50,6 +50,9 @@ if __name__ == "__main__":
             print "Error: In LAN mode, you must have at least one available Fixed Viewer client in the Fixed Viewer csv. Consider using a default localhost, such as the specification in sample_fixed_viewer.csv."
             exit()
 
+    if args.fixed_viewer_csv is not None and args.num_fixed_viewers == 0:
+        print "Warning: You specified a --fixed_viewer_csv parameter, but did not specify the number of fixed viewer clients to spawn (--num_fixed_viewers). As a result, the missions will launch with no fixed viewer clients -- check that this is your intended behavior."
+
     # Execute rounds
     for config in all_configs:
 
