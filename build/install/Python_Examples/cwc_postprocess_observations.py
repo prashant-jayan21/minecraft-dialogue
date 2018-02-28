@@ -91,7 +91,7 @@ def mergeObservation(observations, next_observation):
     return observations
 
 def postprocess(observations):
-    print "postprocessing ...",
+    print "postprocessing ..."
     chat_history = []
     string_to_write = ""
     for observation in observations:
@@ -107,7 +107,7 @@ def postprocess(observations):
 # Appends these block information, as well as the chat history, to the world state JSON.
 def recordGridCoordinates(observation):
     if observation.get(u'BuilderGridAbsolute') is None or observation.get(u'BuilderPosition') is None:
-        print "\n\tWARNING: Something went wrong... the builder", "grid" if observation.get(u'BuilderGridAbsolute') is None else "position", "is missing. Aborting recording grid coordinates for this observation."
+        print "\tWARNING: Something went wrong... the builder", "grid" if observation.get(u'BuilderGridAbsolute') is None else "position", "is missing. Aborting recording grid coordinates for this observation."
         observation["BlocksOutside"] = []
         observation["BlocksInside"]  = []
         return 
@@ -131,24 +131,35 @@ def recordGridCoordinates(observation):
 
 # Generates a string representation of the world state JSON's contents and adds it to the string to be written.
 def writeToString(observation, string_to_write):
-    string_to_write += "\n"+"-"*20+"\n[Timestamp] "+observation.get("Timestamp")
-    string_to_write += "\n[Builder Position] (x, y, z): ("+("None" if observation.get("BuilderPosition") is None else str(observation["BuilderPosition"]["X"]) + \
-           ", "+str(observation["BuilderPosition"]["Y"])+", "+str(observation["BuilderPosition"]["Z"])+") " + \
-           "(yaw, pitch): ("+str(observation["BuilderPosition"]["Yaw"])+", "+str(observation["BuilderPosition"]["Pitch"]))
-    string_to_write += ")\n[Screenshot Path] "+observation.get("ScreenshotPath")+"\n\n[Chat Log]\n"
+    def getStringValueAndFix(observation, key):
+        try:
+            value = observation[key]
+        except KeyError:
+            print "\tWARNING: KeyError occurred for key:", key
+            observation[key] = None
+            return "None"
+        return str(value)
+
+    string_to_write += "\n"+"-"*20+"\n[Timestamp] "+getStringValueAndFix(observation, "Timestamp")
+    string_to_write += "\n[Builder Position] (x, y, z): ("+("None" if getStringValueAndFix(observation, "BuilderPosition") == "None" else 
+           getStringValueAndFix(observation["BuilderPosition"], "X") + ", "+getStringValueAndFix(observation["BuilderPosition"], "Y")+", "+getStringValueAndFix(observation["BuilderPosition"], "Z")+") " + \
+           "(yaw, pitch): ("+getStringValueAndFix(observation["BuilderPosition"], "Yaw")+", "+getStringValueAndFix(observation["BuilderPosition"], "Pitch"))
+
+    string_to_write += ")\n[Screenshot Path] "+getStringValueAndFix(observation, "ScreenshotPath")
     
-    if observation.get("ChatHistory") is None:
+    string_to_write += "\n\n[Chat Log]\n"
+    if getStringValueAndFix(observation, "ChatHistory") == "None":
         string_to_write += "\tNone\n"
     else:
         for utterance in observation["ChatHistory"]:
             string_to_write += "\t"+utterance+"\n"
     
     string_to_write += "\n[Builder Inventory]"
-    if observation.get("BuilderInventory") is None:
+    if getStringValueAndFix(observation, "BuilderInventory") == "None":
         string_to_write += "\tNone\n"
     else:
         for block in observation["BuilderInventory"]:
-            string_to_write += "\tType: "+block["Type"]+" Index: "+str(block["Index"])+" Quantity: "+str(block["Quantity"])+"\n"
+            string_to_write += "\tType: "+getStringValueAndFix(block, "Type")+" Index: "+getStringValueAndFix(block, "Index")+" Quantity: "+getStringValueAndFix(block, "Quantity")+"\n"
     
     string_to_write += "\n[Blocks Inside]\n"
     for block in observation["BlocksInside"]:
@@ -188,7 +199,7 @@ def main():
         string_to_write = postprocess(merged)
         observations["WorldStates"] = merged
 
-        print "done.", 
+        print "\nDone.", 
         if args.verbose:
             debug_utils.prettyPrintString(string_to_write)
             print 20*"-"
