@@ -197,6 +197,7 @@ def main():
         reformatted = reformatObservations(observations.get("WorldStates"))
         merged = mergeObservations(reformatted)
         string_to_write = postprocess(merged)
+        string_to_write += "\nTime elapsed: "+str(observations.get("TimeElapsed"))+" s"
         observations["WorldStates"] = merged
 
         print "\nDone.", 
