@@ -522,9 +522,14 @@
         <xs:enumeration value="cwcmod:cwc_green_rn" />
         <xs:enumeration value="cwcmod:cwc_blue_rn" />
         <xs:enumeration value="cwcmod:cwc_purple_rn" />
+        <xs:enumeration value="cwcmod:cwc_minecraft_red_rn" />
+        <xs:enumeration value="cwcmod:cwc_minecraft_orange_rn" />
+        <xs:enumeration value="cwcmod:cwc_minecraft_yellow_rn" />
+        <xs:enumeration value="cwcmod:cwc_minecraft_green_rn" />
+        <xs:enumeration value="cwcmod:cwc_minecraft_blue_rn" />
+        <xs:enumeration value="cwcmod:cwc_minecraft_purple_rn" />
         <xs:enumeration value="cwcmod:cwc_unbreakable_grey_rn" />
         <xs:enumeration value="cwcmod:cwc_unbreakable_white_rn" />
-        <xs:enumeration value="cwcmod:cwc_unbreakable_transparent_rn" />
     </xs:restriction>
 </xs:simpleType>
 

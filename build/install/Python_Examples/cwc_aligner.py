@@ -1,8 +1,5 @@
-import re
-import os
-import json
+import re, os, json, argparse
 from os.path import join, isdir, isfile
-import argparse
 
 def postprocess_missions(logs_root_dir, screenshots_root_dir, overwrite):
     all_log_dirs = filter(lambda x: isdir(join(logs_root_dir, x)), os.listdir(logs_root_dir))
@@ -15,17 +12,18 @@ def postprocess_missions(logs_root_dir, screenshots_root_dir, overwrite):
 
 def postprocess_observations(logs_dir, screenshots_dir):
     all_filenames = filter(lambda x: x.endswith(".png"), os.listdir(screenshots_dir))
-    aligned_tuples = align(all_filenames)
+    num_fixed_viewers = pass # TODO: obtain from log
+    aligned_tuples = align(all_filenames, num_fixed_viewers)
 
     with open(join(logs_dir, "observations.json")) as observations:
 	       observations_dict = json.load(observations)
 
-    observations_dict = add_other_screenshots(observations_dict, aligned_tuples)
+    observations_dict = add_other_screenshots(observations_dict, aligned_tuples, num_fixed_viewers)
 
     with open(join(logs_dir, "observations_postprocessed.json"), "w") as observations_processed:
         json.dump(observations_dict, observations_processed)
 
-def add_other_screenshots(json, aligned_tuples):
+def add_other_screenshots(json, aligned_tuples, num_fixed_viewers):
     all_states = json["WorldStates"]
     all_states_processed = []
 
@@ -37,10 +35,12 @@ def add_other_screenshots(json, aligned_tuples):
         state["Screenshots"]["Builder"] = builder_screenshot
         if other_screenshots is not None:
             state["Screenshots"]["Architect"] = other_screenshots[0]
-            state["Screenshots"]["FixedViewer1"] = other_screenshots[1]
-            state["Screenshots"]["FixedViewer2"] = other_screenshots[2]
-            state["Screenshots"]["FixedViewer3"] = other_screenshots[3]
-            state["Screenshots"]["FixedViewer4"] = other_screenshots[4]
+            for i in range(num_fixed_viewers):
+                 state["Screenshots"]["FixedViewer" + str(i+1)] = other_screenshots[i+1]
+            # state["Screenshots"]["FixedViewer1"] = other_screenshots[1]
+            # state["Screenshots"]["FixedViewer2"] = other_screenshots[2]
+            # state["Screenshots"]["FixedViewer3"] = other_screenshots[3]
+            # state["Screenshots"]["FixedViewer4"] = other_screenshots[4]
         all_states_processed.append(state)
 
     json["WorldStates"] = all_states_processed
@@ -52,7 +52,7 @@ def get_other_screenshots(builder_screenshot, aligned_tuples):
             return filter(lambda x: x != t[1], t)
     return None
 
-def align(all_screenshot_filenames):
+def align(all_screenshot_filenames, num_fixed_viewers):
     grouping = {} # map from action (e.g. pickup, chat, etc.) to all screenshots corresponding to that action
     for filename in all_screenshot_filenames:
         key = get_key(filename)[1] # action for the screenshot
@@ -61,12 +61,18 @@ def align(all_screenshot_filenames):
         grouping[key].append(filename)
 
     aligned_pairs_ab = get_aligned_pairs(grouping, "Architect", "Builder")
-    aligned_pairs_af_1 = get_aligned_pairs(grouping, "Architect", "FixedViewer1")
-    aligned_pairs_af_2 = get_aligned_pairs(grouping, "Architect", "FixedViewer2")
-    aligned_pairs_af_3 = get_aligned_pairs(grouping, "Architect", "FixedViewer3")
-    aligned_pairs_af_4 = get_aligned_pairs(grouping, "Architect", "FixedViewer4")
+    aligned_pairs_af = []
+    for i in range(num_fixed_viewers):
+        fixed_viewer = "FixedViewer" + str(i+1)
+        aligned_pairs_af.append(get_aligned_pairs(grouping, "Architect", fixed_viewer))
 
-    all_aligned_pairs = [aligned_pairs_ab, aligned_pairs_af_1, aligned_pairs_af_2, aligned_pairs_af_3, aligned_pairs_af_4]
+    # aligned_pairs_af_1 = get_aligned_pairs(grouping, "Architect", "FixedViewer1")
+    # aligned_pairs_af_2 = get_aligned_pairs(grouping, "Architect", "FixedViewer2")
+    # aligned_pairs_af_3 = get_aligned_pairs(grouping, "Architect", "FixedViewer3")
+    # aligned_pairs_af_4 = get_aligned_pairs(grouping, "Architect", "FixedViewer4")
+
+    all_aligned_pairs = aligned_pairs_ab + aligned_pairs_af
+    # all_aligned_pairs = [aligned_pairs_ab, aligned_pairs_af_1, aligned_pairs_af_2, aligned_pairs_af_3, aligned_pairs_af_4]
 
     def merge(list_1, list_2):
         merged_tuples = []
