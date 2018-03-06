@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
         builder_port = (10000 if builder.get("port") is None else int(builder["port"]))
         architect_port = (10000 if architect.get("port") is None else int(architect["port"]))
-        fixed_viewer_port = None if fixed_viewer is None else (10000 if fixed_viewer.get("port") is None else int(fixed_viewer["port"]))
+        fixed_viewer_port = None if fixed_viewer is None or args.num_fixed_viewers == 0 else (10000 if fixed_viewer.get("port") is None else int(fixed_viewer["port"]))
         mission_args = {
             "lan": args.lan,
             "builder_ip_addr": builder["ip address"],
@@ -73,7 +73,7 @@ if __name__ == "__main__":
             "architect_port": architect_port,
             "gold_config": config["gold file path"],
             "existing_config": config["existing file path"],
-            "fixed_viewer_ip_addr": None if fixed_viewer is None else fixed_viewer["ip address"],
+            "fixed_viewer_ip_addr": None if fixed_viewer is None or args.num_fixed_viewers == 0 else fixed_viewer["ip address"],
             "fixed_viewer_port": fixed_viewer_port,
             "num_fixed_viewers": args.num_fixed_viewers
         }
