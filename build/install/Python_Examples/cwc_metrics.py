@@ -70,10 +70,6 @@ def get_turn_metrics(chat_history):
 
 
 if __name__ == "__main__":
-    # my_list = ["<Builder> Mission has started.", "<Architect> Hi! We're going to build a blue structure", "<Architect> Start by putting a row of three blue blocks down on the grid", "<Builder> great ! what do I have to do", "<Builder> okay", "<Architect> A row", "<Architect> Great!", "<Architect> Now, put two more blocks on top of one of the outer blocks of that row", "<Architect> blue blocks, I should've said", "<Architect> great, we're done!"]
-    # my_list = ["<Architect> alright, same base as last time, exceot with orange blocks", "<Builder> Mission has started.", "<Architect> and make a floor of red blocks as before, on top of the ones you placed", "<Builder> pardon?", "<Builder> I only got the second sentence", "<Architect> alright, same base as last time, except with orange blocks", "<Builder> ok ok", "<Architect> the center block should be removed though", "<Architect> yup", "<Architect> we;re done", "<Builder> that was a waste of time", "<Architect> Go team", "<Architect> haha", "<Builder> just kill me now", "<Architect> i don't have a weapon", "<Builder> God doesn't need a weapon to murder", "<Architect> sadly, nor can we commit suicide"]
-    # print get_turn_metrics(my_list)
-
     parser = argparse.ArgumentParser(description="Process observations to compute various dialog metrics")
     parser.add_argument("logs_root_dir", help="Root directory for all log data")
     parser.add_argument("--legacy", default=False, action="store_true", help="Whether or not this is legacy data")
