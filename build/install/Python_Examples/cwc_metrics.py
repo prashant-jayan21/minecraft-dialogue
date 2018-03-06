@@ -1,3 +1,27 @@
+import os, json, argparse
+from os.path import join, isdir
+
+def process_missions(logs_root_dir):
+    all_log_dirs = filter(lambda x: isdir(join(logs_root_dir, x)), os.listdir(logs_root_dir))
+
+    for log_dir in all_log_dirs:
+        process_observations(join(logs_root_dir, log_dir))
+
+def process_observations(logs_dir):
+    metrics_dict = get_all_metrics(join(logs_dir, "observations.json")) # FIXME: Change this later to final json name
+
+    with open(join(logs_dir, "metrics.json"), "w") as metrics:
+        json.dump(metrics_dict, metrics)
+
+def get_all_metrics(json_filename):
+    with open(json_filename) as observations:
+        observations_dict = json.load(observations)
+
+    last_state = observations_dict["WorldStates"][-1]
+    chat_history = last_state["ChatHistory"]
+
+    return get_turn_metrics(chat_history)
+
 def get_turn_metrics(chat_history):
     '''
     chat_history : list of all chat messages
@@ -31,5 +55,11 @@ def get_turn_metrics(chat_history):
 
 if __name__ == "__main__":
     # my_list = ["<Builder> Mission has started.", "<Architect> Hi! We're going to build a blue structure", "<Architect> Start by putting a row of three blue blocks down on the grid", "<Builder> great ! what do I have to do", "<Builder> okay", "<Architect> A row", "<Architect> Great!", "<Architect> Now, put two more blocks on top of one of the outer blocks of that row", "<Architect> blue blocks, I should've said", "<Architect> great, we're done!"]
-    my_list = ["<Architect> alright, same base as last time, exceot with orange blocks", "<Builder> Mission has started.", "<Architect> and make a floor of red blocks as before, on top of the ones you placed", "<Builder> pardon?", "<Builder> I only got the second sentence", "<Architect> alright, same base as last time, except with orange blocks", "<Builder> ok ok", "<Architect> the center block should be removed though", "<Architect> yup", "<Architect> we;re done", "<Builder> that was a waste of time", "<Architect> Go team", "<Architect> haha", "<Builder> just kill me now", "<Architect> i don't have a weapon", "<Builder> God doesn't need a weapon to murder", "<Architect> sadly, nor can we commit suicide"]
-    print get_turn_metrics(my_list)
+    # my_list = ["<Architect> alright, same base as last time, exceot with orange blocks", "<Builder> Mission has started.", "<Architect> and make a floor of red blocks as before, on top of the ones you placed", "<Builder> pardon?", "<Builder> I only got the second sentence", "<Architect> alright, same base as last time, except with orange blocks", "<Builder> ok ok", "<Architect> the center block should be removed though", "<Architect> yup", "<Architect> we;re done", "<Builder> that was a waste of time", "<Architect> Go team", "<Architect> haha", "<Builder> just kill me now", "<Architect> i don't have a weapon", "<Builder> God doesn't need a weapon to murder", "<Architect> sadly, nor can we commit suicide"]
+    # print get_turn_metrics(my_list)
+
+    parser = argparse.ArgumentParser(description="Process observations to compute various dialog metrics")
+    parser.add_argument("logs_root_dir", help="Root directory for all log data")
+    args = parser.parse_args()
+
+    process_missions(args.logs_root_dir)
