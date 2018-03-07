@@ -51,7 +51,7 @@ if __name__ == "__main__":
             exit()
 
     if args.fixed_viewer_csv is not None and args.num_fixed_viewers == 0:
-        print "Warning: You specified a --fixed_viewer_csv parameter, but did not specify the number of fixed viewer clients to spawn (--num_fixed_viewers). As a result, the missions will launch with no fixed viewer clients -- check that this is your intended behavior."
+        print "Warning: You specified a --fixed_viewer_csv parameter, but did not specify the number of fixed viewer clients to spawn (--num_fixed_viewers). As a result, the missions will launch with no fixed viewer clients."
 
     # Execute rounds
     for config in all_configs:

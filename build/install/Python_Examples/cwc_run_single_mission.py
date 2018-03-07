@@ -218,7 +218,7 @@ def cwc_run_mission(args):
         debug_utils.prettyPrintObservation(world_state)
         all_world_states.append(world_state)
 
-    raw_observations = {"WorldStates": all_world_states, "TimeElapsed": time_elapsed}
+    raw_observations = {"WorldStates": all_world_states, "TimeElapsed": time_elapsed, "NumFixedViewers": num_fixed_viewers}
     io_utils.writeJSONtoLog(experiment_id, "raw-observations.json", raw_observations)
 
     m, s = divmod(time_elapsed, 60)
