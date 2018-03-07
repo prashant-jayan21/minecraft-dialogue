@@ -12,7 +12,7 @@ def postprocess_missions(logs_root_dir, screenshots_root_dir, overwrite):
 
 def postprocess_observations(logs_dir, screenshots_dir):
     all_filenames = filter(lambda x: x.endswith(".png"), os.listdir(screenshots_dir))
-    num_fixed_viewers = pass # TODO: obtain from log
+    num_fixed_viewers = pass # FIXME: obtain from log
     aligned_tuples = align(all_filenames, num_fixed_viewers)
 
     with open(join(logs_dir, "observations.json")) as observations:
@@ -28,7 +28,7 @@ def add_other_screenshots(json, aligned_tuples, num_fixed_viewers):
     all_states_processed = []
 
     for state in all_states:
-        builder_screenshot = state["ScreenshotPath"]
+        builder_screenshot = state["ScreenshotPath"] # FIXME: Test for when this is a None
         other_screenshots = get_other_screenshots(builder_screenshot, aligned_tuples)
         del state["ScreenshotPath"]
         state["Screenshots"] = {}
