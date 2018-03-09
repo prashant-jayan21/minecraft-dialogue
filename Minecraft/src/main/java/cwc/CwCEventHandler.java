@@ -1,6 +1,7 @@
 package cwc;
 
 import com.microsoft.Malmo.MissionHandlers.AbsoluteMovementCommandsImplementation;
+import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.GuiChat;
@@ -114,14 +115,16 @@ public class CwCEventHandler {
 
             // spawn with empty hand (if possible)
             if (playerNameMatches(player, CwCMod.BUILDER)) {
+                for (Block block : StartupCommon.cwcMinecraftBlocks)
+                    player.inventory.addItemStackToInventory(new ItemStack(block, CwCMod.DEFAULT_STACK_SIZE));
+
                 int es = player.inventory.getFirstEmptyStack();
                 player.inventory.currentItem = es < 0 ? 0 : es;
                 player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
             }
 
-            // initialize Architect, Builder (if limited inventory) with empty inventory
-            if (playerNameMatches(player, CwCMod.ARCHITECT) || playerNameMatches(player, CwCMod.ORACLE) || playerNameMatchesAny(player, CwCMod.FIXED_VIEWERS) ||
-                    (playerNameMatches(player, CwCMod.BUILDER))) {
+            // initialize Architect, Oracle, FixedViewers with empty inventory
+            if (playerNameMatches(player, CwCMod.ARCHITECT) || playerNameMatches(player, CwCMod.ORACLE) || playerNameMatchesAny(player, CwCMod.FIXED_VIEWERS)) {
                 for (int i = 0; i < InventoryPlayer.getHotbarSize(); i++)
                     player.inventory.setInventorySlotContents(i, ItemStack.EMPTY);
             }
@@ -158,6 +161,9 @@ public class CwCEventHandler {
 
             // spawn with empty hand (if possible)
             if (playerNameMatches(player, CwCMod.BUILDER)) {
+                for (Block block : StartupCommon.cwcMinecraftBlocks)
+                    player.inventory.addItemStackToInventory(new ItemStack(block, CwCMod.DEFAULT_STACK_SIZE));
+
                 int es = player.inventory.getFirstEmptyStack();
                 player.inventory.currentItem = es < 0 ? 0 : es;
                 player.connection.sendPacket(new SPacketHeldItemChange(player.inventory.currentItem));
@@ -433,7 +439,7 @@ public class CwCEventHandler {
                 items += player.inventory.getStackInSlot(i).getCount();
 
             // cancel the left-click event if Builder is not allowed to pick up any more blocks at this time
-            if (items >= CwCMod.MAX_INVENTORY_SIZE || disablePickup)
+            if (disablePickup)
                 event.setCanceled(true);
         }
     }

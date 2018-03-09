@@ -19,7 +19,17 @@ def addFixedViewers(n):
                 '''
     return fvs
 
-def generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_viewers):
+def drawInventoryBlocks():
+    return ''' 
+                <DrawCuboid type="cwcmod:cwc_minecraft_orange_rn" x1="5" y1="1" z1="7" x2="1" y2="2" z2="8"/>
+                <DrawCuboid type="cwcmod:cwc_minecraft_yellow_rn" x1="-1" y1="1" z1="7" x2="-5" y2="2" z2="8"/>
+                <DrawCuboid type="cwcmod:cwc_minecraft_green_rn" x1="7" y1="1" z1="6" x2="8" y2="2" z2="2"/>
+                <DrawCuboid type="cwcmod:cwc_minecraft_blue_rn" x1="7" y1="1" z1="0" x2="8" y2="2" z2="-4"/>
+                <DrawCuboid type="cwcmod:cwc_minecraft_purple_rn" x1="-7" y1="1" z1="6" x2="-8" y2="2" z2="2"/>
+                 <DrawCuboid type="cwcmod:cwc_minecraft_red_rn" x1="-7" y1="1" z1="0" x2="-8" y2="2" z2="-4"/> 
+            '''
+
+def generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_viewers, draw_inventory_blocks):
     return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
@@ -37,13 +47,7 @@ def generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_v
                     </ServerInitialConditions>
                     <ServerHandlers>
                       <FlatWorldGenerator generatorString="3;247;1;" forceReset="true" destroyAfterUse="true"/>
-                      <DrawingDecorator>
-                        <DrawCuboid type="cwcmod:cwc_minecraft_orange_rn" x1="5" y1="1" z1="7" x2="1" y2="2" z2="8"/>
-                        <DrawCuboid type="cwcmod:cwc_minecraft_yellow_rn" x1="-1" y1="1" z1="7" x2="-5" y2="2" z2="8"/>
-                        <DrawCuboid type="cwcmod:cwc_minecraft_green_rn" x1="7" y1="1" z1="6" x2="8" y2="2" z2="2"/>
-                        <DrawCuboid type="cwcmod:cwc_minecraft_blue_rn" x1="7" y1="1" z1="0" x2="8" y2="2" z2="-4"/>
-                        <DrawCuboid type="cwcmod:cwc_minecraft_purple_rn" x1="-7" y1="1" z1="6" x2="-8" y2="2" z2="2"/>
-                        <DrawCuboid type="cwcmod:cwc_minecraft_red_rn" x1="-7" y1="1" z1="0" x2="-8" y2="2" z2="-4"/>
+                      <DrawingDecorator> ''' + ('' if not draw_inventory_blocks else drawInventoryBlocks()) + '''
                         <DrawCuboid type="cwcmod:cwc_unbreakable_white_rn" x1="''' + str(mission_utils.x_min_build) +'''" y1="0" z1="''' + \
                         str(mission_utils.z_min_build)+ '''" x2="'''+ str(mission_utils.x_max_build)+'''" y2="0" z2="''' + str(mission_utils.z_max_build) + '''"/>
                         ''' + existing_config_xml_substring + '''
@@ -120,6 +124,7 @@ def cwc_run_mission(args):
     builder_ip, builder_port = args["builder_ip_addr"], args["builder_port"]
     architect_ip, architect_port = args["architect_ip_addr"], args["architect_port"]
     fixed_viewer_ip, fixed_viewer_port, num_fixed_viewers = args["fixed_viewer_ip_addr"], args["fixed_viewer_port"], args["num_fixed_viewers"]
+    draw_inventory_blocks = args["draw_inventory_blocks"]
 
     # Create agent hosts:
     agent_hosts = []
@@ -163,7 +168,7 @@ def cwc_run_mission(args):
     existing_config_xml_substring = io_utils.readXMLSubstringFromFile(args["existing_config"])
 
     # construct mission xml
-    missionXML = generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_viewers)
+    missionXML = generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_viewers, draw_inventory_blocks)
     missionXML_oracle = generateOracleXML(experiment_id, gold_config_xml_substring)
 
     # oracle
