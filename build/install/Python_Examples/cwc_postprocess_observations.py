@@ -90,7 +90,7 @@ def mergeObservation(observations, next_observation):
 
     return observations
 
-def postprocess(observations):
+def postprocess(observations, legacy):
     print "postprocessing ..."
     chat_history = []
     string_to_write = ""
@@ -98,23 +98,26 @@ def postprocess(observations):
         if observation.get("ChatHistory") is not None:
             chat_history += observation["ChatHistory"]
         observation["ChatHistory"] = copy.deepcopy(chat_history)
-        recordGridCoordinates(observation)
-        string_to_write = writeToString(observation, string_to_write)
+        recordGridCoordinates(observation, legacy)
+        string_to_write = writeToString(observation, string_to_write, legacy)
 
     return string_to_write
 
 # Records the blocks in the builder's grid, separated by outside vs. inside blocks. Also calculates their perspective coordinates.
 # Appends these block information, as well as the chat history, to the world state JSON.
-def recordGridCoordinates(observation):
+def recordGridCoordinates(observation, legacy):
     if observation.get(u'BuilderGridAbsolute') is None or observation.get(u'BuilderPosition') is None:
         print "\tWARNING: Something went wrong... the builder", "grid" if observation.get(u'BuilderGridAbsolute') is None else "position", "is missing. Aborting recording grid coordinates for this observation."
-        observation["BlocksOutside"] = []
-        observation["BlocksInside"]  = []
+        if legacy:
+            observation["BlocksOutside"] = []
+            observation["BlocksInside"] = []
+        else:
+            observation["BlocksInGrid"]  = []
         return 
 
     grid_absolute, grid_relative = observation.pop("BuilderGridAbsolute"), observation.pop("BuilderGridRelative")
     yaw, pitch = observation["BuilderPosition"]["Yaw"], observation["BuilderPosition"]["Pitch"]
-    blocks_inside, blocks_outside = [], []
+    blocks_in_grid, blocks_outside, blocks_inside = [], [], []
     for i in range(len(grid_absolute)):
         block_absolute = grid_absolute[i]
         block_relative = grid_relative[i]
@@ -123,14 +126,21 @@ def recordGridCoordinates(observation):
         (px, py, pz) = getPerspectiveCoordinates(block_relative["X"], block_relative["Y"], block_relative["Z"], yaw, pitch)
 
         block_info = {"Type": block_relative["Type"], "AbsoluteCoordinates": {"X": ax, "Y": ay, "Z": az}, "PerspectiveCoordinates": {"X": px, "Y": py, "Z": pz}}
-        outside = ax < mission_utils.x_min_build or ax > mission_utils.x_max_build or ay < mission_utils.y_min_build or ay > mission_utils.y_max_build or az < mission_utils.z_min_build or az > mission_utils.z_max_build
-        blocks_outside.append(block_info) if outside else blocks_inside.append(block_info)
 
-    observation["BlocksOutside"] = blocks_outside
-    observation["BlocksInside"] = blocks_inside
+        if legacy:
+            outside = ax < mission_utils.x_min_build or ax > mission_utils.x_max_build or ay < mission_utils.y_min_build or ay > mission_utils.y_max_build or az < mission_utils.z_min_build or az > mission_utils.z_max_build
+            blocks_outside.append(block_info) if outside else blocks_inside.append(block_info)
+        else:
+            blocks_in_grid.append(block_info)
+
+    if legacy:
+        observation["BlocksOutside"] = blocks_outside
+        observation["BlocksInside"] = blocks_inside
+    else:
+        observation["BlocksInGrid"] = blocks_in_grid
 
 # Generates a string representation of the world state JSON's contents and adds it to the string to be written.
-def writeToString(observation, string_to_write):
+def writeToString(observation, string_to_write, legacy):
     def getStringValueAndFix(observation, key):
         try:
             value = observation[key]
@@ -154,22 +164,29 @@ def writeToString(observation, string_to_write):
         for utterance in observation["ChatHistory"]:
             string_to_write += "\t"+utterance+"\n"
     
-    string_to_write += "\n[Builder Inventory]"
+    string_to_write += "\n[Builder Inventory]\n"
     if getStringValueAndFix(observation, "BuilderInventory") == "None":
         string_to_write += "\tNone\n"
     else:
         for block in observation["BuilderInventory"]:
             string_to_write += "\tType: "+getStringValueAndFix(block, "Type")+" Index: "+getStringValueAndFix(block, "Index")+" Quantity: "+getStringValueAndFix(block, "Quantity")+"\n"
     
-    string_to_write += "\n[Blocks Inside]\n"
-    for block in observation["BlocksInside"]:
-        string_to_write += "\tType: "+block["Type"]+"  Absolute (x, y, z): ("+str(block["AbsoluteCoordinates"]["X"])+", "+str(block["AbsoluteCoordinates"]["Y"])+", "+str(block["AbsoluteCoordinates"]["Z"]) + \
-               ")  Perspective (x, y, z): "+str(block["PerspectiveCoordinates"]["X"])+", "+str(block["PerspectiveCoordinates"]["Y"])+", "+str(block["PerspectiveCoordinates"]["Z"])+")\n"
+    if legacy:
+        string_to_write += "\n[Blocks Inside]\n"
+        for block in observation["BlocksInside"]:
+            string_to_write += "\tType: "+block["Type"]+"  Absolute (x, y, z): ("+str(block["AbsoluteCoordinates"]["X"])+", "+str(block["AbsoluteCoordinates"]["Y"])+", "+str(block["AbsoluteCoordinates"]["Z"]) + \
+                ")  Perspective (x, y, z): "+str(block["PerspectiveCoordinates"]["X"])+", "+str(block["PerspectiveCoordinates"]["Y"])+", "+str(block["PerspectiveCoordinates"]["Z"])+")\n"
     
-    string_to_write += "\n[Blocks Outside]\n"
-    for block in observation["BlocksOutside"]:
-        string_to_write += "\tType: "+block["Type"]+"  Absolute (x, y, z): ("+str(block["AbsoluteCoordinates"]["X"])+", "+str(block["AbsoluteCoordinates"]["Y"])+", "+str(block["AbsoluteCoordinates"]["Z"]) + \
-               ")  Perspective (x, y, z): "+str(block["PerspectiveCoordinates"]["X"])+", "+str(block["PerspectiveCoordinates"]["Y"])+", "+str(block["PerspectiveCoordinates"]["Z"])+")\n"
+        string_to_write += "\n[Blocks Outside]\n"
+        for block in observation["BlocksOutside"]:
+            string_to_write += "\tType: "+block["Type"]+"  Absolute (x, y, z): ("+str(block["AbsoluteCoordinates"]["X"])+", "+str(block["AbsoluteCoordinates"]["Y"])+", "+str(block["AbsoluteCoordinates"]["Z"]) + \
+                ")  Perspective (x, y, z): "+str(block["PerspectiveCoordinates"]["X"])+", "+str(block["PerspectiveCoordinates"]["Y"])+", "+str(block["PerspectiveCoordinates"]["Z"])+")\n"
+
+    else:
+        string_to_write += "\n[Blocks In Grid]\n"
+        for block in observation["BlocksInGrid"]:
+            string_to_write += "\tType: "+block["Type"]+"  Absolute (x, y, z): ("+str(block["AbsoluteCoordinates"]["X"])+", "+str(block["AbsoluteCoordinates"]["Y"])+", "+str(block["AbsoluteCoordinates"]["Z"]) + \
+                ")  Perspective (x, y, z): "+str(block["PerspectiveCoordinates"]["X"])+", "+str(block["PerspectiveCoordinates"]["Y"])+", "+str(block["PerspectiveCoordinates"]["Z"])+")\n"
     
     return string_to_write
 
@@ -177,6 +194,7 @@ def main():
     parser = argparse.ArgumentParser(description="Postprocess all raw observation files recursively within a given directory.")
     parser.add_argument("observations_dir", nargs="?", default=".", help="Directory within which to search for raw observation files")
     parser.add_argument("--verbose", default=False, action="store_true", help="Print observations to console as they are written")
+    parser.add_argument("--legacy", default=False, action="store_true", help="Legacy version of script for missions involving blocks inside/outside builder's grid (requiring pickup)")
     args = parser.parse_args()
 
     observation_files = [y for x in os.walk(args.observations_dir) for y in glob(os.path.join(x[0], '*raw-observations.json'))]
@@ -196,8 +214,12 @@ def main():
 
         reformatted = reformatObservations(observations.get("WorldStates"))
         merged = mergeObservations(reformatted)
-        string_to_write = postprocess(merged)
-        string_to_write += "\nTime elapsed: "+str(observations.get("TimeElapsed"))+" s"
+        string_to_write = postprocess(merged, args.legacy)
+
+        time_elapsed = observations.get("TimeElapsed")
+        m, s = divmod(time_elapsed, 60)
+        h, m = divmod(m, 60)
+        string_to_write += "\nTime elapsed: %d:%02d:%02d (%.2fs)\n" % (h, m, s, time_elapsed)
         observations["WorldStates"] = merged
 
         print "\nDone.", 
