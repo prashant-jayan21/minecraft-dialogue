@@ -222,15 +222,18 @@ def main():
         string_to_write += "\nTime elapsed: %d:%02d:%02d (%.2fs)\n" % (h, m, s, time_elapsed)
         observations["WorldStates"] = merged
 
+        logfile_path = observation_file_path.split("/")[:-1]
+        print "\nWriting postprocessed JSON to:", logfile_path+"postprocessed-observations.json"
+        with open(logfile_path+"postprocessed-observations.json", "w") as log:
+            json.dump(observations, log)
+
+        # todo: call aligner here
+
         print "\nDone.", 
         if args.verbose:
             debug_utils.prettyPrintString(string_to_write)
             print 20*"-"
         print
-
-        print "Writing postprocessed JSON to:", observation_file_path.replace("raw-","")
-        with open(observation_file_path.replace("raw-",""), "w") as log:
-            json.dump(observations, log)
 
         print "Writing human-readable log to:", observation_file_path.replace("raw-observations.json","log.txt")
         log = open(observation_file_path.replace("raw-observations.json","log.txt"), "w")
