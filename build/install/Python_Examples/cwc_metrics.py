@@ -21,7 +21,7 @@ def process_observations_legacy(logs_dir): # TODO: Phase this out eventually
                 json.dump(metrics_dict, metrics)
 
 def process_observations(logs_dir):
-    metrics_dict = get_all_metrics(join(logs_dir, "observations.json")) # FIXME: Change this later to final json name
+    metrics_dict = get_all_metrics(join(logs_dir, "aligned-observations.json"))
 
     with open(join(logs_dir, "metrics.json"), "w") as metrics:
         json.dump(metrics_dict, metrics)
