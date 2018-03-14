@@ -63,7 +63,7 @@ def align(all_screenshot_filenames, num_fixed_viewers):
         fixed_viewer = "FixedViewer" + str(i+1)
         aligned_pairs_af.append(get_aligned_pairs(grouping, "Architect", fixed_viewer))
 
-    all_aligned_pairs = aligned_pairs_ab + aligned_pairs_af
+    all_aligned_pairs = [aligned_pairs_ab] + aligned_pairs_af
 
     def merge(list_1, list_2):
         merged_tuples = []
