@@ -224,21 +224,21 @@ def main():
         string_to_write += "\nTime elapsed: %d:%02d:%02d (%.2fs)\n" % (h, m, s, time_elapsed)
         observations["WorldStates"] = merged
 
-        logfile_path = os.path.split(observation_file_path)[0]
-        print "\nWriting postprocessed JSON to:", os.path.join(logfile_path, "postprocessed-observations.json")
-        with open(os.path.join(logfile_path, "postprocessed-observations.json"), "w") as log:
-            json.dump(observations, log)
+        logs_dir = os.path.split(observation_file_path)[0]
+        print "\nWriting postprocessed JSON to:", os.path.join(logs_dir, "postprocessed-observations.json")
+        with open(os.path.join(logs_dir, "postprocessed-observations.json"), "w") as postprocessed_observations:
+            json.dump(observations, postprocessed_observations)
 
-        screenshots_dir = os.path.join(args.screenshots_dir, os.path.split(logfile_path)[1])
-        all_filenames = filter(lambda x: x.endswith(".png"), os.listdir(screenshots_dir))
+        screenshots_dir = os.path.join(args.screenshots_dir, os.path.split(logs_dir)[1])
+        all_screenshot_filenames = filter(lambda x: x.endswith(".png"), os.listdir(screenshots_dir))
         num_fixed_viewers = observations["NumFixedViewers"]
 
-        aligned_tuples = align(all_filenames, num_fixed_viewers)
+        aligned_tuples = align(all_screenshot_filenames, num_fixed_viewers)
         observations_aligned = add_other_screenshots(observations, aligned_tuples, num_fixed_viewers)
 
-        print "\nWriting postprocessed AND aligned JSON to:", os.path.join(logfile_path, "aligned-observations.json")
-        with open(os.path.join(logfile_path, "aligned-observations.json"), "w") as observations_processed:
-            json.dump(observations_aligned, observations_processed)
+        print "\nWriting postprocessed AND aligned JSON to:", os.path.join(logs_dir, "aligned-observations.json")
+        with open(os.path.join(logs_dir, "aligned-observations.json"), "w") as aligned_observations:
+            json.dump(observations_aligned, aligned_observations)
 
         print "\nDone.",
         if args.verbose:
@@ -246,8 +246,8 @@ def main():
             print 20*"-"
         print
 
-        print "Writing human-readable log to:", observation_file_path.replace("raw-observations.json","log.txt")
-        log = open(observation_file_path.replace("raw-observations.json","log.txt"), "w")
+        print "Writing human-readable log to:", os.path.join(logs_dir, "log.txt")
+        log = open(os.path.join(logs_dir, "log.txt"), "w")
         log.write(string_to_write)
         log.close()
 
