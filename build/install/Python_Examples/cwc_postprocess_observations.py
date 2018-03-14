@@ -1,6 +1,7 @@
 import os, argparse, json, copy
 import numpy as np
 import cwc_mission_utils as mission_utils, cwc_debug_utils as debug_utils
+from cwc_aligner import align, add_other_screenshots
 from glob import glob
 
 def getPerspectiveCoordinates(x, y, z, yaw, pitch):
@@ -113,7 +114,7 @@ def recordGridCoordinates(observation, legacy):
             observation["BlocksInside"] = []
         else:
             observation["BlocksInGrid"]  = []
-        return 
+        return
 
     grid_absolute, grid_relative = observation.pop("BuilderGridAbsolute"), observation.pop("BuilderGridRelative")
     yaw, pitch = observation["BuilderPosition"]["Yaw"], observation["BuilderPosition"]["Pitch"]
@@ -151,32 +152,32 @@ def writeToString(observation, string_to_write, legacy):
         return str(value)
 
     string_to_write += "\n"+"-"*20+"\n[Timestamp] "+getStringValueAndFix(observation, "Timestamp")
-    string_to_write += "\n[Builder Position] (x, y, z): ("+("None" if getStringValueAndFix(observation, "BuilderPosition") == "None" else 
+    string_to_write += "\n[Builder Position] (x, y, z): ("+("None" if getStringValueAndFix(observation, "BuilderPosition") == "None" else
            getStringValueAndFix(observation["BuilderPosition"], "X") + ", "+getStringValueAndFix(observation["BuilderPosition"], "Y")+", "+getStringValueAndFix(observation["BuilderPosition"], "Z")+") " + \
            "(yaw, pitch): ("+getStringValueAndFix(observation["BuilderPosition"], "Yaw")+", "+getStringValueAndFix(observation["BuilderPosition"], "Pitch"))
 
     string_to_write += ")\n[Screenshot Path] "+getStringValueAndFix(observation, "ScreenshotPath")
-    
+
     string_to_write += "\n\n[Chat Log]\n"
     if getStringValueAndFix(observation, "ChatHistory") == "None":
         string_to_write += "\tNone\n"
     else:
         for utterance in observation["ChatHistory"]:
             string_to_write += "\t"+utterance+"\n"
-    
+
     string_to_write += "\n[Builder Inventory]\n"
     if getStringValueAndFix(observation, "BuilderInventory") == "None":
         string_to_write += "\tNone\n"
     else:
         for block in observation["BuilderInventory"]:
             string_to_write += "\tType: "+getStringValueAndFix(block, "Type")+" Index: "+getStringValueAndFix(block, "Index")+" Quantity: "+getStringValueAndFix(block, "Quantity")+"\n"
-    
+
     if legacy:
         string_to_write += "\n[Blocks Inside]\n"
         for block in observation["BlocksInside"]:
             string_to_write += "\tType: "+block["Type"]+"  Absolute (x, y, z): ("+str(block["AbsoluteCoordinates"]["X"])+", "+str(block["AbsoluteCoordinates"]["Y"])+", "+str(block["AbsoluteCoordinates"]["Z"]) + \
                 ")  Perspective (x, y, z): "+str(block["PerspectiveCoordinates"]["X"])+", "+str(block["PerspectiveCoordinates"]["Y"])+", "+str(block["PerspectiveCoordinates"]["Z"])+")\n"
-    
+
         string_to_write += "\n[Blocks Outside]\n"
         for block in observation["BlocksOutside"]:
             string_to_write += "\tType: "+block["Type"]+"  Absolute (x, y, z): ("+str(block["AbsoluteCoordinates"]["X"])+", "+str(block["AbsoluteCoordinates"]["Y"])+", "+str(block["AbsoluteCoordinates"]["Z"]) + \
@@ -187,12 +188,13 @@ def writeToString(observation, string_to_write, legacy):
         for block in observation["BlocksInGrid"]:
             string_to_write += "\tType: "+block["Type"]+"  Absolute (x, y, z): ("+str(block["AbsoluteCoordinates"]["X"])+", "+str(block["AbsoluteCoordinates"]["Y"])+", "+str(block["AbsoluteCoordinates"]["Z"]) + \
                 ")  Perspective (x, y, z): "+str(block["PerspectiveCoordinates"]["X"])+", "+str(block["PerspectiveCoordinates"]["Y"])+", "+str(block["PerspectiveCoordinates"]["Z"])+")\n"
-    
+
     return string_to_write
 
 def main():
     parser = argparse.ArgumentParser(description="Postprocess all raw observation files recursively within a given directory.")
     parser.add_argument("observations_dir", nargs="?", default=".", help="Directory within which to search for raw observation files")
+    parser.add_argument("screenshots_dir", help="Directory within which to search for screenshots")
     parser.add_argument("--verbose", default=False, action="store_true", help="Print observations to console as they are written")
     parser.add_argument("--legacy", default=False, action="store_true", help="Legacy version of script for missions involving blocks inside/outside builder's grid (requiring pickup)")
     args = parser.parse_args()
@@ -222,21 +224,30 @@ def main():
         string_to_write += "\nTime elapsed: %d:%02d:%02d (%.2fs)\n" % (h, m, s, time_elapsed)
         observations["WorldStates"] = merged
 
-        logfile_path = observation_file_path.split("/")[:-1]
-        print "\nWriting postprocessed JSON to:", logfile_path+"postprocessed-observations.json"
-        with open(logfile_path+"postprocessed-observations.json", "w") as log:
-            json.dump(observations, log)
+        logs_dir = os.path.split(observation_file_path)[0]
+        print "\nWriting postprocessed JSON to:", os.path.join(logs_dir, "postprocessed-observations.json")
+        with open(os.path.join(logs_dir, "postprocessed-observations.json"), "w") as postprocessed_observations:
+            json.dump(observations, postprocessed_observations)
 
-        # todo: call aligner here
+        screenshots_dir = os.path.join(args.screenshots_dir, os.path.split(logs_dir)[1])
+        all_screenshot_filenames = filter(lambda x: x.endswith(".png"), os.listdir(screenshots_dir))
+        num_fixed_viewers = observations["NumFixedViewers"]
 
-        print "\nDone.", 
+        aligned_tuples = align(all_screenshot_filenames, num_fixed_viewers)
+        observations_aligned = add_other_screenshots(observations, aligned_tuples, num_fixed_viewers)
+
+        print "\nWriting postprocessed AND aligned JSON to:", os.path.join(logs_dir, "aligned-observations.json")
+        with open(os.path.join(logs_dir, "aligned-observations.json"), "w") as aligned_observations:
+            json.dump(observations_aligned, aligned_observations)
+
+        print "\nDone.",
         if args.verbose:
             debug_utils.prettyPrintString(string_to_write)
             print 20*"-"
         print
 
-        print "Writing human-readable log to:", observation_file_path.replace("raw-observations.json","log.txt")
-        log = open(observation_file_path.replace("raw-observations.json","log.txt"), "w")
+        print "Writing human-readable log to:", os.path.join(logs_dir, "log.txt")
+        log = open(os.path.join(logs_dir, "log.txt"), "w")
         log.write(string_to_write)
         log.close()
 
