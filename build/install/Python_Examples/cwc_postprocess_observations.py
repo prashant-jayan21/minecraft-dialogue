@@ -193,8 +193,8 @@ def writeToString(observation, string_to_write, legacy):
 
 def main():
     parser = argparse.ArgumentParser(description="Postprocess all raw observation files recursively within a given directory.")
-    parser.add_argument("observations_dir", nargs="?", default=".", help="Directory within which to search for raw observation files")
-    parser.add_argument("screenshots_dir", help="Directory within which to search for screenshots")
+    parser.add_argument("observations_dir", nargs="?", default="./logs", help="Directory within which to search for raw observation files")
+    parser.add_argument("screenshots_dir", default="../../../Minecraft/run/screenshots", help="Directory within which to search for screenshots")
     parser.add_argument("--verbose", default=False, action="store_true", help="Print observations to console as they are written")
     parser.add_argument("--legacy", default=False, action="store_true", help="Legacy version of script for missions involving blocks inside/outside builder's grid (requiring pickup)")
     args = parser.parse_args()
@@ -205,9 +205,12 @@ def main():
             print "Encountered empty file", observation_file_path, "-- skipping."
             continue
 
-        if os.path.exists(observation_file_path.replace("raw-","")):
+        if os.path.exists(observation_file_path.replace("raw-","")) or (os.path.exists(observation_file_path.replace("raw-","postprocessed-")) and os.path.exists(observation_file_path.replace("raw-","aligned-"))):
             if args.verbose:
-                print "Postprocessed file already exists for path:", observation_file_path
+                if os.path.exists(observation_file_path.replace("raw-","")):
+                    print "Legacy postprocessed file already exists for path:", observation_file_path
+                else:
+                    print "Postprocessed and aligned files already exists for path:", observation_file_path
             continue
 
         print "\nReading", observation_file_path, "...",
