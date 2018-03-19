@@ -124,7 +124,9 @@ def cwc_run_mission(args):
     builder_ip, builder_port = args["builder_ip_addr"], args["builder_port"]
     architect_ip, architect_port = args["architect_ip_addr"], args["architect_port"]
     fixed_viewer_ip, fixed_viewer_port, num_fixed_viewers = args["fixed_viewer_ip_addr"], args["fixed_viewer_port"], args["num_fixed_viewers"]
+
     draw_inventory_blocks = args["draw_inventory_blocks"]
+    existing_is_gold = args["existing_is_gold"]
 
     # Create agent hosts:
     agent_hosts = []
@@ -164,8 +166,8 @@ def cwc_run_mission(args):
     experiment_id = player_ids + "-" + config_id + "-" + experiment_time
 
     # obtain xml substrings
-    gold_config_xml_substring = io_utils.readXMLSubstringFromFile(args["gold_config"])
-    existing_config_xml_substring = io_utils.readXMLSubstringFromFile(args["existing_config"])
+    gold_config_xml_substring = io_utils.readXMLSubstringFromFile(args["gold_config"], False)
+    existing_config_xml_substring = io_utils.readXMLSubstringFromFile(args["existing_config"], existing_is_gold)
 
     # construct mission xml
     missionXML = generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_viewers, draw_inventory_blocks)

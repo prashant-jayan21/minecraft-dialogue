@@ -7,9 +7,10 @@ if __name__ == "__main__":
     parser.add_argument("user_info_csv", help="File path of the spreadsheet (.csv) containing user info")
     parser.add_argument("configs_csv", help="File path of the spreadsheet (.csv) containing all gold, existing config file paths")
     parser.add_argument("--fixed_viewer_csv", default=None, help="File path of the spreadsheet (.csv) containing all IP addresses of the Fixed Viewer clients")
-    parser.add_argument("--num_fixed_viewers", type=int, default=4, help="Number of fixed viewer clients per mission")
+    parser.add_argument("--num_fixed_viewers", type=int, default=0, help="Number of fixed viewer clients per mission")
     parser.add_argument("--lan", default=False, action="store_true", help="LAN mode")
     parser.add_argument("--draw_inventory_blocks", action="store_true", help="Starts the mission with inventory blocks on the ground")
+    parser.add_argument("--existing_is_gold", action="store_true", help="Indicates existing configs are actually gold configs and need to be displaced")
     args = parser.parse_args()
 
     # Read user info from spreadsheet
@@ -77,7 +78,8 @@ if __name__ == "__main__":
             "fixed_viewer_ip_addr": None if fixed_viewer is None or args.num_fixed_viewers == 0 else fixed_viewer["ip address"],
             "fixed_viewer_port": fixed_viewer_port,
             "num_fixed_viewers": args.num_fixed_viewers,
-            "draw_inventory_blocks": args.draw_inventory_blocks
+            "draw_inventory_blocks": args.draw_inventory_blocks,
+            "existing_is_gold": args.existing_is_gold
         }
 
         # submit mission jobs to process pool

@@ -1,12 +1,15 @@
 import os, json
 
-def readXMLSubstringFromFile(xml_filename):
+def readXMLSubstringFromFile(xml_filename, displaced):
     config_xml_substring = ""
     if xml_filename is not None and len(xml_filename) > 0:
         print "Reading XML file", xml_filename
         config_file = open(xml_filename, "r")
         config_xml_substring = config_file.read()
         config_file.close()
+
+    if displaced:
+        fixed = None
 
     return config_xml_substring
 
@@ -25,3 +28,16 @@ def writeJSONtoLog(experiment_id, filename, json_data):
     print "Writing", filename, "to", experiment_log, "..."
     with open(experiment_log+"/"+filename, "w") as log:
         json.dump(json_data, log)
+
+def getLogfileNames(arglist, suffix):
+    filenames = []
+    for path in arglist:
+        if path[-1] == '/':
+            path = path[:-1]
+
+        if os.path.isdir(path):
+            filenames.append(path+"/"+suffix)
+        else:
+            filenames.append(path)
+
+    return filenames

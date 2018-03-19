@@ -1,14 +1,5 @@
-import os, argparse, json
-
-def getLogfileNames(arglist):
-	filenames = []
-	for path in arglist:
-		if os.path.isdir(path):
-			filenames.append(path+"aligned-observations.json")
-		else:
-			filenames.append(path)
-
-	return filenames
+import os, argparse, json, re
+from cwc_io_utils import getLogfileNames
 
 def generateTexfile(logfiles, output, screenshots_dir):
 	if not output.endswith(".tex"):
@@ -23,7 +14,8 @@ def generateTexfile(logfiles, output, screenshots_dir):
 			observations = json.load(f)
 
 		experiment_name = logfile.split("/")[-2]
-		outfile.write("\chapter{"+experiment_name+"}\n\\newpage\n\n")
+		m = re.search('B[0-9]+\-A[0-9]+\-([A-z\-]+)\-[0-9]+', experiment_name)
+		outfile.write("\chapter{"+(m.group(1).replace("_","\\textunderscore ") if m else experiment_name)+"}\n\\newpage\n\n")
 
 		world_states = observations["WorldStates"]
 		final_observation = world_states[-1]
@@ -42,7 +34,7 @@ def generateTexfile(logfiles, output, screenshots_dir):
 				outfile.write("\\clearpage\n\n")
 				break
 
-		outfile.write("\section{Final Dialogue}\n")
+		outfile.write("\section{Dialogue}\n")
 		outfile.write("\\begin{lstlisting}\n")
 		for i in range(len(final_observation["ChatHistory"])):
 			outfile.write(final_observation["ChatHistory"][i]+"\n")
@@ -59,7 +51,8 @@ def generateTexfile(logfiles, output, screenshots_dir):
 			if "-chat" not in builder_ss and "-chat" not in architect_ss:
 				fixed_viewers_ss = getFixedViewerScreenshots(screenshots_dir, experiment_name, screenshots, observations["NumFixedViewers"])
 
-			if getActionType(screenshots, observations["NumFixedViewers"]) == "None":
+			action = getActionType(screenshots, observations["NumFixedViewers"]) 
+			if action is None:
 				continue
 
 			outfile.write("\\begin{figure}[!ht]\n\t\centering\n")
@@ -69,14 +62,14 @@ def generateTexfile(logfiles, output, screenshots_dir):
 			for i in range(len(fixed_viewers_ss)):
 				outfile.write("\t\\begin{subfigure}[b]{0.45\\textwidth}\n\t\t\includegraphics[width=\\textwidth]{"+fixed_viewers_ss[i]+"}\n\t\t\caption{FixedViewer"+str(i+1)+"}\n\t\end{subfigure}\n")
 
-			outfile.write("\t\caption{"+getActionType(screenshots, observations["NumFixedViewers"])+"}\n")
+			outfile.write("\t\caption{"+action+"}\n")
 			outfile.write("\end{figure}\n\n")
 
 			outfile.write("\\begin{lstlisting}\n")
 			for i in range(max(len(chat_history)-5, 0), len(chat_history)):
 				outfile.write(chat_history[i]+"\n")
 
-			if "chat" in getActionType(screenshots, observations["NumFixedViewers"]):
+			if "chat" in action:
 				if len(world_state["ChatHistory"]) > len(chat_history):
 					for i in range(len(chat_history), len(world_state["ChatHistory"])):
 						outfile.write("* "+world_state["ChatHistory"][i]+"\n")
@@ -87,9 +80,11 @@ def generateTexfile(logfiles, output, screenshots_dir):
 			outfile.write("\\clearpage\n\n")
 
 	outfile.write("\end{document}")
+	outfile.close()
 
 def getScreenshotFilePath(screenshots_dir, experiment_name, file_path):
-	return "blank.png" if file_path is None else screenshots_dir+"/"+experiment_name+"/"+file_path
+	screenshot_path = None if file_path is None else screenshots_dir+"/"+experiment_name+"/"+file_path
+	return "blank.png" if file_path is None or not os.path.exists(screenshot_path) else screenshot_path
 
 def getFixedViewerScreenshots(screenshots_dir, experiment_name, screenshots, num_fixed_viewers):
 	fixed_viewers_ss = []
@@ -106,7 +101,7 @@ def getActionType(screenshots, num_fixed_viewers):
 		if screenshots.get("FixedViewer"+str(i+1)) is not None:
 			return screenshots.get("FixedViewer"+str(i+1)).split("-")[-1].replace(".png","")
 
-	return "None"
+	return None
 
 
 def main():
@@ -116,7 +111,10 @@ def main():
 	parser.add_argument('-s', '--screenshots_dir', default="../../../../Minecraft/run/screenshots", help="Screenshots directory path")
 	args = parser.parse_args()
 
-	logfiles = getLogfileNames(args.list)
+	if args.screenshots_dir[-1] == '/':
+		args.screenshots_dir = args.screenshots_dir[:-1]
+
+	logfiles = getLogfileNames(args.list, "aligned-observations.json")
 	generateTexfile(logfiles, args.output, args.screenshots_dir)
 
 if __name__ == '__main__':
