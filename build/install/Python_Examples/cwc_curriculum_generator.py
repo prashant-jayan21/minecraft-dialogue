@@ -1,6 +1,32 @@
 import csv
 import pprint
 
+def generate_curriculums(database, type_counts, people_pairs):
+    """
+    Args:
+        database: Base data
+        type_counts: List of dicts containing number of simple and complex configs for each people pair
+        people_pairs: List of people pairs
+
+    Returns:
+        A list of curriculums
+    """
+
+    people_pairs_and_type_counts = zip(people_pairs, type_counts)
+    curriculums = []
+
+    for (people_pair, type_count) in people_pairs_and_type_counts:
+        curriculum = generate_curriculum(
+            database = database,
+            num_simple = type_count["num_simple"],
+            num_complex = type_count["num_complex"],
+            person_1 = people_pair[0],
+            person_2 = people_pair[1]
+        )
+        curriculums.append(curriculum)
+
+    return curriculums
+
 def generate_curriculum(database, num_simple, num_complex, person_1, person_2):
     """
     Args:
@@ -12,6 +38,7 @@ def generate_curriculum(database, num_simple, num_complex, person_1, person_2):
 
     Returns:
         A dict with a curriculum of configurations and the updated database
+        Also updates database
     """
 
     # split simple and complex configs into two sets
@@ -38,10 +65,7 @@ def generate_curriculum(database, num_simple, num_complex, person_1, person_2):
             config["runs"] += 1
             config["people"] = config["people"] + [person_1, person_2]
 
-    return {
-        "curriculum": curriculum,
-        "database": database
-    }
+    return curriculum
 
 def read_database(database_file):
     all_configs = []
