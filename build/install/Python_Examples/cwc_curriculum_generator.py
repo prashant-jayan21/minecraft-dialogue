@@ -1,27 +1,25 @@
 import csv
 import pprint
+import argparse
 
-def generate_curriculums(database, type_counts, people_pairs):
+def generate_curriculums(database, people_specs):
     """
     Args:
         database: Base data
-        type_counts: List of dicts containing number of simple and complex configs for each people pair
-        people_pairs: List of people pairs
+        people_specs: List of dicts containing people pairs and number of simple and complex configs for each people pair
 
     Returns:
         A list of curriculums
     """
-
-    people_pairs_and_type_counts = zip(people_pairs, type_counts)
     curriculums = []
 
-    for (people_pair, type_count) in people_pairs_and_type_counts:
+    for people_pair_specs in people_specs:
         curriculum = generate_curriculum(
             database = database,
-            num_simple = type_count["num_simple"],
-            num_complex = type_count["num_complex"],
-            person_1 = people_pair[0],
-            person_2 = people_pair[1]
+            num_simple = people_pair_specs["num_simple"],
+            num_complex = people_pair_specs["num_complex"],
+            person_1 = people_pair_specs["person_1"],
+            person_2 = people_pair_specs["person_2"]
         )
         curriculums.append(curriculum)
 
@@ -77,3 +75,43 @@ def read_database(database_file):
             all_configs.append(row)
 
     return all_configs
+
+def read_people_specs(people_specs_file):
+    all_people_specs = []
+    with open(people_specs_file, 'rb') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            for key in row:
+                row[key] = int(row[key])
+            all_people_specs.append(row)
+
+    return all_people_specs
+
+def write_curriculums(curriculums, people_specs):
+    i = 0
+    for (curriculum, people_pair_specs) in zip(curriculums, people_specs):
+        i += 1
+        with open('curriculum_' + str(i) + '.csv', 'w') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames = ['gold file path', 'existing file path'])
+            writer.writeheader()
+            for config in curriculum:
+                writer.writerow({'gold file path': 'gold-configurations/' + config, 'existing file path': ''})
+            print "DONE WRITING " + 'curriculum_' + str(i) + '.csv' + " FOR PEOPLE PAIR " + str(people_pair_specs["person_1"]) + ", " + str(people_pair_specs["person_2"])
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Generate gold config curriculums for builder/architect pairs")
+    parser.add_argument("database_csv", help="File path of the spreadsheet (.csv) containing gold config info")
+    parser.add_argument("people_specs_csv", help="File path of the spreadsheet (.csv) containing all people specs for a session")
+    args = parser.parse_args()
+
+    # read database file
+    database = read_database(args.database_csv)
+
+    # read people specs file
+    people_specs = read_people_specs(args.people_specs_csv)
+
+    # generate curriculums
+    curriculums = generate_curriculums(database, people_specs)
+
+    # write curriculums to files
+    write_curriculums(curriculums, people_specs)
