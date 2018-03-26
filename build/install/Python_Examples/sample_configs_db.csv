@@ -6,3 +6,5 @@ g.xml,complex,2,4
 hi.xml,simple,2,5 6
 j.xml,complex,11,5 6
 klm.xml,complex,9,7 8 9
+nop.xml,warmup,0,4
+qr.xml,warmup,1,1 2
