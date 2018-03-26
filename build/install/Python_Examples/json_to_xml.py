@@ -17,7 +17,7 @@ def main():
 	gf = "gold-configurations/"+ (gfn.replace(".json","") if args.config_name is None else args.config_name)+".xml"
 	gold = open(gf, 'w')
 
-	conf = log["WorldStates"][len(log["WorldStates"])-1]["BlocksInside"]
+	conf = log["WorldStates"][len(log["WorldStates"])-1]["BlocksInGrid"]
 	for block in conf:
 		bt = str(block["Type"])
 		bx = str(block["AbsoluteCoordinates"]["X"]+args.displacement)
