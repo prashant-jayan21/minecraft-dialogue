@@ -28,8 +28,11 @@ def add_other_screenshots(json, aligned_tuples, num_fixed_viewers):
     all_states_processed = []
 
     for state in all_states:
-        builder_screenshot = state["ScreenshotPath"] # FIXME: Test for when this is a None
-        other_screenshots = get_other_screenshots(builder_screenshot, aligned_tuples)
+        builder_screenshot = state["ScreenshotPath"]
+        if builder_screenshot is None:
+            other_screenshots = None
+        else:
+            other_screenshots = get_other_screenshots(builder_screenshot, aligned_tuples)
         del state["ScreenshotPath"]
         state["Screenshots"] = {}
         state["Screenshots"]["Builder"] = builder_screenshot
@@ -37,6 +40,10 @@ def add_other_screenshots(json, aligned_tuples, num_fixed_viewers):
             state["Screenshots"]["Architect"] = other_screenshots[0]
             for i in range(num_fixed_viewers):
                  state["Screenshots"]["FixedViewer" + str(i+1)] = other_screenshots[i+1]
+        else:
+            state["Screenshots"]["Architect"] = None
+            for i in range(num_fixed_viewers):
+                 state["Screenshots"]["FixedViewer" + str(i+1)] = None
 
         all_states_processed.append(state)
 
