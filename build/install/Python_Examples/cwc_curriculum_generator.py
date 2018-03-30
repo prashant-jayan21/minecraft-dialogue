@@ -56,7 +56,7 @@ def generate_curriculum(configs_db, num_simple, num_complex, person_1, person_2)
     elif not person_1_played_before and person_2_played_before:
         warmup_config = [get_warmup_config(person_2)] # select any warmup config that person 2 hasn't seen before
     elif not person_1_played_before and not person_2_played_before:
-        warmup_config = [x for x in configs_db if x["type"] == "warmup"][0] # select any warmup config
+        warmup_config = [[x for x in configs_db if x["type"] == "warmup"][0]] # select any warmup config
     else:
         warmup_config = [] # skip warmup config altogther
 
