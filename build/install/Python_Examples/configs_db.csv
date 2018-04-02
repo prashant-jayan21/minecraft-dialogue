@@ -1,0 +1,19 @@
+configuration,type,runs,people
+bell.xml,complex,1,1 3
+black-hole.xml,complex,1,1 3
+blue-original-L.xml,warmup,1,1 3
+flower_new.xml,simple,1,1 3
+overlapping-chain-links.xml,complex,1,1 3
+rectangle-chain.xml,complex,1,1 3
+table2.xml,simple,1,1 3
+asterisk.xml,complex,1,2 3
+broken_heart.xml,complex,1,2 3
+diagonal-Ls.xml,complex,1,2 3
+diagonal-zigzag.xml,simple,1,2 3
+double_stairs.xml,complex,1,2 3
+orange-flat-original-L.xml,warmup,1,2 3
+overlapping-reticles.xml,complex,1,2 3
+slide_with_arch.xml,complex,1,2 3
+smiley.xml,simple,1,2 3
+suspension_bridge.xml,complex,1,2 3
+cup.xml,complex,0,2 3
