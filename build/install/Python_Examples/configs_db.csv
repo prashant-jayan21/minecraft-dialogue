@@ -1,44 +1,44 @@
 configuration,type,runs,people
-bell.xml,complex,1,1 3
-black-hole.xml,complex,1,1 3
-blue-original-L.xml,warmup,1,1 3
-flower_new.xml,simple,1,1 3
-overlapping-chain-links.xml,complex,1,1 3
-rectangle-chain.xml,complex,1,1 3
-table2.xml,simple,1,1 3
-asterisk.xml,complex,1,2 3
-broken_heart.xml,complex,1,2 3
-diagonal-Ls.xml,complex,1,2 3
-diagonal-zigzag.xml,simple,1,2 3
-double_stairs.xml,complex,1,2 3
-orange-flat-original-L.xml,warmup,1,2 3
-overlapping-reticles.xml,complex,1,2 3
-slide_with_arch.xml,complex,1,2 3
-smiley.xml,simple,1,2 3
-suspension_bridge.xml,complex,1,2 3
-cup.xml,complex,0,2 3
-3d-triangle.xml,simple,0,
-bigger-original-L.xml,warmup,0,
-complex_five.xml,simple,0,
-embedded_fives.xml,complex,0,
-l-shape.xml,warmup,0,
-multiple_concepts.xml,complex,0,
-rubiks.xml,simple,0,
+bell.xml,complex,1,1 3 40
+black-hole.xml,complex,1,1 3 40
+blue-original-L.xml,warmup,1,1 3 40
+flower_new.xml,simple,1,1 3 40
+overlapping-chain-links.xml,complex,1,1 3 40
+rectangle-chain.xml,complex,1,1 3 40
+table2.xml,simple,1,1 3 40
+asterisk.xml,complex,1,2 3 40
+broken_heart.xml,complex,1,2 3 40
+diagonal-Ls.xml,complex,1,2 3 40
+diagonal-zigzag.xml,simple,1,2 3 40
+double_stairs.xml,complex,1,2 3 40
+orange-flat-original-L.xml,warmup,1,2 3 40
+overlapping-reticles.xml,complex,1,2 3 40
+slide_with_arch.xml,complex,1,2 3 40
+smiley.xml,simple,1,2 3 40
+suspension_bridge.xml,complex,1,2 3 40
+cup.xml,complex,0,2 3 40
+3d-triangle.xml,simple,0,40
+bigger-original-L.xml,warmup,0,40
+complex_five.xml,simple,0,40
+embedded_fives.xml,complex,0,40
+l-shape.xml,warmup,0,40
+multiple_concepts.xml,complex,0,40
+rubiks.xml,simple,0,40
 u-3.xml,simple,0,
 wtf.xml,simple,0,
 staircase.xml,simple,0,
-creative-five.xml,complex,0,
-funny-cube.xml,complex,0,
+creative-five.xml,complex,0,40
+funny-cube.xml,complex,0,40
 cross-stack.xml,simple,0,
-3d-maze.xml,simple,0,
-duck.xml,simple,0,
-pickup_truck.xml,complex,0,
-sun_and_birds.xml,complex,0,
-chains.xml,complex,0,
-ducks_in_pool.xml,simple,0,
-torch.xml,simple,0,
-superhero.xml,complex,0,
-random_snake.xml,complex,0,
-sickles.xml,complex,0,
-street_lamps.xml,complex,0,
-girl_with_frock.xml,simple,0,
+3d-maze.xml,simple,0,40
+duck.xml,simple,0,40
+pickup_truck.xml,complex,0,40
+sun_and_birds.xml,complex,0,40
+chains.xml,complex,0,40
+ducks_in_pool.xml,simple,0,40
+torch.xml,simple,0,40
+superhero.xml,complex,0,40
+random_snake.xml,complex,0,40
+sickles.xml,complex,0,40
+street_lamps.xml,complex,0,40
+girl_with_frock.xml,simple,0,40
