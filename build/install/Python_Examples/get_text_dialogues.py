@@ -41,6 +41,7 @@ def writeDialogue(outfile, observations, experiment_name, screenshots_dir, with_
 		world_states = observations["WorldStates"]
 		last_world_state = None
 		dialogue = []
+		chat_history = []
 
 		for world_state in world_states:
 			screenshots = world_state["Screenshots"]
@@ -59,10 +60,12 @@ def writeDialogue(outfile, observations, experiment_name, screenshots_dir, with_
 				if last_world_state is None:
 					for i in range(len(world_state["ChatHistory"])):
 						dialogue.append(world_state["ChatHistory"][i].strip())
+						chat_history.append(world_state["ChatHistory"][i].strip())
 
 				elif len(world_state["ChatHistory"]) > len(last_world_state["ChatHistory"]):
 					for i in range(len(last_world_state["ChatHistory"]), len(world_state["ChatHistory"])):
 						dialogue.append(world_state["ChatHistory"][i].strip())
+						chat_history.append(world_state["ChatHistory"][i].strip())
 
 			else:
 				block = getMovedBlock(last_world_state, world_state, action)
@@ -70,6 +73,11 @@ def writeDialogue(outfile, observations, experiment_name, screenshots_dir, with_
 					btype = block["Type"].split("_")[-2]
 					bx, by, bz = str(block["AbsoluteCoordinates"]["X"]), str(block["AbsoluteCoordinates"]["Y"]), str(block["AbsoluteCoordinates"]["Z"])
 					dialogue.append("[Builder "+("picks up" if "pickup" in action else "puts down")+" a "+btype+" block at X:"+bx+" Y:"+by+" Z:"+bz+"]")
+
+				if len(chat_history) < len(world_state["ChatHistory"]):
+					for i in range(len(chat_history), len(world_state["ChatHistory"])):
+						dialogue.append(world_state["ChatHistory"][i].strip())
+						chat_history.append(world_state["ChatHistory"][i].strip())
 
 			last_world_state = world_state
 

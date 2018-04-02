@@ -18,7 +18,7 @@ def generateTexfile(logfiles, output, screenshots_dir, timestamps):
 			observations = json.load(f)
 
 		experiment_name = logfile.split("/")[-2]
-		m = re.search('B[0-9]+\-A[0-9]+\-([A-z\-]+)\-[0-9]+', experiment_name)
+		m = re.search('B[0-9]+\-A[0-9]+\-([A-z0-9\-]+)\-[0-9]+', experiment_name)
 		outfile.write("\chapter{"+(m.group(1).replace("_","\\textunderscore ") if m else experiment_name)+"}\n\\newpage\n\n")
 
 		world_states = observations["WorldStates"]
