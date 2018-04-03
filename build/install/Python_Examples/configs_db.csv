@@ -17,27 +17,27 @@ slide_with_arch.xml,complex,1,2 3 40
 smiley.xml,simple,1,2 3 40
 suspension_bridge.xml,complex,1,2 3 40
 cup.xml,complex,1,2 3 40 29 23
-duck.xml,simple,0,40
+duck.xml,simple,1,40 1 4
 sickles.xml,complex,1,40 29 23
 3d-triangle.xml,simple,1,40 29 23
 bigger-original-L.xml,warmup,0,40
 complex_five.xml,simple,1,40 20 4
-street_lamps.xml,complex,0,40
-embedded_fives.xml,complex,0,40
+street_lamps.xml,complex,1,40 1 4
+embedded_fives.xml,complex,1,40 1 4
 l-shape.xml,warmup,0,40
 cross-stack.xml,simple,1,20 4
 multiple_concepts.xml,complex,1,40 20 4
-rubiks.xml,simple,0,40
-girl_with_frock.xml,simple,0,40
-u-3.xml,simple,0,
+rubiks.xml,simple,1,40 1 4
+girl_with_frock.xml,simple,1,40 1 4
+u-3.xml,simple,1,1 4
 wtf.xml,simple,0,
 staircase.xml,simple,0,
 3d-x_s.xml,complex,1,40 20 4
 hut_and_trees.xml,complex,1,40 20 4
 funny-cube.xml,complex,1,40 20 4
-3d-diagonals.xml,complex,0,40
-sun_and_birds.xml,complex,0,40
-chains.xml,complex,0,40
+3d-diagonals.xml,complex,1,40 1 4
+sun_and_birds.xml,complex,1,40 1 4
+chains.xml,complex,1,40 1 4
 ducks_in_pool.xml,simple,0,40
 torch.xml,simple,0,40
 superhero.xml,complex,0,40
