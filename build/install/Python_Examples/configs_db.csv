@@ -5,8 +5,10 @@ blue-original-L.xml,warmup,4,1 3 40 29 23 20 4 7 11
 flower_new.xml,simple,1,1 3 40
 overlapping-chain-links.xml,complex,1,1 3 40
 rectangle-chain.xml,complex,1,1 3 40
+scissors.xml,complex,0,40
 table2.xml,simple,1,1 3 40
 asterisk.xml,complex,1,2 3 40
+concentric_semicircles.xml,complex,0,40
 broken_heart.xml,complex,1,2 3 40
 diagonal-Ls.xml,complex,1,2 3 40
 diagonal-zigzag.xml,simple,1,2 3 40
@@ -14,12 +16,14 @@ double_stairs.xml,complex,1,2 3 40
 orange-flat-original-L.xml,warmup,1,2 3 40
 overlapping-reticles.xml,complex,1,2 3 40
 slide_with_arch.xml,complex,1,2 3 40
+spectacles.xml,complex,0,40
 smiley.xml,simple,1,2 3 40
 suspension_bridge.xml,complex,1,2 3 40
 cup.xml,complex,1,2 3 40 29 23
 duck.xml,simple,1,40 1 4
 sickles.xml,complex,1,40 29 23
 3d-triangle.xml,simple,1,40 29 23
+hot.xml,complex,0,40
 bigger-original-L.xml,warmup,0,40
 complex_five.xml,simple,1,40 20 4
 street_lamps.xml,complex,1,40 1 4
@@ -29,6 +33,7 @@ cross-stack.xml,simple,1,20 4
 multiple_concepts.xml,complex,1,40 20 4
 rubiks.xml,simple,1,40 1 4
 girl_with_frock.xml,simple,1,40 1 4
+hollow_diseased_rectangle.xml,complex,0,40
 u-3.xml,simple,1,1 4
 wtf.xml,simple,1,7 11
 staircase.xml,simple,1,7 11
@@ -41,8 +46,10 @@ chains.xml,complex,1,40 1 4
 ducks_in_pool.xml,simple,1,40 7 11
 torch.xml,simple,1,40 7 11
 superhero.xml,complex,1,40 7 11
+connected_triangles.xml,complex,0,40
 pickup_truck.xml,complex,1,40 7 11
 random_snake.xml,complex,1,40 7 11
+connected_rows_with_missing_blocks.xml,complex,0,40
 butterfly.xml,complex,1,40 7 11
 x_equals_y.xml,complex,1,40 7 11
 random_objects.xml,complex,0,40
