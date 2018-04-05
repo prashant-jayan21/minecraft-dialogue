@@ -1,59 +1,59 @@
 configuration,type,runs,people
-bell.xml,complex,1,1 3 40
-black-hole.xml,complex,1,1 3 40
-blue-original-L.xml,warmup,4,1 3 40 29 23 20 4 7 11
-flower_new.xml,simple,1,1 3 40
-overlapping-chain-links.xml,complex,1,1 3 40
-rectangle-chain.xml,complex,1,1 3 40
-scissors.xml,complex,0,40
-table2.xml,simple,1,1 3 40
-asterisk.xml,complex,1,2 3 40
-concentric_semicircles.xml,complex,0,40
-broken_heart.xml,complex,1,2 3 40
-diagonal-Ls.xml,complex,1,2 3 40
-diagonal-zigzag.xml,simple,1,2 3 40
-double_stairs.xml,complex,1,2 3 40
-orange-flat-original-L.xml,warmup,1,2 3 40
-overlapping-reticles.xml,complex,1,2 3 40
-slide_with_arch.xml,complex,1,2 3 40
-spectacles.xml,complex,0,40
-smiley.xml,simple,1,2 3 40
-suspension_bridge.xml,complex,1,2 3 40
-cup.xml,complex,1,2 3 40 29 23
-duck.xml,simple,1,40 1 4
-sickles.xml,complex,1,40 29 23
-3d-triangle.xml,simple,1,40 29 23
-hot.xml,complex,0,40
-bigger-original-L.xml,warmup,0,40
-complex_five.xml,simple,1,40 20 4
-street_lamps.xml,complex,1,40 1 4
-embedded_fives.xml,complex,1,40 1 4
-l-shape.xml,warmup,0,40
-cross-stack.xml,simple,1,20 4
+bell.xml,complex,2,1 3 40 29 8 39
+black-hole.xml,complex,1,1 3 40 39
+blue-original-L.xml,warmup,5,1 3 40 29 23 20 4 7 11 15 21 39
+flower_new.xml,simple,3,1 3 40 19 4 29 8 39
+overlapping-chain-links.xml,complex,1,1 3 40 39
+rectangle-chain.xml,complex,1,1 3 40 39
+scissors.xml,complex,1,40 19 4 39
+table2.xml,simple,3,1 3 40 19 4 29 8 39
+asterisk.xml,complex,1,2 3 40 39
+concentric_semicircles.xml,complex,1,40 19 4
+broken_heart.xml,complex,1,2 3 40 39
+diagonal-Ls.xml,complex,1,2 3 40 39
+diagonal-zigzag.xml,simple,3,2 3 40 15 21 29 8 39
+double_stairs.xml,complex,1,2 3 40 39
+orange-flat-original-L.xml,warmup,3,2 3 40 19 4 29 8 39
+overlapping-reticles.xml,complex,1,2 3 40 39
+slide_with_arch.xml,complex,1,2 3 40 39
+spectacles.xml,complex,1,40 19 4 39
+smiley.xml,simple,2,2 3 40 15 21 39
+suspension_bridge.xml,complex,1,2 3 40 39
+cup.xml,complex,1,2 3 40 29 23 39
+duck.xml,simple,2,40 1 4 15 21 39
+sickles.xml,complex,1,40 29 23 39
+3d-triangle.xml,simple,2,40 29 23 19 4 39
+hot.xml,complex,1,40 19 4 39
+bigger-original-L.xml,warmup,0,40 39
+complex_five.xml,simple,1,40 20 4 39
+street_lamps.xml,complex,1,40 1 4 39
+embedded_fives.xml,complex,1,40 1 4 39
+l-shape.xml,warmup,0,40 39
+cross-stack.xml,simple,1,20 4 39
 multiple_concepts.xml,complex,1,40 20 4
-rubiks.xml,simple,1,40 1 4
-girl_with_frock.xml,simple,1,40 1 4
-hollow_diseased_rectangle.xml,complex,0,40
-u-3.xml,simple,1,1 4
-wtf.xml,simple,1,7 11
-staircase.xml,simple,1,7 11
-3d-x_s.xml,complex,1,40 20 4
-hut_and_trees.xml,complex,1,40 20 4
-funny-cube.xml,complex,1,40 20 4
-3d-diagonals.xml,complex,1,40 1 4
-sun_and_birds.xml,complex,1,40 1 4
+rubiks.xml,simple,1,40 1 4 39
+girl_with_frock.xml,simple,1,40 1 4 39
+hollow_diseased_rectangle.xml,complex,1,40 15 21 39
+u-3.xml,simple,1,1 4 39
+wtf.xml,simple,1,7 11 39
+staircase.xml,simple,1,7 11 39
+3d-x_s.xml,complex,1,40 20 4 39
+hut_and_trees.xml,complex,1,40 20 4 39
+funny-cube.xml,complex,1,40 20 4 39
+3d-diagonals.xml,complex,1,40 1 4 39
+sun_and_birds.xml,complex,1,40 1 4 39
 chains.xml,complex,1,40 1 4
-ducks_in_pool.xml,simple,1,40 7 11
-torch.xml,simple,1,40 7 11
-superhero.xml,complex,1,40 7 11
-connected_triangles.xml,complex,0,40
-pickup_truck.xml,complex,1,40 7 11
-random_snake.xml,complex,1,40 7 11
-connected_rows_with_missing_blocks.xml,complex,0,40
-butterfly.xml,complex,1,40 7 11
-x_equals_y.xml,complex,1,40 7 11
-random_objects.xml,complex,0,40
-creative-five.xml,complex,0,40
-double_tripod.xml,complex,0,40
-3d-maze.xml,simple,1,40 7 11
-random_objects_2.xml,complex,0,40
+ducks_in_pool.xml,simple,1,40 7 11 39
+torch.xml,simple,1,40 7 11 39
+superhero.xml,complex,1,40 7 11 39
+connected_triangles.xml,complex,1,40 15 21 39
+pickup_truck.xml,complex,1,40 7 11 39
+random_snake.xml,complex,1,40 7 11 39
+connected_rows_with_missing_blocks.xml,complex,1,40 15 21
+butterfly.xml,complex,1,40 7 11 39
+x_equals_y.xml,complex,1,40 7 11 39
+random_objects.xml,complex,2,40 15 21 29 8
+creative-five.xml,complex,2,40 19 4 29 8 39
+double_tripod.xml,complex,3,40 15 21 19 4 29 8 39
+3d-maze.xml,simple,1,40 7 11 39
+random_objects_2.xml,complex,1,40 29 8
