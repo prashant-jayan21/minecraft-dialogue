@@ -194,7 +194,7 @@ def writeToString(observation, string_to_write, legacy):
 def main():
     parser = argparse.ArgumentParser(description="Postprocess all raw observation files recursively within a given directory.")
     parser.add_argument("observations_dir", nargs="?", default="./logs", help="Directory within which to search for raw observation files")
-    parser.add_argument("screenshots_dir", default="../../../Minecraft/run/screenshots", help="Directory within which to search for screenshots")
+    parser.add_argument("--screenshots_dir", default=None, help="Directory within which to search for screenshots")
     parser.add_argument("--verbose", default=False, action="store_true", help="Print observations to console as they are written")
     parser.add_argument("--legacy", default=False, action="store_true", help="Legacy version of script for missions involving blocks inside/outside builder's grid (requiring pickup)")
     args = parser.parse_args()
@@ -232,16 +232,17 @@ def main():
         with open(os.path.join(logs_dir, "postprocessed-observations.json"), "w") as postprocessed_observations:
             json.dump(observations, postprocessed_observations)
 
-        screenshots_dir = os.path.join(args.screenshots_dir, os.path.split(logs_dir)[1])
-        all_screenshot_filenames = filter(lambda x: x.endswith(".png"), os.listdir(screenshots_dir))
-        num_fixed_viewers = observations["NumFixedViewers"]
+        if args.screenshots_dir is not None:
+            screenshots_dir = os.path.join(args.screenshots_dir, os.path.split(logs_dir)[1])
+            all_screenshot_filenames = filter(lambda x: x.endswith(".png"), os.listdir(screenshots_dir))
+            num_fixed_viewers = observations["NumFixedViewers"]
 
-        aligned_tuples = align(all_screenshot_filenames, num_fixed_viewers)
-        observations_aligned = add_other_screenshots(observations, aligned_tuples, num_fixed_viewers)
+            aligned_tuples = align(all_screenshot_filenames, num_fixed_viewers)
+            observations_aligned = add_other_screenshots(observations, aligned_tuples, num_fixed_viewers)
 
-        print "\nWriting postprocessed AND aligned JSON to:", os.path.join(logs_dir, "aligned-observations.json")
-        with open(os.path.join(logs_dir, "aligned-observations.json"), "w") as aligned_observations:
-            json.dump(observations_aligned, aligned_observations)
+            print "\nWriting postprocessed AND aligned JSON to:", os.path.join(logs_dir, "aligned-observations.json")
+            with open(os.path.join(logs_dir, "aligned-observations.json"), "w") as aligned_observations:
+                json.dump(observations_aligned, aligned_observations)
 
         print "\nDone.",
         if args.verbose:

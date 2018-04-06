@@ -111,7 +111,7 @@ def generateOracleXML(experiment_id, gold_config_xml_substring):
                   <AgentSection mode="Spectator">
                     <Name>Oracle</Name>
                     <AgentStart>
-                      <Placement x = "100" y = "5" z = "94" pitch="45"/>
+                      <Placement x = "100" y = "9" z = "94" pitch="45"/>
                     </AgentStart>
                     <AgentHandlers/>
                   </AgentSection>

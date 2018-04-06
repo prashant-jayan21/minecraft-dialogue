@@ -11,17 +11,20 @@ asterisk.xml,complex,2,2 3 40 39 26 12
 concentric_semicircles.xml,complex,2,40 19 4 26 12
 broken_heart.xml,complex,2,2 3 40 39 26 12
 diagonal-Ls.xml,complex,2,2 3 40 39 26 12
+eye.xml,complex,0,39
 diagonal-zigzag.xml,simple,3,2 3 40 15 21 29 8 39
 double_stairs.xml,complex,2,2 3 40 39 10 20
+bloody-sword.xml,complex,0,39
 orange-flat-original-L.xml,warmup,5,2 3 40 19 4 29 8 39 10 20 27 15
 overlapping-reticles.xml,complex,2,2 3 40 39 28 38
 slide_with_arch.xml,complex,2,2 3 40 39 28 38
+rainbow-lasso.xml,complex,0,39
 spectacles.xml,complex,2,40 19 4 39 28 38
 smiley.xml,simple,3,2 3 40 15 21 39 30 13
 suspension_bridge.xml,complex,2,2 3 40 39 28 38
 cup.xml,complex,3,2 3 40 29 23 39 28 38 41 16
+music-notes.xml,simple,0,39
 duck.xml,simple,3,40 1 4 15 21 39 30 13
-sickles.xml,complex,3,40 29 23 39 28 38 41 16
 3d-triangle.xml,simple,2,40 29 23 19 4 39
 hot.xml,complex,3,40 19 4 39 28 38 41 16
 bigger-original-L.xml,warmup,0,40 39
@@ -37,20 +40,24 @@ hollow_diseased_rectangle.xml,complex,2,40 15 21 39 30 13
 u-3.xml,simple,2,1 4 39 28 38
 wtf.xml,simple,2,7 11 39 28 38
 staircase.xml,simple,3,7 11 39 28 38 41 16
+umbrella.xml,complex,0,39 40
+letter-cube.xml,complex,0,39
 3d-x_s.xml,complex,2,40 20 4 39 27 15
 hut_and_trees.xml,complex,2,40 20 4 39 27 15
 funny-cube.xml,complex,2,40 20 4 39 30 13
 3d-diagonals.xml,complex,2,40 1 4 39 30 13
-sun_and_birds.xml,complex,1,40 1 4 39
 chains.xml,complex,1,40 1 4
+color-wheel.xml,complex,0,39
 ducks_in_pool.xml,simple,2,40 7 11 39 41 16
 torch.xml,simple,2,40 7 11 39 27 15
 superhero.xml,complex,1,40 7 11 39
 connected_triangles.xml,complex,1,40 15 21 39
+storm-cloud.xml,simple,0,39
+christmas-tree.xml,complex,0,39
 pickup_truck.xml,complex,1,40 7 11 39
 random_snake.xml,complex,1,40 7 11 39
 connected_rows_with_missing_blocks.xml,complex,1,40 15 21
-butterfly.xml,complex,1,40 7 11 39
+cat.xml,complex,0,39
 x_equals_y.xml,complex,1,40 7 11 39
 random_objects.xml,complex,2,40 15 21 29 8
 creative-five.xml,complex,2,40 19 4 29 8 39
