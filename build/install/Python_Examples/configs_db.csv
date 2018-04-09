@@ -31,6 +31,7 @@ tetris.xml,complex,1,39 20 44
 3d-triangle.xml,simple,3,40 29 23 19 4 39 41 31
 hot.xml,complex,3,40 19 4 39 28 38 41 16
 bigger-original-L.xml,warmup,0,40 39
+connected_diamonds_with_missing_blocks.xml,complex,0,40
 complex_five.xml,simple,3,40 20 4 39 26 12 41 31
 strange-triangles.xml,complex,1,39 20 44
 street_lamps.xml,complex,2,40 1 4 39 41 16
@@ -59,6 +60,7 @@ ducks_in_pool.xml,simple,3,40 7 11 39 41 16 44 1
 parallel-bars.xml,simple,0,39
 diagonal-2.xml,complex,0,39 40
 chair2.xml,simple,0,39 40 1 4
+gallows.xml,complex,0,40
 chair3.xml,complex,0,39 40 1 4
 question.xml,simple,0,39 40
 torch.xml,simple,2,40 7 11 39 27 15
@@ -76,3 +78,4 @@ creative-five.xml,complex,2,40 19 4 29 8 39
 double_tripod.xml,complex,3,40 15 21 19 4 29 8 39
 3d-maze.xml,simple,2,40 7 11 39 27 15
 random_objects_2.xml,complex,1,40 29 8
+connected_crosses.xml,complex,0,40
