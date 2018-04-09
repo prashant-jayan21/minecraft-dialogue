@@ -24,19 +24,19 @@ smiley.xml,simple,3,2 3 40 15 21 39 30 13
 suspension_bridge.xml,complex,2,2 3 40 39 28 38
 cup.xml,complex,3,2 3 40 29 23 39 28 38 41 16
 music-notes.xml,simple,3,39 41 31 44 1 25 24
-rainbow-diagonal-stack.xml,complex,0,39
-funny-Ts.xml,complex,0,39
+rainbow-diagonal-stack.xml,complex,1,39 20 44
+funny-Ts.xml,complex,1,39 20 44
 duck.xml,simple,3,40 1 4 15 21 39 30 13
-tetris.xml,complex,0,39
+tetris.xml,complex,1,39 20 44
 3d-triangle.xml,simple,3,40 29 23 19 4 39 41 31
 hot.xml,complex,3,40 19 4 39 28 38 41 16
 bigger-original-L.xml,warmup,0,40 39
 complex_five.xml,simple,3,40 20 4 39 26 12 41 31
-strange-triangles.xml,complex,0,39
+strange-triangles.xml,complex,1,39 20 44
 street_lamps.xml,complex,2,40 1 4 39 41 16
 embedded_fives.xml,complex,2,40 1 4 39 27 15
 l-shape.xml,warmup,0,40 39
-three-squares.xml,simple,0,39
+three-squares.xml,simple,1,39 20 44
 cross-stack.xml,simple,3,20 4 39 26 12 44 1
 multiple_concepts.xml,complex,2,40 20 4 27 15
 rubiks.xml,simple,3,40 1 4 39 26 12 10 20
@@ -48,18 +48,18 @@ staircase.xml,simple,3,7 11 39 28 38 41 16
 umbrella.xml,complex,2,39 40 44 1 25 24
 letter-cube.xml,complex,2,39 41 31 44 1
 3d-x_s.xml,complex,2,40 20 4 39 27 15
-interlocking-magnets.xml,simple,0,39
+interlocking-magnets.xml,simple,1,39 20 44
 hut_and_trees.xml,complex,2,40 20 4 39 27 15
 funny-cube.xml,complex,2,40 20 4 39 30 13
 3d-diagonals.xml,complex,2,40 1 4 39 30 13
-chains.xml,complex,1,40 1 4
+chains.xml,complex,2,40 1 4 20 44
 color-wheel.xml,complex,2,39 41 31 44 1
-four-three.xml,simple,0,39
+four-three.xml,simple,1,39 20 44
 ducks_in_pool.xml,simple,3,40 7 11 39 41 16 44 1
 parallel-bars.xml,simple,0,39
 torch.xml,simple,2,40 7 11 39 27 15
-superhero.xml,complex,1,40 7 11 39
-connected_triangles.xml,complex,1,40 15 21 39
+superhero.xml,complex,2,40 7 11 39 20 44
+connected_triangles.xml,complex,2,40 15 21 39 20 44
 storm-cloud.xml,simple,3,39 41 31 44 1 14 40
 christmas-tree.xml,complex,2,39 41 31 14 40
 pickup_truck.xml,complex,1,40 7 11 39
