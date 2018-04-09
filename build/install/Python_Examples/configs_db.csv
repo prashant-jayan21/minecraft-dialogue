@@ -57,6 +57,10 @@ color-wheel.xml,complex,2,39 41 31 44 1
 four-three.xml,simple,1,39 20 44
 ducks_in_pool.xml,simple,3,40 7 11 39 41 16 44 1
 parallel-bars.xml,simple,0,39
+diagonal-2.xml,complex,0,39 40
+chair2.xml,simple,0,39 40 1 4
+chair3.xml,complex,0,39 40 1 4
+question.xml,simple,0,39 40
 torch.xml,simple,2,40 7 11 39 27 15
 superhero.xml,complex,2,40 7 11 39 20 44
 connected_triangles.xml,complex,2,40 15 21 39 20 44
