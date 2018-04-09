@@ -86,6 +86,8 @@ def generateTexfile(logfiles, output, screenshots_dir, timestamps):
 	outfile.write("\end{document}")
 	outfile.close()
 
+	print "Successfully written tex file to", output
+
 def getScreenshotFilePath(screenshots_dir, experiment_name, file_path):
 	screenshot_path = None if file_path is None else screenshots_dir+"/"+experiment_name+"/"+file_path
 	return "blank.png" if file_path is None or not os.path.exists(screenshot_path) else screenshot_path
