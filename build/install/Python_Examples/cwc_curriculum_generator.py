@@ -93,8 +93,8 @@ def generate_curriculum(configs_db, num_simple, num_complex, person_1, person_2)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate gold config curriculums for builder/architect pairs")
-    parser.add_argument("configs_db_csv", help="File path of the spreadsheet (.csv) DB containing all gold config info")
-    parser.add_argument("people_specs_csv", help="File path of the spreadsheet (.csv) containing all people specs for a session")
+    parser.add_argument("configs_db_csv", nargs='?', default='configs_db.csv', help="File path of the spreadsheet (.csv) DB containing all gold config info")
+    parser.add_argument("people_specs_csv", nargs='?', default='sample_people_specs.csv', help="File path of the spreadsheet (.csv) containing all people specs for a session")
     args = parser.parse_args()
 
     # read configs DB file

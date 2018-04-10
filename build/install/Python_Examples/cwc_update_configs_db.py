@@ -36,8 +36,8 @@ def update_configs_db_single(configs_db, curriculum, person_1, person_2):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Update spreadsheet (.csv) DB containing all gold config info")
-    parser.add_argument("configs_db_csv", help="File path of the spreadsheet (.csv) DB containing all gold config info")
-    parser.add_argument("people_specs_csv", help="File path of the spreadsheet (.csv) containing all people specs for a session")
+    parser.add_argument("configs_db_csv", nargs='?', default='configs_db.csv', help="File path of the spreadsheet (.csv) DB containing all gold config info")
+    parser.add_argument("people_specs_csv", nargs='?', default='sample_people_specs.csv', help="File path of the spreadsheet (.csv) containing all people specs for a session")
     parser.add_argument("--curriculums_dir", default=".", help="Directory containing the curriculum files as curriculum_i.csv (i = 1, 2, ...)")
     args = parser.parse_args()
 
