@@ -1,6 +1,7 @@
 import csv
 import argparse
 from cwc_io_utils import *
+from random import shuffle
 
 def generate_curriculums(configs_db, people_specs):
     """
@@ -75,6 +76,9 @@ def generate_curriculum(configs_db, num_simple, num_complex, person_1, person_2)
     # select top-k least run configs
     simple_configs_selected = simple_configs_sorted[:num_simple]
     complex_configs_selected = complex_configs_sorted[:num_complex]
+
+    shuffle(simple_configs_selected)
+    shuffle(complex_configs_selected)
 
     # concatenate warmup, simple and complex configs
     curriculum = map(lambda x: x["configuration"], warmup_config + simple_configs_selected + complex_configs_selected)

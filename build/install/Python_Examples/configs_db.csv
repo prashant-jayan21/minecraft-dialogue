@@ -24,7 +24,7 @@ smiley.xml,simple,3,2 3 40 15 21 39 30 13
 suspension_bridge.xml,complex,2,2 3 40 39 28 38
 cup.xml,complex,3,2 3 40 29 23 39 28 38 41 16
 music-notes.xml,simple,3,39 41 31 44 1 25 24
-rainbow-diagonal-stack.xml,complex,1,39 20 44 12 42
+rainbow-diagonal-stack.xml,complex,2,39 20 44 12 42 26 29
 funny-Ts.xml,complex,2,39 20 44 12 42
 duck.xml,simple,3,40 1 4 15 21 39 30 13
 tetris.xml,complex,2,39 20 44 12 42
@@ -33,7 +33,7 @@ hot.xml,complex,3,40 19 4 39 28 38 41 16
 bigger-original-L.xml,warmup,0,40 39
 connected_diamonds_with_missing_blocks.xml,complex,2,40 46 37 12 42
 complex_five.xml,simple,3,40 20 4 39 26 12 41 31
-strange-triangles.xml,complex,1,39 20 44
+strange-triangles.xml,complex,2,39 20 44 26 29
 street_lamps.xml,complex,2,40 1 4 39 41 16
 embedded_fives.xml,complex,2,40 1 4 39 27 15
 l-shape.xml,warmup,0,40 39
@@ -49,28 +49,27 @@ staircase.xml,simple,3,7 11 39 28 38 41 16
 umbrella.xml,complex,2,39 40 44 1 25 24
 letter-cube.xml,complex,2,39 41 31 44 1
 3d-x_s.xml,complex,2,40 20 4 39 27 15
-interlocking-magnets.xml,simple,1,39 20 44
+interlocking-magnets.xml,simple,2,39 20 44 26 29
 hut_and_trees.xml,complex,2,40 20 4 39 27 15
 funny-cube.xml,complex,2,40 20 4 39 30 13
 3d-diagonals.xml,complex,2,40 1 4 39 30 13
 chains.xml,complex,2,40 1 4 20 44
 color-wheel.xml,complex,2,39 41 31 44 1
-four-three.xml,simple,1,39 20 44
+four-three.xml,simple,2,39 20 44 26 29
 ducks_in_pool.xml,simple,3,40 7 11 39 41 16 44 1
 parallel-bars.xml,simple,2,39 46 37 12 42
 diagonal-2.xml,complex,2,39 40 46 37 12 42
-chair2.xml,simple,1,39 40 1 4 46 37
-gallows.xml,complex,1,40 46 37
-chair3.xml,complex,1,39 40 1 4 46 37
-question.xml,simple,1,39 40 12 42
+chair2.xml,simple,2,39 40 1 4 46 37 26 29
+chair3.xml,complex,2,39 40 1 4 46 37 26 29
+question.xml,simple,2,39 40 12 42 26 29
 torch.xml,simple,2,40 7 11 39 27 15
 superhero.xml,complex,2,40 7 11 39 20 44
 connected_triangles.xml,complex,2,40 15 21 39 20 44
 storm-cloud.xml,simple,3,39 41 31 44 1 14 40
 christmas-tree.xml,complex,2,39 41 31 14 40
-pickup_truck.xml,complex,1,40 7 11 39
-random_snake.xml,complex,1,40 7 11 39
-connected_rows_with_missing_blocks.xml,complex,1,40 15 21
+pickup_truck.xml,complex,2,40 7 11 39 26 29
+random_snake.xml,complex,2,40 7 11 39 26 29
+connected_rows_with_missing_blocks.xml,complex,2,40 15 21 26 29
 cat.xml,complex,1,39 41 31
 x_equals_y.xml,complex,1,40 7 11 39
 random_objects.xml,complex,2,40 15 21 29 8
