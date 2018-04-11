@@ -18,10 +18,10 @@ x_min_goal, x_max_goal = x_min_build + displacement, x_max_build + displacement
 y_min_goal, y_max_goal = y_min_build, y_max_build # NOTE: Do not change this relation without thought!
 z_min_goal, z_max_goal = z_min_build + displacement, z_max_build + displacement
 
-fv_placements = ['<Placement x = "0" y = "9" z = "-8" pitch="40"/>', 
-                 '<Placement x = "0" y = "9" z = "9" pitch="40" yaw="180"/>', 
-                 '<Placement x = "9" y = "9" z = "0" pitch="40" yaw="90"/>', 
-                 '<Placement x = "-8" y = "9" z = "0" pitch="40" yaw="-90"/>']
+fv_placements = ['<Placement x = "0" y = "10" z = "-8" pitch="40"/>', 
+                 '<Placement x = "0" y = "10" z = "9" pitch="40" yaw="180"/>', 
+                 '<Placement x = "9" y = "10" z = "0" pitch="40" yaw="90"/>', 
+                 '<Placement x = "-8" y = "10" z = "0" pitch="40" yaw="-90"/>']
 
 def safeStartMission(agent_host, my_mission, my_client_pool, my_mission_record, role, expId):
     used_attempts = 0
