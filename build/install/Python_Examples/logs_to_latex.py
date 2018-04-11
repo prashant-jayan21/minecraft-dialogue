@@ -5,12 +5,13 @@ def getConfigNameMap():
 	with open('tex/configs-to-names.txt') as f:
 		config_names = f.readlines()
 
-	config_name_map = {}
+	config_name_map, name_config_map = {}, {}
 	for config in config_names:
 		(c,n) = config.split()
 		config_name_map[c.strip()] = n.strip()
+		name_config_map[n.strip()] = c.strip()
 
-	return config_name_map
+	return config_name_map, name_config_map
 
 def generateTexfile(logfiles, output, screenshots_dir, timestamps):
 	if not os.path.isdir("tex/"):
@@ -24,7 +25,7 @@ def generateTexfile(logfiles, output, screenshots_dir, timestamps):
 	header = "\documentclass{book}\n\usepackage[utf8]{inputenc}\n\usepackage[margin=1in,headheight=13.6pt]{geometry}\n\usepackage{graphicx}\n\usepackage{subcaption}\n\usepackage{listings}\n\lstset{basicstyle=\large\\ttfamily,columns=fullflexible,breaklines=true}\n\usepackage{hyperref}\n\usepackage{fancyhdr}\n\n\pagestyle{fancy}\n\\fancyhf{}\n\\fancyhead[L]{\\nouppercase\leftmark}\n\n\\begin{document}\n\\tableofcontents\n"
 	outfile.write(header)
 
-	config_name_map = getConfigNameMap()
+	config_name_map, name_config_map = getConfigNameMap()
 
 	for logfile in logfiles:
 		with open(logfile, 'r') as f:
@@ -32,9 +33,11 @@ def generateTexfile(logfiles, output, screenshots_dir, timestamps):
 
 		experiment_name = logfile.split("/")[-2]
 		m = re.search('B[0-9]+\-A[0-9]+\-([A-z0-9\-]+)\-[0-9]+', experiment_name)
-		config_name = m.group(1).replace("_","\\textunderscore ") if m else experiment_name
+		config_name = m.group(1) if m else experiment_name
 		if config_name_map.get(config_name) is not None:
 			config_name = config_name_map[config_name].replace("_","\\textunderscore ")+" ("+config_name+")"
+		else:
+			config_name = config_name.replace("_","\\textunderscore ")+" ("+name_config_map[config_name]+")"
 		outfile.write("\chapter{"+config_name+"}\n\\newpage\n\n")
 
 		world_states = observations["WorldStates"]

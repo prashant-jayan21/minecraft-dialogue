@@ -82,10 +82,10 @@ C80.xml,complex,1,39 30 20
 C81.xml,complex,1,39 3 30 20
 C82.xml,complex,1,39 3 30 20
 C83.xml,complex,1,39 3 30 20
-C84.xml,simple,1,39 3 30 20
-C85.xml,simple,1,39 3 30 20
-C86.xml,complex,0,39 40
-C87.xml,complex,0,39 40
-C88.xml,complex,0,39 40
-C89.xml,complex,0,40
-C90.xml,complex,0,39 40
+C84.xml,simple,2,39 3 30 20 23 31
+C85.xml,simple,2,39 3 30 20 23 31
+C86.xml,complex,1,39 40 23 31
+C87.xml,complex,1,39 40 23 31
+C88.xml,complex,1,39 40 23 31
+C89.xml,complex,0,40 23 31
+C90.xml,complex,1,39 40 23 31
