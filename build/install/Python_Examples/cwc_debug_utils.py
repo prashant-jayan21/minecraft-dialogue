@@ -26,7 +26,7 @@ def printObservationElements(observation):
     for element in observation:
         print element,
     if observation.get("Chat") is not None:
-        print "Chat:", observation.get("Chat")
+        print "\nChat:", observation.get("Chat")
     print
 
 # Helper method to print a shortened, prettier version of the string to be written
