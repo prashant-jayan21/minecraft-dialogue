@@ -69,7 +69,7 @@ C67.xml,simple,3,39 41 31 44 1 14 40
 C68.xml,complex,2,39 41 31 14 40
 C69.xml,complex,2,40 7 11 39 26 29
 C70.xml,complex,2,40 7 11 39 26 29
-C71,complex,2,40 15 21 26 29
+C71.xml,complex,2,40 15 21 26 29
 C72.xml,complex,2,39 41 31 3 25
 C73.xml,complex,2,40 7 11 39 3 25
 C74.xml,complex,2,40 15 21 29 8
@@ -78,9 +78,14 @@ C76.xml,complex,3,40 15 21 19 4 29 8 39
 C77.xml,simple,2,40 7 11 39 27 15
 C78.xml,complex,2,40 29 8 3 25
 C79.xml,complex,2,40 12 42 3 25
-C80.xml,complex,0,39
-C81.xml,complex,0,39 3
-C82.xml,complex,0,39 3
-C83.xml,complex,0,39 3
-C84.xml,simple,0,39 3
-C85.xml,simple,0,39 3
+C80.xml,complex,1,39 30 20
+C81.xml,complex,1,39 3 30 20
+C82.xml,complex,1,39 3 30 20
+C83.xml,complex,1,39 3 30 20
+C84.xml,simple,1,39 3 30 20
+C85.xml,simple,1,39 3 30 20
+C86.xml,complex,0,39 40
+C87.xml,complex,0,39 40
+C88.xml,complex,0,39 40
+C89.xml,complex,0,40
+C90.xml,complex,0,39 40

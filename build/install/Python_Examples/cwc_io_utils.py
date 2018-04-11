@@ -9,7 +9,9 @@ def readXMLSubstringFromFile(xml_filename, displaced):
         config_file.close()
 
     if displaced:
-        fixed = None
+        fixed = ""
+        for line in config_xml_substring.split("\n"):
+            print line
 
     return config_xml_substring
 
