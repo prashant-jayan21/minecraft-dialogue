@@ -15,26 +15,26 @@ C13.xml,complex,3,39 44 1 25 24 38 15
 C14.xml,simple,3,2 3 40 15 21 29 8 39
 C15.xml,complex,3,2 3 40 39 10 20 38 15
 C16.xml,complex,3,39 44 1 25 24 16 3
-C17.xml,warmup,8,2 3 40 19 4 29 8 39 10 20 27 15 41 31 44 1 12 42
-C18.xml,complex,2,2 3 40 39 28 38
-C19.xml,complex,2,2 3 40 39 28 38
+C17.xml,warmup,9,2 3 40 19 4 29 8 39 10 20 27 15 41 31 44 1 12 42 30 47
+C18.xml,complex,3,2 3 40 39 28 38 30 47
+C19.xml,complex,3,2 3 40 39 28 38 30 47
 C20.xml,complex,3,39 44 1 25 24 16 3
 C21.xml,complex,3,40 19 4 39 28 38 3 25
 C22.xml,simple,3,2 3 40 15 21 39 30 13
-C23.xml,complex,2,2 3 40 39 28 38
+C23.xml,complex,3,2 3 40 39 28 38 30 47
 C24.xml,complex,3,2 3 40 29 23 39 28 38 41 16
 C25.xml,simple,3,39 41 31 44 1 25 24
 C26.xml,complex,3,39 20 44 12 42 26 29 3 25
-C27.xml,complex,2,39 20 44 12 42 16 3
+C27.xml,complex,3,39 20 44 12 42 16 3 30 47
 C28.xml,simple,3,40 1 4 15 21 39 30 13
-C29.xml,complex,2,39 20 44 12 42
+C29.xml,complex,3,39 20 44 12 42 30 47
 C30.xml,simple,3,40 29 23 19 4 39 41 31
 C31.xml,complex,3,40 19 4 39 28 38 41 16
 C32.xml,warmup,0,40 39
-C33.xml,complex,2,40 46 37 12 42
+C33.xml,complex,3,40 46 37 12 42 30 47
 C34.xml,simple,3,40 20 4 39 26 12 41 31
-C35.xml,complex,2,39 20 44 26 29
-C36.xml,complex,2,40 1 4 39 41 16
+C35.xml,complex,3,39 20 44 26 29 30 47
+C36.xml,complex,3,40 1 4 39 41 16 30 47
 C37.xml,complex,2,40 1 4 39 27 15
 C38.xml,warmup,0,40 39
 C39.xml,simple,3,39 20 44 12 42 3 25
@@ -75,7 +75,7 @@ C73.xml,complex,2,40 7 11 39 3 25
 C74.xml,complex,2,40 15 21 29 8
 C75.xml,complex,2,40 19 4 29 8 39
 C76.xml,complex,3,40 15 21 19 4 29 8 39
-C77.xml,simple,2,40 7 11 39 27 15 21 38
+C77.xml,simple,3,40 7 11 39 27 15 21 38 30 47
 C78.xml,complex,2,40 29 8 3 25
 C79.xml,complex,2,40 12 42 3 25
 C80.xml,complex,2,39 30 20 21 38
@@ -87,4 +87,4 @@ C85.xml,simple,3,39 3 30 20 23 31 10 25
 C86.xml,complex,2,39 40 23 31 10 25
 C87.xml,complex,2,39 40 23 31 10 25
 C88.xml,complex,2,39 40 23 31 10 25
-C90.xml,complex,1,39 40 23 31
+C90.xml,complex,2,39 40 23 31 30 47
