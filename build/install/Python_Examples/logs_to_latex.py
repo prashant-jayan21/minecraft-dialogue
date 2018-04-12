@@ -13,7 +13,7 @@ def getConfigNameMap():
 
 	return config_name_map, name_config_map
 
-def generateTexfile(logfiles, output, screenshots_dir, timestamps):
+def generateTexfile(logfiles, output, screenshots_dir, disable_timestamps):
 	if not os.path.isdir("tex/"):
 		os.makedirs("tex/")
 	if not output.endswith(".tex"):
@@ -21,9 +21,11 @@ def generateTexfile(logfiles, output, screenshots_dir, timestamps):
 	if not output.startswith("tex/"):
 		output = "tex/"+output
 	outfile = open(output, "w")
+	simplefile = open(output[:-4]+"-simplified.tex","w")
 
 	header = "\documentclass{book}\n\usepackage[utf8]{inputenc}\n\usepackage[margin=1in,headheight=13.6pt]{geometry}\n\usepackage{graphicx}\n\usepackage{subcaption}\n\usepackage{listings}\n\lstset{basicstyle=\large\\ttfamily,columns=fullflexible,breaklines=true}\n\usepackage{hyperref}\n\usepackage{fancyhdr}\n\n\pagestyle{fancy}\n\\fancyhf{}\n\\fancyhead[L]{\\nouppercase\leftmark}\n\n\\begin{document}\n\\tableofcontents\n"
 	outfile.write(header)
+	simplefile.write(header)
 
 	config_name_map, name_config_map = getConfigNameMap()
 
@@ -39,6 +41,7 @@ def generateTexfile(logfiles, output, screenshots_dir, timestamps):
 		else:
 			config_name = config_name.replace("_","\\textunderscore ")+" ("+name_config_map[config_name]+")"
 		outfile.write("\chapter{"+config_name+"}\n\\newpage\n\n")
+		simplefile.write("\chapter{"+config_name+"}\n\\newpage\n\n")
 
 		world_states = observations["WorldStates"]
 		final_observation = world_states[-1]
@@ -55,6 +58,14 @@ def generateTexfile(logfiles, output, screenshots_dir, timestamps):
 				outfile.write("\t\caption{Gold configuration}\n")
 				outfile.write("\end{figure}\n")
 				outfile.write("\\clearpage\n\n")
+
+				simplefile.write("\section{Gold Configuration}\n")
+				simplefile.write("\\begin{figure}[!hb]\n\t\centering\n")
+				for i in range(len(fixed_viewers_ss)):
+					simplefile.write("\t\\begin{subfigure}[b]{0.45\\textwidth}\n\t\t\includegraphics[width=\\textwidth]{"+fixed_viewers_ss[i]+"}\n\t\t\caption{FixedViewer"+str(i+1)+"}\n\t\end{subfigure}\n")
+				simplefile.write("\t\caption{Gold configuration}\n")
+				simplefile.write("\end{figure}\n")
+				simplefile.write("\\clearpage\n\n")
 				break
 
 		outfile.write("\section{Dialogue}\n")
@@ -62,6 +73,12 @@ def generateTexfile(logfiles, output, screenshots_dir, timestamps):
 		for i in range(len(final_observation["ChatHistory"])):
 			outfile.write(final_observation["ChatHistory"][i]+"\n")
 		outfile.write("\end{lstlisting}\n\\newpage\n\n")
+
+		simplefile.write("\section{Dialogue}\n")
+		simplefile.write("\\begin{lstlisting}\n")
+		for i in range(len(final_observation["ChatHistory"])):
+			simplefile.write(final_observation["ChatHistory"][i]+"\n")
+		simplefile.write("\end{lstlisting}\n\clearpage\n\n")
 
 		outfile.write("\section{Step-by-Step}\n\n")
 
@@ -79,11 +96,11 @@ def generateTexfile(logfiles, output, screenshots_dir, timestamps):
 				continue
 
 			outfile.write("\\begin{figure}[!ht]\n\t\centering\n")
-			outfile.write("\t\\begin{subfigure}[b]{0.45\\textwidth}\n\t\t\includegraphics[width=\\textwidth]{"+builder_ss+"}\n\t\t\caption{Builder" + ("" if not timestamps else " ("+getScreenshotTimestamp(builder_ss)+")") + "}\n\t\end{subfigure}\n")
-			outfile.write("\t\\begin{subfigure}[b]{0.45\\textwidth}\n\t\t\includegraphics[width=\\textwidth]{"+architect_ss+"}\n\t\t\caption{Architect" + ("" if not timestamps else " ("+getScreenshotTimestamp(architect_ss)+")") + "}\n\t\end{subfigure}\n")
+			outfile.write("\t\\begin{subfigure}[b]{0.45\\textwidth}\n\t\t\includegraphics[width=\\textwidth]{"+builder_ss+"}\n\t\t\caption{Builder" + ("" if disable_timestamps else " ("+getScreenshotTimestamp(builder_ss)+")") + "}\n\t\end{subfigure}\n")
+			outfile.write("\t\\begin{subfigure}[b]{0.45\\textwidth}\n\t\t\includegraphics[width=\\textwidth]{"+architect_ss+"}\n\t\t\caption{Architect" + ("" if disable_timestamps else " ("+getScreenshotTimestamp(architect_ss)+")") + "}\n\t\end{subfigure}\n")
 
 			for i in range(len(fixed_viewers_ss)):
-				outfile.write("\t\\begin{subfigure}[b]{0.45\\textwidth}\n\t\t\includegraphics[width=\\textwidth]{"+fixed_viewers_ss[i]+"}\n\t\t\caption{FixedViewer"+str(i+1)+("" if not timestamps else " ("+getScreenshotTimestamp(fixed_viewers_ss[i])+")")+"}\n\t\end{subfigure}\n")
+				outfile.write("\t\\begin{subfigure}[b]{0.45\\textwidth}\n\t\t\includegraphics[width=\\textwidth]{"+fixed_viewers_ss[i]+"}\n\t\t\caption{FixedViewer"+str(i+1)+("" if disable_timestamps else " ("+getScreenshotTimestamp(fixed_viewers_ss[i])+")")+"}\n\t\end{subfigure}\n")
 
 			outfile.write("\t\caption{"+action+"}\n")
 			outfile.write("\end{figure}\n\n")
@@ -104,8 +121,12 @@ def generateTexfile(logfiles, output, screenshots_dir, timestamps):
 
 	outfile.write("\end{document}")
 	outfile.close()
+	simplefile.write("\end{document}")
+	simplefile.close()
 
+	simple = output[:-4]+"-simplified.tex"
 	print "Successfully written tex file to", output
+	print "Successfully written simplified tex file to", simple
 
 def getScreenshotFilePath(screenshots_dir, experiment_name, file_path):
 	screenshot_path = None if file_path is None else screenshots_dir+"/"+experiment_name+"/"+file_path
@@ -136,15 +157,18 @@ def main():
 	parser = argparse.ArgumentParser(description="Produce .tex file from given json logfiles or directories.")
 	parser.add_argument('-l', '--list', nargs='+', help='Json files to be processed, or the directory in which they live', required=True)
 	parser.add_argument('-o', '--output', help='Name of output tex file', required=True)
-	parser.add_argument('-s', '--screenshots_dir', default="../../../../Minecraft/run/screenshots", help="Screenshots directory path")
-	parser.add_argument("--timestamps", default=False, action="store_true", help="Whether or not to print timestamps in Figure captions")
+	parser.add_argument('-s', '--screenshots_dir', default=None, help="Screenshots directory path")
+	parser.add_argument("--disable_timestamps", default=True, action="store_false", help="Whether or not to print timestamps in Figure captions")
 	args = parser.parse_args()
+
+	if args.screenshots_dir is None:
+		args.screenshots_dir = "/".join(args.list[0].split("/")[:-2])+"/screenshots/"
 
 	if args.screenshots_dir[-1] == '/':
 		args.screenshots_dir = args.screenshots_dir[:-1]
 
 	logfiles = getLogfileNames(args.list, "aligned-observations.json")
-	generateTexfile(logfiles, args.output, args.screenshots_dir, args.timestamps)
+	generateTexfile(logfiles, args.output, args.screenshots_dir, args.disable_timestamps)
 
 if __name__ == '__main__':
 	main()
