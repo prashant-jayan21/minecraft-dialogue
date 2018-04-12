@@ -106,6 +106,12 @@ C105	lol_ethylene
 C106	minimal_tree
 C107	colorful_alien
 C108	illinois-i
+C109	waving-flag
+C110	color-loop
+C111	color-cube
+C112	color-spiral
+C113	numbers
+C114	e3
 C155	sickles-difficult
 C156	sun_and_birds-difficult
 C157	butterfly-difficult
