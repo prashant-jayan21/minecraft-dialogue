@@ -93,22 +93,22 @@ C91.xml,complex,1,39 25 27
 C92.xml,complex,1,39 25 27
 C93.xml,simple,1,39 25 27
 C94.xml,complex,1,39 25 27
-C95.xml,complex,0,39
+C95.xml,complex,1,39 23 37
 C96.xml,simple,1,39 25 27
 C97.xml,simple,2,39 25 27 36 44
 C98.xml,complex,1,40 36 44
 C99.xml,complex,1,40 25 27
-C100.xml,complex,0,40
+C100.xml,complex,1,40 23 37
 C101.xml,simple,2,40 25 27 36 44
-C102.xml,simple,0,40
-C103.xml,simple,0,40
-C104.xml,simple,0,40
-C105.xml,complex,0,40
-C106.xml,complex,0,40
-C107.xml,complex,0,40
+C102.xml,simple,1,40 23 37
+C103.xml,simple,1,40 23 37
+C104.xml,simple,1,40 23 37
+C105.xml,complex,1,40 23 37
+C106.xml,complex,1,40 23 37
+C107.xml,complex,1,40 23 37
 C108.xml,simple,0,39
 C109.xml,simple,0,39 1
-C110.xml,complex,0,39 1
+C110.xml,complex,1,39 1 23 37
 C111.xml,simple,0,39 1
 C112.xml,complex,0,39
 C113.xml,complex,0,39
