@@ -113,7 +113,7 @@ def read_metrics_db(metrics_db_file):
 
 def write_metrics_db(metrics_db, metrics_db_file):
     with open(metrics_db_file, 'w') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames = ['config','time','num_utterances','utterances_per_turn'])
+        writer = csv.DictWriter(csvfile, fieldnames = ['config','mean_time', 'mean_num_utterances', 'mean_utterances_per_turn', 'time','num_utterances','utterances_per_turn'])
         writer.writeheader()
         for config in metrics_db:
             config["time"] = ' '.join(str(x) for x in config["time"])

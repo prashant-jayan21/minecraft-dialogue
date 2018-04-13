@@ -14,10 +14,16 @@ def merge(metrics_db, metrics_data):
                 metrics_dict_db["time"].append(metrics_dict["time"])
                 metrics_dict_db["num_utterances"].append(metrics_dict["num_utterances"])
                 metrics_dict_db["utterances_per_turn"].append(metrics_dict["utterances_per_turn"])
+                metrics_dict_db["mean_time"] = float(sum(metrics_dict_db["time"]))/float(len(metrics_dict_db["time"]))
+                metrics_dict_db["mean_num_utterances"] = float(sum(metrics_dict_db["num_utterances"]))/float(len(metrics_dict_db["num_utterances"]))
+                metrics_dict_db["mean_utterances_per_turn"] = float(sum(metrics_dict_db["utterances_per_turn"]))/float(len(metrics_dict_db["utterances_per_turn"]))
                 break
 
         # if not found
         if not found:
+            metrics_dict["mean_time"] = float(metrics_dict["time"])
+            metrics_dict["mean_num_utterances"] = float(metrics_dict["num_utterances"])
+            metrics_dict["mean_utterances_per_turn"] = float(metrics_dict["utterances_per_turn"])
             # convert to lists
             metrics_dict["time"] = [metrics_dict["time"]]
             metrics_dict["num_utterances"] = [metrics_dict["num_utterances"]]
@@ -42,7 +48,7 @@ def get_metrics_data(logs_root_dir):
 
         # get required metrics data
         del metrics_dict["num_turns"]
-        metrics_dict["time"] = postprocessed_observations_dict["TimeElapsed"]
+        metrics_dict["time"] = float(postprocessed_observations_dict["TimeElapsed"])/float(60)
 
         config_name = re.sub(r"B\d+-A\d+-|-\d\d\d\d\d\d\d+", "", log_dir)
         metrics_dict["config"] = config_name
