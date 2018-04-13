@@ -1,7 +1,7 @@
 configuration,type,runs,people
 C1.xml,complex,3,1 3 40 29 8 39 38 15
 C2.xml,complex,3,1 3 40 39 26 12 10 20
-C3.xml,warmup,12,1 3 40 29 23 20 4 7 11 15 21 39 26 12 28 38 41 16 30 13 25 24 14 40 46 37
+C3.xml,warmup,13,1 3 40 29 23 20 4 7 11 15 21 39 26 12 28 38 41 16 30 13 25 24 14 40 46 37 36 44
 C4.xml,simple,4,1 3 40 19 4 29 8 39 38 15
 C5.xml,complex,3,1 3 40 39 26 12 10 20
 C6.xml,complex,3,1 3 40 39 10 20 26 12
@@ -87,29 +87,29 @@ C85.xml,simple,3,39 3 30 20 23 31 10 25
 C86.xml,complex,2,39 40 23 31 10 25
 C87.xml,complex,2,39 40 23 31 10 25
 C88.xml,complex,2,39 40 23 31 10 25
-C89.xml,complex,0,39
+C89.xml,complex,1,39 25 27
 C90.xml,complex,2,39 40 23 31 30 47
-C91.xml,complex,0,39
-C92.xml,complex,0,39
-C93.xml,simple,0,39
-C94.xml,complex,0,39
-C95.xml,complex,0,39
-C96.xml,simple,0,39
-C97.xml,simple,0,39
-C98.xml,complex,0,40
-C99.xml,complex,0,40
-C100.xml,complex,0,40
-C101.xml,simple,0,40
-C102.xml,simple,0,40
-C103.xml,simple,0,40
-C104.xml,simple,0,40
-C105.xml,complex,0,40
-C106.xml,complex,0,40
-C107.xml,complex,0,40
+C91.xml,complex,1,39 25 27
+C92.xml,complex,1,39 25 27
+C93.xml,simple,1,39 25 27
+C94.xml,complex,1,39 25 27
+C95.xml,complex,1,39 23 37
+C96.xml,simple,1,39 25 27
+C97.xml,simple,2,39 25 27 36 44
+C98.xml,complex,1,40 36 44
+C99.xml,complex,1,40 25 27
+C100.xml,complex,1,40 23 37
+C101.xml,simple,2,40 25 27 36 44
+C102.xml,simple,1,40 23 37
+C103.xml,simple,1,40 23 37
+C104.xml,simple,1,40 23 37
+C105.xml,complex,1,40 23 37
+C106.xml,complex,1,40 23 37
+C107.xml,complex,1,40 23 37
 C108.xml,simple,0,39
 C109.xml,simple,0,39 1
-C110.xml,complex,0,39 1
+C110.xml,complex,1,39 1 23 37
 C111.xml,simple,0,39 1
 C112.xml,complex,0,39
 C113.xml,complex,0,39
-C114.xml,simple,0,39 
+C114.xml,simple,0,39

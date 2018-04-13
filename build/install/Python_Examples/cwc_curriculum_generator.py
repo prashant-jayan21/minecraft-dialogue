@@ -89,6 +89,8 @@ def generate_curriculum(configs_db, num_simple, num_complex, person_1, person_2)
             config["runs"] += 1
             config["people"] = config["people"] + [person_1, person_2]
 
+    print "Generated", len(warmup_config), "warmup,", len(simple_configs_selected), "simple,", len(complex_configs_selected), "complex configs for pair", (person_1, person_2)
+
     return curriculum
 
 if __name__ == "__main__":
