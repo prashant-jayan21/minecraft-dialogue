@@ -158,7 +158,7 @@ def main():
 	parser.add_argument('-l', '--list', nargs='+', help='Json files to be processed, or the directory in which they live', required=True)
 	parser.add_argument('-o', '--output', help='Name of output tex file', required=True)
 	parser.add_argument('-s', '--screenshots_dir', default=None, help="Screenshots directory path")
-	parser.add_argument("--disable_timestamps", default=True, action="store_false", help="Whether or not to print timestamps in Figure captions")
+	parser.add_argument("--disable_timestamps", default=True, action="store_false", help="Disable printing timestamps in Figure captions (looks nicer)")
 	args = parser.parse_args()
 
 	if args.screenshots_dir is None:
