@@ -195,6 +195,7 @@ def main():
     parser = argparse.ArgumentParser(description="Postprocess all raw observation files recursively within a given directory.")
     parser.add_argument("observations_dir", nargs="?", default="./logs", help="Directory within which to search for raw observation files")
     parser.add_argument("--screenshots_dir", default=None, help="Directory within which to search for screenshots")
+    parser.add_argument("--auto_find_screenshots", default=False, action="store_true", help="Finds screenshots directory in the parent directory of observations directory")
     parser.add_argument("--verbose", default=False, action="store_true", help="Print observations to console as they are written")
     parser.add_argument("--legacy", default=False, action="store_true", help="Legacy version of script for missions involving blocks inside/outside builder's grid (requiring pickup)")
     args = parser.parse_args()
@@ -231,6 +232,9 @@ def main():
         print "\nWriting postprocessed JSON to:", os.path.join(logs_dir, "postprocessed-observations.json")
         with open(os.path.join(logs_dir, "postprocessed-observations.json"), "w") as postprocessed_observations:
             json.dump(observations, postprocessed_observations)
+
+        if args.auto_find_screenshots:
+            args.screenshots_dir = "/".join(args.observations_dir.split("/")[:-2])+"/screenshots/"
 
         if args.screenshots_dir is not None:
             screenshots_dir = os.path.join(args.screenshots_dir, os.path.split(logs_dir)[1])
