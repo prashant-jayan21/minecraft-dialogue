@@ -98,7 +98,7 @@ def write_configs_db(configs_db, configs_db_file):
             writer.writerow(config)
         print "DONE WRITING " + configs_db_file
 
-def read_metrics_db(metrics_db_file):
+def read_config_metrics_db(metrics_db_file):
     all_configs = []
 
     with open(metrics_db_file, 'rb') as csvfile:
@@ -107,11 +107,14 @@ def read_metrics_db(metrics_db_file):
             row["time"] = map(float, row["time"].split())
             row["num_utterances"] = map(int, row["num_utterances"].split())
             row["utterances_per_turn"] = map(float, row["utterances_per_turn"].split())
+            row["mean_time"] = float(row["mean_time"])
+            row["mean_num_utterances"] = float(row["mean_num_utterances"])
+            row["mean_utterances_per_turn"] = float(row["mean_utterances_per_turn"])
             all_configs.append(row)
 
     return all_configs
 
-def write_metrics_db(metrics_db, metrics_db_file):
+def write_config_metrics_db(metrics_db, metrics_db_file):
     with open(metrics_db_file, 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames = ['config','mean_time', 'mean_num_utterances', 'mean_utterances_per_turn', 'time','num_utterances','utterances_per_turn'])
         writer.writeheader()
@@ -120,4 +123,25 @@ def write_metrics_db(metrics_db, metrics_db_file):
             config["num_utterances"] = ' '.join(str(x) for x in config["num_utterances"])
             config["utterances_per_turn"] = ' '.join(str(x) for x in config["utterances_per_turn"])
             writer.writerow(config)
+        print "DONE WRITING " + metrics_db_file
+
+def read_dialog_metrics_db(metrics_db_file):
+    all_dialogs = []
+
+    with open(metrics_db_file, 'rb') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            row["time"] = float(row["time"])
+            row["num_utterances"] = int(row["num_utterances"])
+            row["utterances_per_turn"] = float(row["utterances_per_turn"])
+            all_dialogs.append(row)
+
+    return all_dialogs
+
+def write_dialog_metrics_db(metrics_db, metrics_db_file):
+    with open(metrics_db_file, 'w') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames = ['dialog', 'time','num_utterances','utterances_per_turn'])
+        writer.writeheader()
+        for dialog in metrics_db:
+            writer.writerow(dialog)
         print "DONE WRITING " + metrics_db_file
