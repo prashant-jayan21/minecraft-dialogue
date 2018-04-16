@@ -133,15 +133,15 @@ C131.xml,complex,2,40 42 38 54 51
 C132.xml,complex,1,40 42 38
 C133.xml,complex,2,40 42 38 54 51
 C134.xml,complex,1,40 42 38
-C135.xml,simple,0,39 54 51
+C135.xml,simple,1,39 54 51 35 36
 C136.xml,complex,1,39 54 51
 C137.xml,complex,1,39 54 51
 C138.xml,complex,1,39 54 51
-C139.xml,simple,0,39
-C140.xml,complex,0,39 51
-C141.xml,complex,0,39
-C142.xml,complex,0,39
-C143.xml,complex,0,39
+C139.xml,simple,1,39 35 36
+C140.xml,complex,1,39 51 35 36
+C141.xml,complex,1,39 35 36
+C142.xml,complex,1,39 35 36
+C143.xml,complex,1,39 35 36
 C144.xml,simple,0,39
 C145.xml,simple,0,39
 C146.xml,simple,0,39
