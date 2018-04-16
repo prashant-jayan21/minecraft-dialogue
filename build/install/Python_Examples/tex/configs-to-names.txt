@@ -145,6 +145,9 @@ C144	curly-R
 C145	pulse
 C146	boxy-to-diagonal
 C147	pi
+C148	headphones
+C149	drink-with-umbrella
+C150	checkerboard
 C155	sickles-difficult
 C156	sun_and_birds-difficult
 C157	butterfly-difficult
