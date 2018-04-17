@@ -49,7 +49,10 @@ def generateTexfile(logfiles, output, screenshots_dir, disable_timestamps):
 
 		for i in reversed(range(len(world_states))):
 			world_state = world_states[i]
-			if "-chat" not in world_state["Screenshots"]["Builder"] and "-chat" not in world_state["Screenshots"]["Architect"]:
+			screenshots = world_state["Screenshots"]
+			builder_no_chat = True if screenshots.get("Builder") is None else "-chat" not in screenshots.get("Builder")
+			architect_no_chat = True if screenshots.get("Architect") is None else "-chat" not in screenshots.get("Architect")
+			if builder_no_chat and architect_no_chat:
 				fixed_viewers_ss = getFixedViewerScreenshots(screenshots_dir, experiment_name, world_state["Screenshots"], observations["NumFixedViewers"])
 				outfile.write("\section{Gold Configuration}\n")
 				outfile.write("\\begin{figure}[!hb]\n\t\centering\n")
@@ -157,12 +160,15 @@ def main():
 	parser = argparse.ArgumentParser(description="Produce .tex file from given json logfiles or directories.")
 	parser.add_argument('-l', '--list', nargs='+', help='Json files to be processed, or the directory in which they live', required=True)
 	parser.add_argument('-o', '--output', help='Name of output tex file', required=True)
-	parser.add_argument('-s', '--screenshots_dir', default=None, help="Screenshots directory path")
+	parser.add_argument('-s', '--screenshots_dir', default=None, help="Screenshots directory path. If unspecified, retrieves screenshots from a default location determined from the logfiles path")
 	parser.add_argument("--disable_timestamps", default=True, action="store_false", help="Disable printing timestamps in Figure captions (looks nicer)")
 	args = parser.parse_args()
 
 	if args.screenshots_dir is None:
-		args.screenshots_dir = "/".join(args.list[0].split("/")[:-2])+"/screenshots/"
+		index = -2
+		if not os.path.isdir(args.list[0]):
+			index -= 1
+		args.screenshots_dir = "/".join(args.list[0].split("/")[:index])+"/screenshots/"
 
 	if args.screenshots_dir[-1] == '/':
 		args.screenshots_dir = args.screenshots_dir[:-1]

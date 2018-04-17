@@ -138,8 +138,17 @@ def main():
 	parser = argparse.ArgumentParser(description="Produce .txt file of dialogues from given json logfiles or directories.")
 	parser.add_argument('-l', '--list', nargs='+', help='Json files to be processed, or the directory in which they live', required=True)
 	parser.add_argument('-o', '--output', help='Name of output txt file', required=True)
-	parser.add_argument('-s', '--screenshots_dir', default="../../../../Minecraft/run/screenshots", help="Screenshots directory path")
+	parser.add_argument('-s', '--screenshots_dir', default=None, help="Screenshots directory path. If unspecified, retrieves screenshots from a default location determined from the logfiles path")
 	args = parser.parse_args()
+
+	if args.screenshots_dir is None:
+		index = -2
+		if not os.path.isdir(args.list[0]):
+			index -= 1
+		args.screenshots_dir = "/".join(args.list[0].split("/")[:index])+"/screenshots/"
+
+	if args.screenshots_dir[-1] == '/':
+		args.screenshots_dir = args.screenshots_dir[:-1]
 
 	logfiles = getLogfileNames(args.list, "aligned-observations.json")
 	generateTxtFile(logfiles, args.output, args.screenshots_dir)

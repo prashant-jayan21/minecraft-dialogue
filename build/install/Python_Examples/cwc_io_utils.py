@@ -52,6 +52,7 @@ def getLogfileNames(arglist, suffix):
     print "Retrieved the following logfiles:"
     for logfile in sorted_filenames:
         print "\t",logfile
+    print
 
     return sorted_filenames
 
