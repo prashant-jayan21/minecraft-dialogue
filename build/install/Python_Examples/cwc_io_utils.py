@@ -32,17 +32,28 @@ def writeJSONtoLog(experiment_id, filename, json_data):
         json.dump(json_data, log)
 
 def getLogfileNames(arglist, suffix):
-    filenames = []
+    filenames = {}
     for path in arglist:
         if path[-1] == '/':
             path = path[:-1]
 
         if os.path.isdir(path):
-            filenames.append(path+"/"+suffix)
+            timestamp = path.split("-")[-1]
+            filenames[timestamp] = path+"/"+suffix
         else:
-            filenames.append(path)
+            timestamp = path.split("/")[-2].split("-")[-1]
+            filenames[timestamp] = path
 
-    return filenames
+    sf = sorted(filenames.items())
+    sorted_filenames = []
+    for k,v in sf:
+        sorted_filenames.append(v)
+
+    print "Retrieved the following logfiles:"
+    for logfile in sorted_filenames:
+        print "\t",logfile
+
+    return sorted_filenames
 
 def read_configs_db(configs_db_file):
     all_configs = []
