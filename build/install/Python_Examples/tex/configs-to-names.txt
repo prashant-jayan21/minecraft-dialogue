@@ -148,6 +148,10 @@ C147	pi
 C148	headphones
 C149	drink-with-umbrella
 C150	checkerboard
+C151	hanger
+C152	ballerina
+C153	cursive-ok
+C154	gateway-to-stairs
 C155	sickles-difficult
 C156	sun_and_birds-difficult
 C157	butterfly-difficult
