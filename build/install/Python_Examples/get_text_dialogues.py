@@ -2,14 +2,16 @@ import os, argparse, json
 from cwc_io_utils import getLogfileNames
 
 def generateTxtFile(logfiles, output, screenshots_dir):
+	output_is_empty = len(output) <= 0
+
 	if not os.path.isdir("dialogues/"):
 		os.makedirs("dialogues/")
 
 	if not output.endswith(".txt"):
 		output += ".txt"
 
-	outfile_no_actions = open("dialogues/"+".".join(output.split(".")[:-1])+"-dialogue.txt", "w")
-	outfile_with_actions = open("dialogues/"+".".join(output.split(".")[:-1])+"-dialogue-with-actions.txt", "w")
+	outfile_no_actions = open("dialogues/"+".".join(output.split(".")[:-1])+("-" if not output_is_empty else "")+"dialogue.txt", "w")
+	outfile_with_actions = open("dialogues/"+".".join(output.split(".")[:-1])+("-" if not output_is_empty else "")+"dialogue-with-actions.txt", "w")
 
 	print "Writing plain dialogues to", outfile_no_actions.name
 	print "Writing dialogues with actions to", outfile_with_actions.name
