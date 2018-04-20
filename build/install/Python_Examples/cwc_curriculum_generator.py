@@ -69,6 +69,10 @@ def generate_curriculum(configs_db, num_simple, num_complex, person_1, person_2)
     simple_configs = [x for x in simple_configs if person_1 not in x["people"] and person_2 not in x["people"]]
     complex_configs = [x for x in complex_configs if person_1 not in x["people"] and person_2 not in x["people"]]
 
+    # shuffle
+    shuffle(simple_configs)
+    shuffle(complex_configs)
+
     # sort configs by number of runs
     simple_configs_sorted = sorted(simple_configs, key = lambda x: x["runs"])
     complex_configs_sorted = sorted(complex_configs, key = lambda x: x["runs"])
@@ -77,6 +81,7 @@ def generate_curriculum(configs_db, num_simple, num_complex, person_1, person_2)
     simple_configs_selected = simple_configs_sorted[:num_simple]
     complex_configs_selected = complex_configs_sorted[:num_complex]
 
+    # shuffle again
     shuffle(simple_configs_selected)
     shuffle(complex_configs_selected)
 
