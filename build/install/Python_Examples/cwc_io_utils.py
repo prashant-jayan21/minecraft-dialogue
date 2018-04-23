@@ -146,13 +146,14 @@ def read_dialog_metrics_db(metrics_db_file):
             row["time"] = float(row["time"])
             row["num_utterances"] = int(row["num_utterances"])
             row["utterances_per_turn"] = float(row["utterances_per_turn"])
+            row["num_tokens"] = int(row["num_tokens"])
             all_dialogs.append(row)
 
     return all_dialogs
 
 def write_dialog_metrics_db(metrics_db, metrics_db_file):
     with open(metrics_db_file, 'w') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames = ['dialog', 'time','num_utterances','utterances_per_turn'])
+        writer = csv.DictWriter(csvfile, fieldnames = ['dialog', 'time','num_utterances','utterances_per_turn', 'num_tokens'])
         writer.writeheader()
         for dialog in metrics_db:
             writer.writerow(dialog)

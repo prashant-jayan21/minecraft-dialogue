@@ -43,12 +43,19 @@ def merge_into_config_metrics_db(metrics_db, metrics_data):
             metrics_dict_to_append["utterances_per_turn"] = [metrics_dict["utterances_per_turn"]]
             metrics_db.append(metrics_dict_to_append)
 
+warmup_configs_blacklist = ["blue-original-L", "C3", "orange-flat-original-L", "C17", "bigger-original-L", "C32", "l-shape", "C38"]
+
 def get_metrics_data(logs_root_dir):
     all_log_dirs = filter(lambda x: isdir(join(logs_root_dir, x)), os.listdir(logs_root_dir))
 
     metrics_data = []
 
     for log_dir in all_log_dirs:
+        config_name = re.sub(r"B\d+-A\d+-|-\d\d\d\d\d\d\d+", "", log_dir)
+
+        if config_name in warmup_configs_blacklist:
+            continue
+
         # read metrics.json
         metrics_json_file = join(logs_root_dir, log_dir, "metrics.json")
         with open(metrics_json_file) as json_data:
@@ -63,7 +70,6 @@ def get_metrics_data(logs_root_dir):
         del metrics_dict["num_turns"]
         metrics_dict["time"] = float(postprocessed_observations_dict["TimeElapsed"])/float(60)
 
-        config_name = re.sub(r"B\d+-A\d+-|-\d\d\d\d\d\d\d+", "", log_dir)
         metrics_dict["config"] = config_name
 
         metrics_dict["dialog"] = log_dir
