@@ -1,5 +1,6 @@
-import os, json, argparse
+import os, json, argparse, re
 from os.path import join, isdir
+from nltk import word_tokenize
 
 def process_missions(logs_root_dir, legacy):
     all_log_dirs = filter(lambda x: isdir(join(logs_root_dir, x)), os.listdir(logs_root_dir))
@@ -54,7 +55,13 @@ def get_turn_metrics(chat_history):
             last_collapsed_utterance.startswith("<Architect>") and utterance.startswith("<Builder>"):
                 chat_history_collapsed.append(utterance)
 
+    # tokenize utterances
+    chat_history_stripped = list(map(lambda x: re.sub(r"<Builder> |<Architect> ", "", x), chat_history))
+    chat_history_stripped_tokenized = list(map(word_tokenize, chat_history_stripped))
+    all_tokens = [item for sublist in chat_history_stripped_tokenized for item in sublist]
+
     # compute metrics
+    num_tokens = len(all_tokens)
     num_utterances = len(chat_history)
     num_turns = len(chat_history_collapsed)
     if num_turns == 0:
@@ -65,9 +72,9 @@ def get_turn_metrics(chat_history):
     return {
         "num_utterances": num_utterances,
         "num_turns": num_turns,
-        "utterances_per_turn": utterances_per_turn
+        "utterances_per_turn": utterances_per_turn,
+        "num_tokens": num_tokens
     }
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process observations to compute various dialog metrics")
