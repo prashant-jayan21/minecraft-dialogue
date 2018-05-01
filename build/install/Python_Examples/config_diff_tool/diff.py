@@ -1,3 +1,5 @@
+import numpy as np
+
 from cwc_mission_utils import x_min_build, x_max_build, y_min_build, y_max_build, z_min_build, z_max_build
 
 def get_diff(gold_config, built_config):
@@ -24,7 +26,18 @@ def get_diff(gold_config, built_config):
 
     perturbations = generate_perturbations(built_config, build_region_specs)
 
-    # FIXME: prune infeasible perturbations
+    # prune infeasible perturbations
+
+    def is_feasible(config):
+        def is_feasible_block(d):
+            if (x_min_build <= d["x"] <= x_max_build) and (y_min_build <= d["y"] <= y_max_build) and (z_min_build <= d["z"] <= z_max_build):
+                return True
+            else:
+                return False
+
+        all(is_feasible_block(block) for block in config)
+
+    perturbations = filter(is_feasible, perturbations)
 
     # compute diffs for each perturbation
     diffs = map(lambda t: diff(gold_config, t), perturbations)
@@ -53,7 +66,7 @@ def generate_perturbations(config, build_region_specs):
 
     all_x_values = [i for i in range(build_region_specs["x_min_build"], build_region_specs["x_max_build"] + 1)]
     all_z_values = [i for i in range(build_region_specs["z_min_build"], build_region_specs["z_max_build"] + 1)]
-    all_rot_values = [0] # FIXME
+    all_rot_values = [0, 90, 180, -90]
 
     perturbations = []
 
@@ -86,6 +99,44 @@ def generate_perturbation(config, x_target, z_target, rot_target):
     config_translated = map(lambda t: f(t, x_diff = x_diff, z_diff = z_diff), config)
 
     # rotate
-    config_rotated_and_translated = config_translated # FIXME
 
-    return config_rotated_and_translated
+    # convert to pivot's frame of reference
+    x_source = config_translated[0]["x"]
+    y_source = config_translated[0]["y"]
+    z_source = config_translated[0]["z"]
+
+    def g(d, x_source, y_source, z_source):
+        r = copy.deepcopy(d)
+        r["x"] = r["x"] - x_source
+        r["y"] = r["y"] - y_source
+        r["z"] = r["z"] - z_source
+        return r
+
+    config_translated_referred = map(lambda t: g(t, x_source = x_source, y_source = y_source, z_source = z_source), config_translated)
+
+    # rotate about pivot
+
+    # construct yaw rotation matrix
+    theta_yaw = np.radians(-1 * rot_target)
+    c, s = np.cos(theta_yaw), np.sin(theta_yaw)
+    R_yaw = np.matrix('{} {} {}; {} {} {}; {} {} {}'.format(c, 0, -s, 0, 1, 0, s, 0, c))
+
+    def h(d, rot_matrix):
+        r = copy.deepcopy(d)
+
+        v = np.matrix('{}; {}; {}'.format(r["x"], r["y"], r["z"]))
+        v_new = rot_matrix * v
+
+        r["x"] = v_new.item(0)
+        r["y"] = v_new.item(1)
+        r["z"] = v_new.item(2)
+
+        return r
+
+    config_translated_referred_rotated = map(lambda t: h(t, rot_matrix = R_yaw), config_translated_referred)
+
+    # convert back to abs coordinates
+
+    config_translated_rotated = map(lambda t: g(t, x_source = -1.0 * x_source, y_source = -1.0 * y_source, z_source = -1.0 * z_source), config_translated_referred_rotated)
+
+    return config_translated_rotated
