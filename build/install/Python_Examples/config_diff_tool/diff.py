@@ -37,14 +37,17 @@ def get_diff(gold_config, built_config):
     # select perturbation with min diff
     perturbations_and_diffs = zip(perturbations, diffs)
 
-    min_perturbation_and_diff = min(perturbations_and_diffs, key = lambda t: len(t["gold_minus_built"]) + len(t["built_minus_gold"]))
+    min_perturbation_and_diff = min(perturbations_and_diffs, key = lambda t: len(t[1]["gold_minus_built"]) + len(t[1]["built_minus_gold"]))
 
     # return
     return min_perturbation_and_diff[1]
 
 def diff(gold_config, built_config):
-    gold_minus_built = set(gold_config) - set(built_config)
-    built_minus_gold = set(built_config) - set(gold_config)
+    gold_config_reformatted = map(str, gold_config)
+    built_config_reformatted = map(str, built_config)
+
+    gold_minus_built = set(gold_config_reformatted) - set(built_config_reformatted)
+    built_minus_gold = set(built_config_reformatted) - set(gold_config_reformatted)
 
     return {
         "gold_minus_built": gold_minus_built,
