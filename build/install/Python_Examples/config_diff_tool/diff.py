@@ -1,5 +1,7 @@
 import numpy as np
-
+import sys
+import copy
+sys.path.insert(0, '..')
 from cwc_mission_utils import x_min_build, x_max_build, y_min_build, y_max_build, z_min_build, z_max_build
 
 def get_diff(gold_config, built_config):
@@ -27,17 +29,7 @@ def get_diff(gold_config, built_config):
     perturbations = generate_perturbations(built_config, build_region_specs)
 
     # prune infeasible perturbations
-
-    def is_feasible(config):
-        def is_feasible_block(d):
-            if (x_min_build <= d["x"] <= x_max_build) and (y_min_build <= d["y"] <= y_max_build) and (z_min_build <= d["z"] <= z_max_build):
-                return True
-            else:
-                return False
-
-        all(is_feasible_block(block) for block in config)
-
-    perturbations = filter(is_feasible, perturbations)
+    perturbations = filter(lambda t: is_feasible(t, build_region_specs), perturbations)
 
     # compute diffs for each perturbation
     diffs = map(lambda t: diff(gold_config = gold_config, built_config = t), perturbations)
@@ -58,6 +50,15 @@ def diff(gold_config, built_config):
         "gold_minus_built": gold_minus_built,
         "built_minus_gold": built_minus_gold
     }
+
+def is_feasible(config, build_region_specs):
+    def is_feasible_block(d):
+        if (build_region_specs["x_min_build"] <= d["x"] <= build_region_specs["x_max_build"]) and (build_region_specs["y_min_build"] <= d["y"] <= build_region_specs["y_max_build"]) and (build_region_specs["z_min_build"] <= d["z"] <= build_region_specs["z_max_build"]):
+            return True
+        else:
+            return False
+
+    return all(is_feasible_block(block) for block in config)
 
 def generate_perturbations(config, build_region_specs):
     """
@@ -145,3 +146,22 @@ def generate_perturbation(config, x_target, z_target, rot_target):
     config_translated_rotated = map(lambda t: g(t, x_source = -1.0 * x_source, y_source = -1.0 * y_source, z_source = -1.0 * z_source), config_translated_referred_rotated)
 
     return config_translated_rotated
+
+if __name__ == "__main__":
+    config = [{"x": 1, "y": 2, "z": 3, "type": "red"}, {"x": 4, "y": 5, "z": 6, "type": "orange"}, {"x": 7, "y": 8, "z": 9, "type": "blue"}]
+    actual_output = generate_perturbation(config, 1, 1, 90)
+    expected_output = [{"x": 1, "y": 2, "z": 1, "type": "red"}, {"x": 4, "y": 5, "z": 4, "type": "orange"}, {"x": 7, "y": 8, "z": 7, "type": "blue"}]
+    print actual_output == expected_output
+    print actual_output
+
+    build_region_specs = {
+        "x_min_build": -2,
+        "x_max_build": 2,
+        "y_min_build": -2,
+        "y_max_build": 2,
+        "z_min_build": -2,
+        "z_max_build": 2
+    }
+    perturbations = generate_perturbations(config, build_region_specs)
+    print len(perturbations)
+    print len(filter(lambda t: is_feasible(t, build_region_specs), perturbations))
