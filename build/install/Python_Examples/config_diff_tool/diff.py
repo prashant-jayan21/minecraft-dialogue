@@ -145,22 +145,3 @@ def generate_perturbation(config, x_target, z_target, rot_target):
     config_translated_rotated = map(lambda t: g(t, x_source = -1 * x_source, y_source = -1 * y_source, z_source = -1 * z_source), config_translated_referred_rotated)
 
     return config_translated_rotated
-
-if __name__ == "__main__":
-    config = [{"x": 1, "y": 2, "z": 3, "type": "red"}, {"x": 4, "y": 5, "z": 6, "type": "orange"}, {"x": 7, "y": 8, "z": 9, "type": "blue"}]
-    actual_output = generate_perturbation(config, 1, 1, 90)
-    # expected_output = [{"x": 1, "y": 2, "z": 1, "type": "red"}, {"x": 4, "y": 5, "z": 4, "type": "orange"}, {"x": 7, "y": 8, "z": 7, "type": "blue"}]
-    # print actual_output == expected_output
-    print actual_output
-    #
-    # build_region_specs = {
-    #     "x_min_build": -2,
-    #     "x_max_build": 2,
-    #     "y_min_build": -2,
-    #     "y_max_build": 2,
-    #     "z_min_build": -2,
-    #     "z_max_build": 2
-    # }
-    # perturbations = generate_perturbations(config, build_region_specs)
-    # print len(perturbations)
-    # print len(filter(lambda t: is_feasible(t, build_region_specs), perturbations))
