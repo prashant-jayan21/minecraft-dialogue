@@ -40,19 +40,24 @@ def get_diff(gold_config, built_config):
     perturbations = filter(is_feasible, perturbations)
 
     # compute diffs for each perturbation
-    diffs = map(lambda t: diff(gold_config, t), perturbations)
+    diffs = map(lambda t: diff(gold_config = gold_config, built_config = t), perturbations)
 
     # select perturbation with min diff
     perturbations_and_diffs = zip(perturbations, diffs)
 
-    min_perturbation_and_diff = min(perturbations_and_diffs, key = lambda t: t[1])
+    min_perturbation_and_diff = min(perturbations_and_diffs, key = lambda t: len(t["gold_minus_built"]) + len(t["built_minus_gold"]))
 
     # return
-    return min_perturbation_and_diff[1] # FIXME: Return more than just min diff value
+    return min_perturbation_and_diff[1]
 
-def diff(config_1, config_2):
-    diff_set = set(config_1) ^ set(config_2)
-    return len(diff_set)
+def diff(gold_config, built_config):
+    gold_minus_built = set(gold_config) - set(built_config)
+    built_minus_gold = set(built_config) - set(gold_config)
+
+    return {
+        "gold_minus_built": gold_minus_built,
+        "built_minus_gold": built_minus_gold
+    }
 
 def generate_perturbations(config, build_region_specs):
     """
