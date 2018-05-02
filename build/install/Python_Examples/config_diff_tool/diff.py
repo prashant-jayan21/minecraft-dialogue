@@ -133,35 +133,34 @@ def generate_perturbation(config, x_target, z_target, rot_target):
         v = np.matrix('{}; {}; {}'.format(r["x"], r["y"], r["z"]))
         v_new = rot_matrix * v
 
-        r["x"] = v_new.item(0)
-        r["y"] = v_new.item(1)
-        r["z"] = v_new.item(2)
+        r["x"] = int(round(v_new.item(0)))
+        r["y"] = int(round(v_new.item(1)))
+        r["z"] = int(round(v_new.item(2)))
 
         return r
 
     config_translated_referred_rotated = map(lambda t: h(t, rot_matrix = R_yaw), config_translated_referred)
 
     # convert back to abs coordinates
-
-    config_translated_rotated = map(lambda t: g(t, x_source = -1.0 * x_source, y_source = -1.0 * y_source, z_source = -1.0 * z_source), config_translated_referred_rotated)
+    config_translated_rotated = map(lambda t: g(t, x_source = -1 * x_source, y_source = -1 * y_source, z_source = -1 * z_source), config_translated_referred_rotated)
 
     return config_translated_rotated
 
 if __name__ == "__main__":
     config = [{"x": 1, "y": 2, "z": 3, "type": "red"}, {"x": 4, "y": 5, "z": 6, "type": "orange"}, {"x": 7, "y": 8, "z": 9, "type": "blue"}]
     actual_output = generate_perturbation(config, 1, 1, 90)
-    expected_output = [{"x": 1, "y": 2, "z": 1, "type": "red"}, {"x": 4, "y": 5, "z": 4, "type": "orange"}, {"x": 7, "y": 8, "z": 7, "type": "blue"}]
-    print actual_output == expected_output
+    # expected_output = [{"x": 1, "y": 2, "z": 1, "type": "red"}, {"x": 4, "y": 5, "z": 4, "type": "orange"}, {"x": 7, "y": 8, "z": 7, "type": "blue"}]
+    # print actual_output == expected_output
     print actual_output
-
-    build_region_specs = {
-        "x_min_build": -2,
-        "x_max_build": 2,
-        "y_min_build": -2,
-        "y_max_build": 2,
-        "z_min_build": -2,
-        "z_max_build": 2
-    }
-    perturbations = generate_perturbations(config, build_region_specs)
-    print len(perturbations)
-    print len(filter(lambda t: is_feasible(t, build_region_specs), perturbations))
+    #
+    # build_region_specs = {
+    #     "x_min_build": -2,
+    #     "x_max_build": 2,
+    #     "y_min_build": -2,
+    #     "y_max_build": 2,
+    #     "z_min_build": -2,
+    #     "z_max_build": 2
+    # }
+    # perturbations = generate_perturbations(config, build_region_specs)
+    # print len(perturbations)
+    # print len(filter(lambda t: is_feasible(t, build_region_specs), perturbations))
