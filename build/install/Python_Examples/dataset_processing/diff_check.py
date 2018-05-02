@@ -40,3 +40,14 @@ def get_gold_config(gold_config_xml_file):
     gold_config = map(reformat, gold_config_raw)
 
     return gold_config
+
+if __name__ == "__main__":
+    import pprint
+    import json
+
+    with open("/Users/prashant/Downloads/data-4-16/B36-A35-C140-1523917326878/postprocessed-observations.json") as observations:
+        observations_dict = json.load(observations)
+
+    pprint.PrettyPrinter(indent = 2).pprint(get_built_config(observations_dict))
+
+    pprint.PrettyPrinter(indent = 2).pprint(get_gold_config("../gold-configurations/C1.xml"))
