@@ -6,6 +6,8 @@ from diff import get_diff
 sys.path.insert(0, '..')
 from cwc_mission_utils import displacement
 
+color_regex = re.compile("red|orange|purple|blue|green|yellow")
+
 def get_built_config(observations_dict):
     """
     Args:
@@ -22,7 +24,7 @@ def get_built_config(observations_dict):
             "x": block["AbsoluteCoordinates"]["X"],
             "y": block["AbsoluteCoordinates"]["Y"],
             "z": block["AbsoluteCoordinates"]["Z"],
-            "type": str(block["Type"]) # NOTE: DO NOT CHANGE! Unicode to str conversion needed downstream when stringifying the dict.
+            "type": color_regex.findall(str(block["Type"]))[0] # NOTE: DO NOT CHANGE! Unicode to str conversion needed downstream when stringifying the dict.
         }
 
     built_config = map(reformat, built_config_raw)
@@ -40,23 +42,23 @@ def get_gold_config(gold_config_xml_file):
             "x": int(block.attrib["x"]) - displacement,
             "y": int(block.attrib["y"]),
             "z": int(block.attrib["z"]) - displacement,
-            "type": block.attrib["type"][len("cwcmod:"):]
+            "type": color_regex.findall(block.attrib["type"])[0]
         }
 
     gold_config = map(reformat, gold_config_raw)
 
     return gold_config
 
-def f(logs_root_dir, gold_configs_dir):
+def process_logs_root_dir(logs_root_dir, gold_configs_dir):
     all_log_dirs = filter(lambda x: isdir(join(logs_root_dir, x)), os.listdir(logs_root_dir))
 
     for log_dir in all_log_dirs:
         diff_size = g(logs_root_dir, log_dir, gold_configs_dir)
         print(log_dir)
         print(diff_size)
-        print("\n\n")
+        print("\n")
 
-def g(logs_root_dir, log_dir, gold_configs_dir):
+def process_log_dir(logs_root_dir, log_dir, gold_configs_dir):
     # get gold config
     config_name = re.sub(r"B\d+-A\d+-|-\d\d\d\d\d\d\d+", "", log_dir)
     config_xml_file = join(gold_configs_dir, config_name + ".xml")
@@ -75,16 +77,3 @@ def g(logs_root_dir, log_dir, gold_configs_dir):
     diff_size = len(diff["gold_minus_built"]) + len(diff["built_minus_gold"])
 
     return diff_size
-
-if __name__ == "__main__":
-    # import pprint
-    # import json
-    #
-    # with open("/Users/prashant/Downloads/data-4-16/B36-A35-C140-1523917326878/postprocessed-observations.json") as observations:
-    #     observations_dict = json.load(observations)
-    #
-    # pprint.PrettyPrinter(indent = 2).pprint(get_built_config(observations_dict))
-    #
-    # pprint.PrettyPrinter(indent = 2).pprint(get_gold_config("../gold-configurations/C1.xml"))
-
-    f("/Users/prashant/Downloads/data-4-16/", "/Users/prashant/Work/cwc-minecraft/build/install/Python_Examples/gold-configurations")
