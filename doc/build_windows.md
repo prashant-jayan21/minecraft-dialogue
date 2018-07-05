@@ -10,7 +10,7 @@
     3. Add `C:\ffmpeg\bin` to your `PATH` ([How To](https://support.microsoft.com/en-us/kb/310519))
     4. Check that typing `ffmpeg` at a command prompt works.
 
-3. Install git and Visual Studio 2013 and [Python 2.7 (64-bit)](https://www.python.org/ftp/python/2.7.12/python-2.7.12.amd64.msi) and the JDK (64-bit). Hints:
+3. Install git and Visual Studio 2013 and [Python 2.7 (64-bit)](https://www.python.org/ftp/python/2.7.12/python-2.7.12.amd64.msi) and the JDK (64-bit, version 1.8 **ONLY**). Hints:
     1. Get the latest Windows git from https://git-scm.com/downloads
     2. Check that git and msbuild and python are on your path.  
        N.B. MSBuild lives in an odd place: e.g. `C:\Program Files (x86)\MSBuild\12.0\Bin`
@@ -25,7 +25,7 @@
 5. Download and install ZLib
     1. Download e.g. `zlib-1.2.11.zip` from http://zlib.net/
     2. Extract to `C:\zlib-1.2.11\`
-    3. Open a Visual Studio 2013 x64 command prompt with Admin rights ([How-To](https://technet.microsoft.com/en-us/library/cc947813(v=ws.10).aspx))
+    3. Open a Visual Studio 2013 x64 command prompt with Admin rights ([How-To](https://technet.microsoft.com/en-us/library/cc947813(v=ws.10).aspx)) (to do this search for visual studio tools 2013 in the windows search bar, select the developer command prompt and then run it as admin)
     4. `cd C:\zlib-1.2.11\`
     5. `cmake -G "Visual Studio 12 2013 Win64" .`
     6. `cmake --build . --config Debug --target install`
@@ -35,7 +35,7 @@
 6. Install and build Boost 1.59.0: (NOTE - if you have Python31 installed, ensure that it isn't picked up by the boost build - make sure it comes _after_ Python27 in your path)
     1. Download e.g. `boost_1_59_0.zip` from http://boost.org
     2. Extract to `c:\boost`
-    3. Open a Visual Studio 2013 x64 command prompt with Admin rights ([How-To](https://technet.microsoft.com/en-us/library/cc947813(v=ws.10).aspx))
+    3. Open a Visual Studio 2013 x64 command prompt with Admin rights
     4. e.g. `cd c:\boost\boost_1_59_0`
     5. `bootstrap.bat`
     6. `b2.exe toolset=msvc-12.0 address-model=64 -sZLIB_SOURCE="C:\zlib-1.2.11"`   
