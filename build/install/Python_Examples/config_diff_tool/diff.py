@@ -1,6 +1,4 @@
-import numpy as np
-import sys
-import copy
+import numpy as np, sys, copy, ast
 sys.path.insert(0, '..')
 from cwc_mission_utils import x_min_build, x_max_build, y_min_build, y_max_build, z_min_build, z_max_build
 
@@ -48,6 +46,9 @@ def diff(gold_config, built_config):
 
     gold_minus_built = set(gold_config_reformatted) - set(built_config_reformatted)
     built_minus_gold = set(built_config_reformatted) - set(gold_config_reformatted)
+
+    gold_minus_built = map(ast.literal_eval, gold_minus_built)
+    built_minus_gold = map(ast.literal_eval, built_minus_gold)
 
     return {
         "gold_minus_built": gold_minus_built,
