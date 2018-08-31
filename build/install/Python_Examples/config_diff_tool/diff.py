@@ -13,6 +13,14 @@ def get_diff(gold_config, built_config):
         Nothing
     """
 
+    # FIXME: Return output in terms of built config blocks and not gold config blocks
+
+    if not built_config:
+        return {
+            "gold_minus_built": gold_config,
+            "built_minus_gold": []
+        }
+
     # generate all possible perturbations of built config in the build region
 
     build_region_specs = {
