@@ -13,7 +13,7 @@ def get_diff(gold_config, built_config):
         Nothing
     """
 
-    # FIXME: Return output in terms of built config blocks and not gold config blocks
+    # FIXME: Return output in terms of built config blocks and not gold config blocks -- by storing exact x, y, rot perturbation and reverting it at the end
 
     if not built_config:
         return {
