@@ -1,4 +1,5 @@
 import numpy as np, sys, copy, ast
+from scipy.spatial import distance
 sys.path.insert(0, '..')
 from cwc_mission_utils import x_min_build, x_max_build, y_min_build, y_max_build, z_min_build, z_max_build
 
@@ -10,6 +11,40 @@ build_region_specs = {
     "z_min_build": z_min_build,
     "z_max_build": z_max_build
 }
+
+def get_next_actions(all_next_actions, num_next_actions_needed, last_action):
+    """
+    Args:
+        all_next_actions: The diff between current state and goal state
+        num_next_actions_needed: The number of next actions to sample from all possible next actions
+        last_action: The point in space where the last action took place
+
+    Returns:
+        The appropriate next actions in terms of a reduced diff
+    """
+
+    all_next_removals = all_next_actions["built_minus_gold"]
+    all_next_placements = all_next_actions["gold_minus_built"]
+
+    assert num_next_actions_needed % 2 == 0 # an even split is needed between removals and placements
+
+    # sort all next actions by distance from last action and pick top-k
+    all_next_removals_sorted = sorted(all_next_removals, key = lambda x: euclidean_distance(x, last_action))
+    all_next_placements_sorted = sorted(all_next_placements, key = lambda x: euclidean_distance(x, last_action))
+
+    next_removals = all_next_removals_sorted[:num_next_actions_needed/2]
+    next_placements = all_next_placements_sorted[:num_next_actions_needed/2]
+
+    return {
+        "gold_minus_built": next_placements,
+        "built_minus_gold": next_removals
+    }
+
+def euclidean_distance(block_1, block_2):
+    return distance.euclidean(
+        [block_1["x"], block_1["y"], block_1["z"]],
+        [block_2["x"], block_2["y"], block_2["z"]]
+    )
 
 def get_diff(gold_config, built_config):
     """
@@ -47,9 +82,9 @@ def get_diff(gold_config, built_config):
 def is_feasible_perturbation(perturbed_config, diff):
     # NOTE: This function mutates `diff`. DO NOT CHANGE THIS BEHAVIOR!
     """
-        Args:
-            perturbed_config: PerturbedConfig
-            diff: Dict
+    Args:
+        perturbed_config: PerturbedConfig
+        diff: Dict
     """
 
     for key, config in diff.iteritems():
@@ -62,8 +97,8 @@ def is_feasible_perturbation(perturbed_config, diff):
 
 def is_feasible_config(config):
     """
-        Args:
-            config: List of blocks
+    Args:
+        config: List of blocks
     """
     def is_feasible_block(d):
         if (build_region_specs["x_min_build"] <= d["x"] <= build_region_specs["x_max_build"]) and (build_region_specs["y_min_build"] <= d["y"] <= build_region_specs["y_max_build"]) and (build_region_specs["z_min_build"] <= d["z"] <= build_region_specs["z_max_build"]):
@@ -299,4 +334,8 @@ if __name__  == "__main__":
 
     import pprint
     pp = pprint.PrettyPrinter()
-    pp.pprint(get_diff(gold_config, built_config))
+    diff = get_diff(gold_config, built_config)
+    pp.pprint(diff)
+    print("\n\n")
+    next_actions = get_next_actions(diff, 2, {"x": 0, "y": 0, "z": 5})
+    pp.pprint(next_actions)
