@@ -13,8 +13,6 @@ def get_diff(gold_config, built_config):
         Nothing
     """
 
-    # FIXME: Return output in terms of built config blocks and not gold config blocks -- by storing exact x, y, rot perturbation and reverting it at the end
-
     if not built_config:
         return {
             "gold_minus_built": gold_config,
@@ -35,18 +33,29 @@ def get_diff(gold_config, built_config):
     perturbations = generate_perturbations(built_config, build_region_specs)
 
     # prune infeasible perturbations
-    perturbations = filter(lambda t: is_feasible(t, build_region_specs), perturbations)
+    perturbations = filter(lambda t: is_feasible(t.perturbed_config, build_region_specs), perturbations)
 
     # compute diffs for each perturbation
-    diffs = map(lambda t: diff(gold_config = gold_config, built_config = t), perturbations)
+    diffs = map(lambda t: diff(gold_config = gold_config, built_config = t.perturbed_config), perturbations)
 
     # select perturbation with min diff
     perturbations_and_diffs = zip(perturbations, diffs)
 
     min_perturbation_and_diff = min(perturbations_and_diffs, key = lambda t: len(t[1]["gold_minus_built"]) + len(t[1]["built_minus_gold"]))
 
+    # revert perturbation on blocks in diff
+    final_perturbed_config = min_perturbation_and_diff[0]
+    final_diff = min_perturbation_and_diff[1]
+
+    for key in final_diff:
+        config = final_diff[key]
+        final_diff[key] = invert_perturbation_transform(
+            config = config,
+            perturbed_config = final_perturbed_config
+        )
+
     # return
-    return min_perturbation_and_diff[1]
+    return final_diff
 
 def diff(gold_config, built_config):
     gold_config_reformatted = map(str, gold_config)
@@ -156,4 +165,113 @@ def generate_perturbation(config, x_target, z_target, rot_target):
     # convert back to abs coordinates
     config_translated_rotated = map(lambda t: g(t, x_source = -1 * x_source, y_source = -1 * y_source, z_source = -1 * z_source), config_translated_referred_rotated)
 
-    return config_translated_rotated
+    return PerturbedConfig(
+        perturbed_config = config_translated_rotated,
+        rot_target = rot_target,
+        rot_axis_pivot = (x_source, y_source, z_source),
+        translation = (x_diff, z_diff)
+    )
+
+def invert_perturbation_transform(config, perturbed_config):
+
+    # rotate
+    rot_target = -1 * perturbed_config.rot_target
+
+    # convert to pivot's frame of reference
+    x_source = perturbed_config.rot_axis_pivot[0]
+    y_source = perturbed_config.rot_axis_pivot[1]
+    z_source = perturbed_config.rot_axis_pivot[2]
+
+    def g(d, x_source, y_source, z_source):
+        r = copy.deepcopy(d)
+        r["x"] = r["x"] - x_source
+        r["y"] = r["y"] - y_source
+        r["z"] = r["z"] - z_source
+        return r
+
+    config_referred = map(lambda t: g(t, x_source = x_source, y_source = y_source, z_source = z_source), config)
+
+    # rotate about pivot
+
+    # construct yaw rotation matrix
+    theta_yaw = np.radians(-1 * rot_target)
+    c, s = np.cos(theta_yaw), np.sin(theta_yaw)
+    R_yaw = np.matrix('{} {} {}; {} {} {}; {} {} {}'.format(c, 0, -s, 0, 1, 0, s, 0, c))
+
+    def h(d, rot_matrix):
+        r = copy.deepcopy(d)
+
+        v = np.matrix('{}; {}; {}'.format(r["x"], r["y"], r["z"]))
+        v_new = rot_matrix * v
+
+        r["x"] = int(round(v_new.item(0)))
+        r["y"] = int(round(v_new.item(1)))
+        r["z"] = int(round(v_new.item(2)))
+
+        return r
+
+    config_referred_rotated = map(lambda t: h(t, rot_matrix = R_yaw), config_referred)
+
+    # convert back to abs coordinates
+    config_rotated = map(lambda t: g(t, x_source = -1 * x_source, y_source = -1 * y_source, z_source = -1 * z_source), config_referred_rotated)
+
+    x_diff = -1 * perturbed_config.translation[0]
+    z_diff = -1 * perturbed_config.translation[1]
+
+    # translate
+    def f(d, x_diff, z_diff):
+        r = copy.deepcopy(d)
+        r["x"] = r["x"] + x_diff
+        r["z"] = r["z"] + z_diff
+        return r
+
+    config_rotated_translated = map(lambda t: f(t, x_diff = x_diff, z_diff = z_diff), config_rotated)
+
+    return config_rotated_translated
+
+class PerturbedConfig:
+    def __init__(self, perturbed_config, rot_target, rot_axis_pivot, translation):
+        self.perturbed_config = perturbed_config
+        self.rot_target = rot_target
+        self.rot_axis_pivot = rot_axis_pivot
+        self.translation = translation
+
+if __name__  == "__main__":
+    gold_config = [
+        {
+            "x": 3,
+            "y": 1,
+            "z": 3,
+            "type": "orange"
+        },
+        {
+            "x": 4,
+            "y": 1,
+            "z": 3,
+            "type": "red"
+        },
+        {
+            "x": 5,
+            "y": 1,
+            "z": 3,
+            "type": "blue"
+        }
+    ]
+
+    built_config = [
+        {
+            "x": 1,
+            "y": 1,
+            "z": 4,
+            "type": "orange"
+        },
+        {
+            "x": 1,
+            "y": 1,
+            "z": 5,
+            "type": "red"
+        }
+
+    ]
+
+    print(get_diff(gold_config, built_config))
