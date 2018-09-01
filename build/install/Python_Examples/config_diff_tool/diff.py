@@ -1,15 +1,13 @@
 import numpy as np, sys, copy, ast
 from scipy.spatial import distance
-sys.path.insert(0, '..')
-from cwc_mission_utils import x_min_build, x_max_build, y_min_build, y_max_build, z_min_build, z_max_build
 
-build_region_specs = {
-    "x_min_build": x_min_build,
-    "x_max_build": x_max_build,
-    "y_min_build": y_min_build,
-    "y_max_build": y_max_build,
-    "z_min_build": z_min_build,
-    "z_max_build": z_max_build
+build_region_specs = { # FIXME: Import instead
+    "x_min_build": -5,
+    "x_max_build": 5,
+    "y_min_build": 1,
+    "y_max_build": 9,
+    "z_min_build": -5,
+    "z_max_build": 5
 }
 
 def get_next_actions(all_next_actions, num_next_actions_needed, last_action):
@@ -32,8 +30,8 @@ def get_next_actions(all_next_actions, num_next_actions_needed, last_action):
     all_next_removals_sorted = sorted(all_next_removals, key = lambda x: euclidean_distance(x, last_action))
     all_next_placements_sorted = sorted(all_next_placements, key = lambda x: euclidean_distance(x, last_action))
 
-    next_removals = all_next_removals_sorted[:num_next_actions_needed/2]
-    next_placements = all_next_placements_sorted[:num_next_actions_needed/2]
+    next_removals = all_next_removals_sorted[:int(num_next_actions_needed/2)]
+    next_placements = all_next_placements_sorted[:int(num_next_actions_needed/2)]
 
     return {
         "gold_minus_built": next_placements,
@@ -68,11 +66,11 @@ def get_diff(gold_config, built_config):
     perturbations = generate_perturbations(built_config)
 
     # compute diffs for each perturbation
-    diffs = map(lambda t: diff(gold_config = gold_config, built_config = t.perturbed_config), perturbations)
+    diffs = list(map(lambda t: diff(gold_config = gold_config, built_config = t.perturbed_config), perturbations))
 
     # convert diffs back to actions in the built config space and not the perturbed config space
     # filter out perturbations that yield infeasible diff actions (those outside the build region)
-    perturbations_and_diffs = filter(lambda x: is_feasible_perturbation(x[0], x[1]), zip(perturbations, diffs))
+    perturbations_and_diffs = list(filter(lambda x: is_feasible_perturbation(x[0], x[1]), list(zip(perturbations, diffs))))
 
     # select perturbation with min diff
     min_perturbation_and_diff = min(perturbations_and_diffs, key = lambda t: len(t[1]["gold_minus_built"]) + len(t[1]["built_minus_gold"]))
@@ -87,7 +85,7 @@ def is_feasible_perturbation(perturbed_config, diff):
         diff: Dict
     """
 
-    for key, config in diff.iteritems():
+    for key, config in diff.items():
         diff[key] = invert_perturbation_transform(
             config = config,
             perturbed_config = perturbed_config
@@ -109,14 +107,14 @@ def is_feasible_config(config):
     return all(is_feasible_block(block) for block in config)
 
 def diff(gold_config, built_config):
-    gold_config_reformatted = map(str, gold_config)
-    built_config_reformatted = map(str, built_config)
+    gold_config_reformatted = list(map(str, gold_config))
+    built_config_reformatted = list(map(str, built_config))
 
     gold_minus_built = set(gold_config_reformatted) - set(built_config_reformatted)
     built_minus_gold = set(built_config_reformatted) - set(gold_config_reformatted)
 
-    gold_minus_built = map(ast.literal_eval, gold_minus_built)
-    built_minus_gold = map(ast.literal_eval, built_minus_gold)
+    gold_minus_built = list(map(ast.literal_eval, gold_minus_built))
+    built_minus_gold = list(map(ast.literal_eval, built_minus_gold))
 
     return {
         "gold_minus_built": gold_minus_built,
@@ -164,7 +162,7 @@ def generate_perturbation(config, x_target, z_target, rot_target):
         r["z"] = r["z"] + z_diff
         return r
 
-    config_translated = map(lambda t: f(t, x_diff = x_diff, z_diff = z_diff), config)
+    config_translated = list(map(lambda t: f(t, x_diff = x_diff, z_diff = z_diff), config))
 
     # rotate
 
@@ -180,7 +178,7 @@ def generate_perturbation(config, x_target, z_target, rot_target):
         r["z"] = r["z"] - z_source
         return r
 
-    config_translated_referred = map(lambda t: g(t, x_source = x_source, y_source = y_source, z_source = z_source), config_translated)
+    config_translated_referred = list(map(lambda t: g(t, x_source = x_source, y_source = y_source, z_source = z_source), config_translated))
 
     # rotate about pivot
 
@@ -201,10 +199,10 @@ def generate_perturbation(config, x_target, z_target, rot_target):
 
         return r
 
-    config_translated_referred_rotated = map(lambda t: h(t, rot_matrix = R_yaw), config_translated_referred)
+    config_translated_referred_rotated = list(map(lambda t: h(t, rot_matrix = R_yaw), config_translated_referred))
 
     # convert back to abs coordinates
-    config_translated_rotated = map(lambda t: g(t, x_source = -1 * x_source, y_source = -1 * y_source, z_source = -1 * z_source), config_translated_referred_rotated)
+    config_translated_rotated = list(map(lambda t: g(t, x_source = -1 * x_source, y_source = -1 * y_source, z_source = -1 * z_source), config_translated_referred_rotated))
 
     return PerturbedConfig(
         perturbed_config = config_translated_rotated,
@@ -230,7 +228,7 @@ def invert_perturbation_transform(config, perturbed_config):
         r["z"] = r["z"] - z_source
         return r
 
-    config_referred = map(lambda t: g(t, x_source = x_source, y_source = y_source, z_source = z_source), config)
+    config_referred = list(map(lambda t: g(t, x_source = x_source, y_source = y_source, z_source = z_source), config))
 
     # rotate about pivot
 
@@ -251,10 +249,10 @@ def invert_perturbation_transform(config, perturbed_config):
 
         return r
 
-    config_referred_rotated = map(lambda t: h(t, rot_matrix = R_yaw), config_referred)
+    config_referred_rotated = list(map(lambda t: h(t, rot_matrix = R_yaw), config_referred))
 
     # convert back to abs coordinates
-    config_rotated = map(lambda t: g(t, x_source = -1 * x_source, y_source = -1 * y_source, z_source = -1 * z_source), config_referred_rotated)
+    config_rotated = list(map(lambda t: g(t, x_source = -1 * x_source, y_source = -1 * y_source, z_source = -1 * z_source), config_referred_rotated))
 
     x_diff = -1 * perturbed_config.translation[0]
     z_diff = -1 * perturbed_config.translation[1]
@@ -266,7 +264,7 @@ def invert_perturbation_transform(config, perturbed_config):
         r["z"] = r["z"] + z_diff
         return r
 
-    config_rotated_translated = map(lambda t: f(t, x_diff = x_diff, z_diff = z_diff), config_rotated)
+    config_rotated_translated = list(map(lambda t: f(t, x_diff = x_diff, z_diff = z_diff), config_rotated))
 
     return config_rotated_translated
 
@@ -337,5 +335,5 @@ if __name__  == "__main__":
     diff = get_diff(gold_config, built_config)
     pp.pprint(diff)
     print("\n\n")
-    next_actions = get_next_actions(diff, 2, {"x": 0, "y": 0, "z": 5})
+    next_actions = get_next_actions(diff, 4, {"x": 0, "y": 0, "z": 5})
     pp.pprint(next_actions)
