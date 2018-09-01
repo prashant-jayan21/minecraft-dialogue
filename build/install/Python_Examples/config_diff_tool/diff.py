@@ -2,6 +2,15 @@ import numpy as np, sys, copy, ast
 sys.path.insert(0, '..')
 from cwc_mission_utils import x_min_build, x_max_build, y_min_build, y_max_build, z_min_build, z_max_build
 
+build_region_specs = {
+    "x_min_build": x_min_build,
+    "x_max_build": x_max_build,
+    "y_min_build": y_min_build,
+    "y_max_build": y_max_build,
+    "z_min_build": z_min_build,
+    "z_max_build": z_max_build
+}
+
 def get_diff(gold_config, built_config):
     """
     Args:
@@ -10,7 +19,8 @@ def get_diff(gold_config, built_config):
         Both are lists of dicts. Each dict contains info on block type and block coordinates.
 
     Returns:
-        Nothing
+        The diff in terms of actions -- blocks to remove and block to place --
+        to take the built config state to the goal config state
     """
 
     if not built_config:
@@ -20,42 +30,48 @@ def get_diff(gold_config, built_config):
         }
 
     # generate all possible perturbations of built config in the build region
-
-    build_region_specs = {
-        "x_min_build": x_min_build,
-        "x_max_build": x_max_build,
-        "y_min_build": y_min_build,
-        "y_max_build": y_max_build,
-        "z_min_build": z_min_build,
-        "z_max_build": z_max_build
-    }
-
-    perturbations = generate_perturbations(built_config, build_region_specs)
-
-    # prune infeasible perturbations
-    perturbations = filter(lambda t: is_feasible(t.perturbed_config, build_region_specs), perturbations)
+    perturbations = generate_perturbations(built_config)
 
     # compute diffs for each perturbation
     diffs = map(lambda t: diff(gold_config = gold_config, built_config = t.perturbed_config), perturbations)
 
-    # select perturbation with min diff
-    perturbations_and_diffs = zip(perturbations, diffs)
+    # convert diffs back to actions in the built config space and not the perturbed config space
+    # filter out perturbations that yield infeasible diff actions (those outside the build region)
+    perturbations_and_diffs = filter(lambda x: is_feasible_perturbation(x[0], x[1]), zip(perturbations, diffs))
 
+    # select perturbation with min diff
     min_perturbation_and_diff = min(perturbations_and_diffs, key = lambda t: len(t[1]["gold_minus_built"]) + len(t[1]["built_minus_gold"]))
 
-    # revert perturbation on blocks in diff
-    final_perturbed_config = min_perturbation_and_diff[0]
-    final_diff = min_perturbation_and_diff[1]
+    return min_perturbation_and_diff[1]
 
-    for key in final_diff:
-        config = final_diff[key]
-        final_diff[key] = invert_perturbation_transform(
+def is_feasible_perturbation(perturbed_config, diff):
+    # NOTE: This function mutates `diff`. DO NOT CHANGE THIS BEHAVIOR!
+    """
+        Args:
+            perturbed_config: PerturbedConfig
+            diff: Dict
+    """
+
+    for key, config in diff.iteritems():
+        diff[key] = invert_perturbation_transform(
             config = config,
-            perturbed_config = final_perturbed_config
+            perturbed_config = perturbed_config
         )
 
-    # return
-    return final_diff
+    return is_feasible_config(diff["gold_minus_built"])
+
+def is_feasible_config(config):
+    """
+        Args:
+            config: List of blocks
+    """
+    def is_feasible_block(d):
+        if (build_region_specs["x_min_build"] <= d["x"] <= build_region_specs["x_max_build"]) and (build_region_specs["y_min_build"] <= d["y"] <= build_region_specs["y_max_build"]) and (build_region_specs["z_min_build"] <= d["z"] <= build_region_specs["z_max_build"]):
+            return True
+        else:
+            return False
+
+    return all(is_feasible_block(block) for block in config)
 
 def diff(gold_config, built_config):
     gold_config_reformatted = map(str, gold_config)
@@ -72,20 +88,10 @@ def diff(gold_config, built_config):
         "built_minus_gold": built_minus_gold
     }
 
-def is_feasible(config, build_region_specs):
-    def is_feasible_block(d):
-        if (build_region_specs["x_min_build"] <= d["x"] <= build_region_specs["x_max_build"]) and (build_region_specs["y_min_build"] <= d["y"] <= build_region_specs["y_max_build"]) and (build_region_specs["z_min_build"] <= d["z"] <= build_region_specs["z_max_build"]):
-            return True
-        else:
-            return False
-
-    return all(is_feasible_block(block) for block in config)
-
-def generate_perturbations(config, build_region_specs):
+def generate_perturbations(config):
     """
     Args:
         config: A configuration
-        build_region_specs: A dict specifying bounds of the build region
 
     Returns:
         All perturbations of the config in build region
@@ -239,22 +245,34 @@ class PerturbedConfig:
 if __name__  == "__main__":
     gold_config = [
         {
-            "x": 3,
+            "x": 1,
             "y": 1,
-            "z": 3,
-            "type": "orange"
-        },
-        {
-            "x": 4,
-            "y": 1,
-            "z": 3,
+            "z": 1,
             "type": "red"
         },
         {
-            "x": 5,
+            "x": 1,
+            "y": 1,
+            "z": 2,
+            "type": "red"
+        },
+        {
+            "x": 1,
             "y": 1,
             "z": 3,
             "type": "blue"
+        },
+        {
+            "x": 1,
+            "y": 1,
+            "z": 4,
+            "type": "blue"
+        },
+        {
+            "x": 1,
+            "y": 1,
+            "z": 5,
+            "type": "orange"
         }
     ]
 
@@ -262,16 +280,23 @@ if __name__  == "__main__":
         {
             "x": 1,
             "y": 1,
-            "z": 4,
-            "type": "orange"
+            "z": 1,
+            "type": "red"
         },
         {
             "x": 1,
             "y": 1,
-            "z": 5,
-            "type": "red"
+            "z": 3,
+            "type": "blue"
+        },
+        {
+            "x": 1,
+            "y": 4,
+            "z": 3,
+            "type": "blue"
         }
-
     ]
 
-    print(get_diff(gold_config, built_config))
+    import pprint
+    pp = pprint.PrettyPrinter()
+    pp.pprint(get_diff(gold_config, built_config))
