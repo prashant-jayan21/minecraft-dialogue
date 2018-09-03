@@ -1,4 +1,4 @@
-import numpy as np, sys, copy, ast
+import numpy as np, sys
 from scipy.spatial import distance
 
 build_region_specs = { # FIXME: Import instead
@@ -106,20 +106,23 @@ def is_feasible_config(config):
 
     return all(is_feasible_block(block) for block in config)
 
-def diff(gold_config, built_config):
-    gold_config_reformatted = list(map(str, gold_config))
-    built_config_reformatted = list(map(str, built_config))
+def diff(gold_config, built_config): # PROFILED
+    gold_config_reformatted = list(map(dict_to_tuple, gold_config))
+    built_config_reformatted = list(map(dict_to_tuple, built_config))
 
     gold_minus_built = set(gold_config_reformatted) - set(built_config_reformatted)
     built_minus_gold = set(built_config_reformatted) - set(gold_config_reformatted)
 
-    gold_minus_built = list(map(ast.literal_eval, gold_minus_built))
-    built_minus_gold = list(map(ast.literal_eval, built_minus_gold))
+    gold_minus_built = list(map(dict, gold_minus_built))
+    built_minus_gold = list(map(dict, built_minus_gold))
 
     return {
         "gold_minus_built": gold_minus_built,
         "built_minus_gold": built_minus_gold
     }
+
+def dict_to_tuple(d):
+    return tuple(sorted(d.items()))
 
 def generate_perturbations(config):
     """
@@ -144,7 +147,7 @@ def generate_perturbations(config):
 
     return perturbations
 
-def generate_perturbation(config, x_target, z_target, rot_target):
+def generate_perturbation(config, x_target, z_target, rot_target): # PROFILED
     # treat first block in config as pivot always
 
     # move config to x, z and with rotation
@@ -157,10 +160,12 @@ def generate_perturbation(config, x_target, z_target, rot_target):
 
     # translate
     def f(d, x_diff, z_diff):
-        r = copy.deepcopy(d)
-        r["x"] = r["x"] + x_diff
-        r["z"] = r["z"] + z_diff
-        return r
+        return {
+            'x': d["x"] + x_diff,
+            'y': d["y"],
+            'z': d["z"] + z_diff,
+            'type': d["type"]
+        }
 
     config_translated = list(map(lambda t: f(t, x_diff = x_diff, z_diff = z_diff), config))
 
@@ -172,11 +177,12 @@ def generate_perturbation(config, x_target, z_target, rot_target):
     z_source = config_translated[0]["z"]
 
     def g(d, x_source, y_source, z_source):
-        r = copy.deepcopy(d)
-        r["x"] = r["x"] - x_source
-        r["y"] = r["y"] - y_source
-        r["z"] = r["z"] - z_source
-        return r
+        return {
+            'x': d["x"] - x_source,
+            'y': d["y"] - y_source,
+            'z': d["z"] - z_source,
+            'type': d["type"]
+        }
 
     config_translated_referred = list(map(lambda t: g(t, x_source = x_source, y_source = y_source, z_source = z_source), config_translated))
 
@@ -185,19 +191,18 @@ def generate_perturbation(config, x_target, z_target, rot_target):
     # construct yaw rotation matrix
     theta_yaw = np.radians(-1 * rot_target)
     c, s = np.cos(theta_yaw), np.sin(theta_yaw)
-    R_yaw = np.matrix('{} {} {}; {} {} {}; {} {} {}'.format(c, 0, -s, 0, 1, 0, s, 0, c))
+    R_yaw = np.matrix([ [ c, 0, -s ], [ 0, 1, 0 ], [ s, 0, c ] ])
 
-    def h(d, rot_matrix):
-        r = copy.deepcopy(d)
-
-        v = np.matrix('{}; {}; {}'.format(r["x"], r["y"], r["z"]))
+    def h(d, rot_matrix): #PROFILED
+        v = np.matrix([ [ d["x"] ], [ d["y"] ], [ d["z"] ] ])
         v_new = rot_matrix * v
 
-        r["x"] = int(round(v_new.item(0)))
-        r["y"] = int(round(v_new.item(1)))
-        r["z"] = int(round(v_new.item(2)))
-
-        return r
+        return {
+            'x': int(round(v_new.item(0))),
+            'y': int(round(v_new.item(1))),
+            'z': int(round(v_new.item(2))),
+            'type': d["type"]
+        }
 
     config_translated_referred_rotated = list(map(lambda t: h(t, rot_matrix = R_yaw), config_translated_referred))
 
@@ -211,7 +216,7 @@ def generate_perturbation(config, x_target, z_target, rot_target):
         translation = (x_diff, z_diff)
     )
 
-def invert_perturbation_transform(config, perturbed_config):
+def invert_perturbation_transform(config, perturbed_config): # PROFILED
 
     # rotate
     rot_target = -1 * perturbed_config.rot_target
@@ -221,12 +226,13 @@ def invert_perturbation_transform(config, perturbed_config):
     y_source = perturbed_config.rot_axis_pivot[1]
     z_source = perturbed_config.rot_axis_pivot[2]
 
-    def g(d, x_source, y_source, z_source):
-        r = copy.deepcopy(d)
-        r["x"] = r["x"] - x_source
-        r["y"] = r["y"] - y_source
-        r["z"] = r["z"] - z_source
-        return r
+    def g(d, x_source, y_source, z_source): # PROFILED
+        return {
+            'x': d["x"] - x_source,
+            'y': d["y"] - y_source,
+            'z': d["z"] - z_source,
+            'type': d["type"]
+        }
 
     config_referred = list(map(lambda t: g(t, x_source = x_source, y_source = y_source, z_source = z_source), config))
 
@@ -235,19 +241,18 @@ def invert_perturbation_transform(config, perturbed_config):
     # construct yaw rotation matrix
     theta_yaw = np.radians(-1 * rot_target)
     c, s = np.cos(theta_yaw), np.sin(theta_yaw)
-    R_yaw = np.matrix('{} {} {}; {} {} {}; {} {} {}'.format(c, 0, -s, 0, 1, 0, s, 0, c))
+    R_yaw = np.matrix([ [ c, 0, -s ], [ 0, 1, 0 ], [ s, 0, c ] ])
 
-    def h(d, rot_matrix):
-        r = copy.deepcopy(d)
-
-        v = np.matrix('{}; {}; {}'.format(r["x"], r["y"], r["z"]))
+    def h(d, rot_matrix): # PROFILED
+        v = np.matrix([ [ d["x"] ], [ d["y"] ], [ d["z"] ] ])
         v_new = rot_matrix * v
 
-        r["x"] = int(round(v_new.item(0)))
-        r["y"] = int(round(v_new.item(1)))
-        r["z"] = int(round(v_new.item(2)))
-
-        return r
+        return {
+            'x': int(round(v_new.item(0))),
+            'y': int(round(v_new.item(1))),
+            'z': int(round(v_new.item(2))),
+            'type': d["type"]
+        }
 
     config_referred_rotated = list(map(lambda t: h(t, rot_matrix = R_yaw), config_referred))
 
@@ -258,11 +263,13 @@ def invert_perturbation_transform(config, perturbed_config):
     z_diff = -1 * perturbed_config.translation[1]
 
     # translate
-    def f(d, x_diff, z_diff):
-        r = copy.deepcopy(d)
-        r["x"] = r["x"] + x_diff
-        r["z"] = r["z"] + z_diff
-        return r
+    def f(d, x_diff, z_diff): # PROFILED
+        return {
+            'x': d["x"] + x_diff,
+            'y': d["y"],
+            'z': d["z"] + z_diff,
+            'type': d["type"]
+        }
 
     config_rotated_translated = list(map(lambda t: f(t, x_diff = x_diff, z_diff = z_diff), config_rotated))
 
