@@ -10,6 +10,14 @@ build_region_specs = { # FIXME: Import instead
     "z_max_build": 5
 }
 
+all_possible_rot_values = [0, 90, 180, -90, -180]
+rot_matrices_dict = {}
+for rot_value in all_possible_rot_values:
+    theta_yaw = np.radians(-1 * rot_value)
+    c, s = np.cos(theta_yaw), np.sin(theta_yaw)
+    R_yaw = np.matrix([ [ c, 0, -s ], [ 0, 1, 0 ], [ s, 0, c ] ])
+    rot_matrices_dict[rot_value] = R_yaw
+
 def get_next_actions(all_next_actions, num_next_actions_needed, last_action):
     """
     Args:
@@ -20,7 +28,6 @@ def get_next_actions(all_next_actions, num_next_actions_needed, last_action):
     Returns:
         The appropriate next actions in terms of a reduced diff
     """
-
     all_next_removals = all_next_actions["built_minus_gold"]
     all_next_placements = all_next_actions["gold_minus_built"]
 
@@ -85,11 +92,18 @@ def is_feasible_perturbation(perturbed_config, diff):
         diff: Dict
     """
 
-    for key, config in diff.items():
-        diff[key] = invert_perturbation_transform(
-            config = config,
-            perturbed_config = perturbed_config
-        )
+    def find_orig_block(block, block_pairs):
+        return next(x[1] for x in block_pairs if x[0] == block)
+
+    for key, diff_config in diff.items():
+        if key == "built_minus_gold": # retrieve from original built config instead of applying inverse transform
+            block_pairs = zip(perturbed_config.perturbed_config, perturbed_config.original_config)
+            diff[key] = list(map(lambda x: find_orig_block(x, block_pairs), diff_config))
+        else:
+            diff[key] = invert_perturbation_transform(
+                config = diff_config,
+                perturbed_config = perturbed_config
+            )
 
     return is_feasible_config(diff["gold_minus_built"])
 
@@ -147,7 +161,7 @@ def generate_perturbations(config):
 
     return perturbations
 
-def generate_perturbation(config, x_target, z_target, rot_target): # PROFILED
+def generate_perturbation(config, x_target, z_target, rot_target): # PROFILED_3
     # treat first block in config as pivot always
 
     # move config to x, z and with rotation
@@ -188,10 +202,8 @@ def generate_perturbation(config, x_target, z_target, rot_target): # PROFILED
 
     # rotate about pivot
 
-    # construct yaw rotation matrix
-    theta_yaw = np.radians(-1 * rot_target)
-    c, s = np.cos(theta_yaw), np.sin(theta_yaw)
-    R_yaw = np.matrix([ [ c, 0, -s ], [ 0, 1, 0 ], [ s, 0, c ] ])
+    # obtain yaw rotation matrix
+    R_yaw = rot_matrices_dict[rot_target]
 
     def h(d, rot_matrix): #PROFILED
         v = np.matrix([ [ d["x"] ], [ d["y"] ], [ d["z"] ] ])
@@ -213,10 +225,11 @@ def generate_perturbation(config, x_target, z_target, rot_target): # PROFILED
         perturbed_config = config_translated_rotated,
         rot_target = rot_target,
         rot_axis_pivot = (x_source, y_source, z_source),
-        translation = (x_diff, z_diff)
+        translation = (x_diff, z_diff),
+        original_config = config
     )
 
-def invert_perturbation_transform(config, perturbed_config): # PROFILED
+def invert_perturbation_transform(config, perturbed_config): # PROFILED_2
 
     # rotate
     rot_target = -1 * perturbed_config.rot_target
@@ -238,10 +251,8 @@ def invert_perturbation_transform(config, perturbed_config): # PROFILED
 
     # rotate about pivot
 
-    # construct yaw rotation matrix
-    theta_yaw = np.radians(-1 * rot_target)
-    c, s = np.cos(theta_yaw), np.sin(theta_yaw)
-    R_yaw = np.matrix([ [ c, 0, -s ], [ 0, 1, 0 ], [ s, 0, c ] ])
+    # obtain yaw rotation matrix
+    R_yaw = rot_matrices_dict[rot_target]
 
     def h(d, rot_matrix): # PROFILED
         v = np.matrix([ [ d["x"] ], [ d["y"] ], [ d["z"] ] ])
@@ -276,11 +287,12 @@ def invert_perturbation_transform(config, perturbed_config): # PROFILED
     return config_rotated_translated
 
 class PerturbedConfig:
-    def __init__(self, perturbed_config, rot_target, rot_axis_pivot, translation):
+    def __init__(self, perturbed_config, rot_target, rot_axis_pivot, translation, original_config):
         self.perturbed_config = perturbed_config
         self.rot_target = rot_target
         self.rot_axis_pivot = rot_axis_pivot
         self.translation = translation
+        self.original_config = original_config
 
 if __name__  == "__main__":
     gold_config = [
