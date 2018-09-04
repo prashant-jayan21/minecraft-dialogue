@@ -33,9 +33,15 @@ def get_next_actions(all_next_actions, num_next_actions_needed, last_action):
 
     assert num_next_actions_needed % 2 == 0 # an even split is needed between removals and placements
 
-    # sort all next actions by distance from last action and pick top-k
-    all_next_removals_sorted = sorted(all_next_removals, key = lambda x: euclidean_distance(x, last_action))
-    all_next_placements_sorted = sorted(all_next_placements, key = lambda x: euclidean_distance(x, last_action))
+    if last_action:
+        # sort all next actions by distance from last action and pick top-k
+        all_next_removals_sorted = sorted(all_next_removals, key = lambda x: euclidean_distance(x, last_action))
+        all_next_placements_sorted = sorted(all_next_placements, key = lambda x: euclidean_distance(x, last_action))
+    else:
+        assert all_next_removals == [] and all_next_placements != [] # at the very start of the game
+        all_next_removals_sorted = all_next_removals
+        # most likely first block to be placed is on the lowest layer
+        all_next_placements_sorted = sorted(all_next_placements, key = lambda x: x["y"]) # TODO: already sorted?
 
     next_removals = all_next_removals_sorted[:int(num_next_actions_needed/2)]
     next_placements = all_next_placements_sorted[:int(num_next_actions_needed/2)]
@@ -354,5 +360,8 @@ if __name__  == "__main__":
     diff = get_diff(gold_config, built_config)
     pp.pprint(diff)
     print("\n\n")
+
+    # diff["built_minus_gold"] = []
+    # diff["gold_minus_built"] = []
     next_actions = get_next_actions(diff, 4, {"x": 0, "y": 0, "z": 5})
     pp.pprint(next_actions)
