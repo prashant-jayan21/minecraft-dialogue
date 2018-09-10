@@ -38,7 +38,13 @@ def get_next_actions(all_next_actions, num_next_actions_needed, last_action):
         all_next_removals_sorted = sorted(all_next_removals, key = lambda x: euclidean_distance(x, last_action))
         all_next_placements_sorted = sorted(all_next_placements, key = lambda x: euclidean_distance(x, last_action))
     else:
-        assert all_next_removals == [] and all_next_placements != [] # at the very start of the game
+        # try:
+        #     assert all_next_removals == [] and all_next_placements != [] # at the very start of the game
+        # except AssertionError:
+        #     print("ASSERTION ERROR!")
+        #     print(all_next_placements)
+        #     print("\n\n")
+        #     print(all_next_removals)
         all_next_removals_sorted = all_next_removals
         # most likely first block to be placed is on the lowest layer
         all_next_placements_sorted = sorted(all_next_placements, key = lambda x: x["y"]) # TODO: already sorted?
