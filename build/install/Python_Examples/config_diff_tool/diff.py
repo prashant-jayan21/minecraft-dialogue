@@ -94,7 +94,13 @@ def get_diff(gold_config, built_config):
     # select perturbation with min diff
     min_perturbation_and_diff = min(perturbations_and_diffs, key = lambda t: len(t[1]["gold_minus_built"]) + len(t[1]["built_minus_gold"]))
 
-    return min_perturbation_and_diff[1]
+    diff_sizes = list(map(lambda t: len(t[1]["gold_minus_built"]) + len(t[1]["built_minus_gold"]), perturbations_and_diffs))
+    min_diff_size = min(diff_sizes)
+
+    everything = list(zip(perturbations_and_diffs, diff_sizes))
+    everything_min = list(filter(lambda x: x[1] == min_diff_size, everything))
+
+    return min_perturbation_and_diff[1], everything_min
 
 def is_feasible_perturbation(perturbed_config, diff):
     # NOTE: This function mutates `diff`. DO NOT CHANGE THIS BEHAVIOR!
@@ -306,6 +312,28 @@ class PerturbedConfig:
         self.translation = translation
         self.original_config = original_config
 
+def get_built_config_distribution(built_config, minimal_diffs):
+    """
+    Args:
+        built_config: Configuration built so far
+        minimal_diffs: List of all the minimal diffs
+
+    Returns:
+        A probability distribution over blocks in the built config
+    """
+
+    def f(block, minimal_diffs):
+        diffs_containing_block = list(filter(lambda x: block in x["built_minus_gold"], minimal_diffs))
+        return len(diffs_containing_block)
+
+    # get counts
+    scores = list(map(lambda x: f(x, minimal_diffs), built_config))
+    # normalize
+    normalized_scores = list(map(lambda x: x/sum(scores), scores))
+
+    print(scores)
+    return normalized_scores
+
 if __name__  == "__main__":
     gold_config = [
         {
@@ -345,29 +373,38 @@ if __name__  == "__main__":
             "x": 1,
             "y": 1,
             "z": 1,
+            "type": "blue"
+        },
+        {
+            "x": 0,
+            "y": 1,
+            "z": 3,
             "type": "red"
         },
         {
-            "x": 1,
+            "x": 0,
             "y": 1,
-            "z": 3,
-            "type": "blue"
-        },
-        {
-            "x": 1,
-            "y": 4,
-            "z": 3,
-            "type": "blue"
+            "z": -1,
+            "type": "red"
         }
     ]
 
     import pprint
     pp = pprint.PrettyPrinter()
-    diff = get_diff(gold_config, built_config)
-    pp.pprint(diff)
-    print("\n\n")
+    diff, everything_min = get_diff(gold_config, built_config)
+    # pp.pprint(diff)
+    # print("\n\n")
+    # pp.pprint(everything_min)
+    # print(len(everything_min))
+
+    minimal_diffs = list(map(lambda x: x[0][1], everything_min))
+    pp.pprint(minimal_diffs)
+
+    scores = get_built_config_distribution(built_config, minimal_diffs)
+
+    pp.pprint(scores)
 
     # diff["built_minus_gold"] = []
     # diff["gold_minus_built"] = []
-    next_actions = get_next_actions(diff, 4, {"x": 0, "y": 0, "z": 5})
-    pp.pprint(next_actions)
+    # next_actions = get_next_actions(diff, 4, {"x": 0, "y": 0, "z": 5})
+    # pp.pprint(next_actions)
