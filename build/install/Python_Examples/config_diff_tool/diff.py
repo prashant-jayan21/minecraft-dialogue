@@ -91,16 +91,21 @@ def get_diff(gold_config, built_config):
     # filter out perturbations that yield infeasible diff actions (those outside the build region)
     perturbations_and_diffs = list(filter(lambda x: is_feasible_perturbation(x[0], x[1]), list(zip(perturbations, diffs))))
 
-    # select perturbation with min diff
-    min_perturbation_and_diff = min(perturbations_and_diffs, key = lambda t: len(t[1]["gold_minus_built"]) + len(t[1]["built_minus_gold"]))
+    # recompute diffs in gold config space
+    orig_diffs = list(map(lambda x: diff(gold_config = gold_config, built_config = x[0].perturbed_config), perturbations_and_diffs))
+    perturbations_diffs_and_orig_diffs = [x + (y,) for x, y in zip(perturbations_and_diffs, orig_diffs)]
+    perturbations_and_diffs = list(map(lambda x: (x[0], Diff(diff_built_config_space = x[1], diff_gold_config_space = x[2])), perturbations_diffs_and_orig_diffs))
 
-    diff_sizes = list(map(lambda t: len(t[1]["gold_minus_built"]) + len(t[1]["built_minus_gold"]), perturbations_and_diffs))
+    # select perturbation with min diff
+    min_perturbation_and_diff = min(perturbations_and_diffs, key = lambda t: len(t[1].diff_built_config_space["gold_minus_built"]) + len(t[1].diff_built_config_space["built_minus_gold"]))
+
+    diff_sizes = list(map(lambda t: len(t[1].diff_built_config_space["gold_minus_built"]) + len(t[1].diff_built_config_space["built_minus_gold"]), perturbations_and_diffs))
     min_diff_size = min(diff_sizes)
 
     everything = list(zip(perturbations_and_diffs, diff_sizes))
     everything_min = list(filter(lambda x: x[1] == min_diff_size, everything))
 
-    return min_perturbation_and_diff[1], everything_min
+    return min_perturbation_and_diff[1].diff_built_config_space, everything_min
 
 def is_feasible_perturbation(perturbed_config, diff):
     # NOTE: This function mutates `diff`. DO NOT CHANGE THIS BEHAVIOR!
@@ -312,6 +317,11 @@ class PerturbedConfig:
         self.translation = translation
         self.original_config = original_config
 
+class Diff:
+    def __init__(self, diff_built_config_space, diff_gold_config_space):
+        self.diff_built_config_space = diff_built_config_space
+        self.diff_gold_config_space = diff_gold_config_space
+
 def get_built_config_distribution(built_config, minimal_diffs):
     """
     Args:
@@ -397,7 +407,7 @@ if __name__  == "__main__":
     # pp.pprint(everything_min)
     # print(len(everything_min))
 
-    minimal_diffs = list(map(lambda x: x[0][1], everything_min))
+    minimal_diffs = list(map(lambda x: x[0][1].diff_built_config_space, everything_min))
     pp.pprint(minimal_diffs)
 
     scores = get_built_config_distribution(built_config, minimal_diffs)
