@@ -109,7 +109,7 @@ def is_feasible_perturbation(perturbed_config, diff):
 
     for key, diff_config in diff.items():
         if key == "built_minus_gold": # retrieve from original built config instead of applying inverse transform
-            block_pairs = zip(perturbed_config.perturbed_config, perturbed_config.original_config)
+            block_pairs = list(zip(perturbed_config.perturbed_config, perturbed_config.original_config))
             diff[key] = list(map(lambda x: find_orig_block(x, block_pairs), diff_config))
         else:
             diff[key] = invert_perturbation_transform(
