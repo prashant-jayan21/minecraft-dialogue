@@ -326,10 +326,10 @@ def get_built_config_distribution(built_config, minimal_diffs):
     """
     Args:
         built_config: Configuration built so far
-        minimal_diffs: List of all the minimal diffs
+        minimal_diffs: List of all the minimal diffs in built config space
 
     Returns:
-        A probability distribution over blocks in the built config
+        A probability distribution over blocks in the built config -- probabilities of next removal
     """
 
     def f(block, minimal_diffs):
@@ -338,6 +338,28 @@ def get_built_config_distribution(built_config, minimal_diffs):
 
     # get counts
     scores = list(map(lambda x: f(x, minimal_diffs), built_config))
+    # normalize
+    normalized_scores = list(map(lambda x: x/sum(scores), scores))
+
+    print(scores)
+    return normalized_scores
+
+def get_gold_config_distribution(gold_config, minimal_diffs):
+    """
+    Args:
+        gold_config: Gold configuration
+        minimal_diffs: List of all the minimal diffs in gold config space
+
+    Returns:
+        A probability distribution over blocks in the gold config -- probabilities of next placement
+    """
+
+    def f(block, minimal_diffs):
+        diffs_containing_block = list(filter(lambda x: block in x["gold_minus_built"], minimal_diffs))
+        return len(diffs_containing_block)
+
+    # get counts
+    scores = list(map(lambda x: f(x, minimal_diffs), gold_config))
     # normalize
     normalized_scores = list(map(lambda x: x/sum(scores), scores))
 
@@ -407,11 +429,21 @@ if __name__  == "__main__":
     # pp.pprint(everything_min)
     # print(len(everything_min))
 
-    minimal_diffs = list(map(lambda x: x[0][1].diff_built_config_space, everything_min))
-    pp.pprint(minimal_diffs)
+    print("BUILT")
 
-    scores = get_built_config_distribution(built_config, minimal_diffs)
+    minimal_diffs_built_config_space = list(map(lambda x: x[0][1].diff_built_config_space, everything_min))
+    # pp.pprint(minimal_diffs_built_config_space)
 
+    scores = get_built_config_distribution(built_config, minimal_diffs_built_config_space)
+    pp.pprint(scores)
+
+    print("\n")
+    print("GOLD")
+
+    minimal_diffs_gold_config_space = list(map(lambda x: x[0][1].diff_gold_config_space, everything_min))
+    # pp.pprint(minimal_diffs_gold_config_space)
+
+    scores = get_gold_config_distribution(gold_config, minimal_diffs_gold_config_space)
     pp.pprint(scores)
 
     # diff["built_minus_gold"] = []
