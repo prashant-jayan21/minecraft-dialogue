@@ -76,10 +76,23 @@ def get_diff(gold_config, built_config):
     """
 
     if not built_config:
-        return {
+        d = {
             "gold_minus_built": gold_config,
             "built_minus_gold": []
         }
+        a = PerturbedConfig(
+            perturbed_config = [],
+            rot_target = None,
+            rot_axis_pivot = None,
+            translation = None,
+            original_config = []
+        )
+        b = Diff(
+            diff_built_config_space = d,
+            diff_gold_config_space = d
+        )
+        c = len(gold_config)
+        return d, [((a, b), c)]
 
     # generate all possible perturbations of built config in the build region
     perturbations = generate_perturbations(built_config)
@@ -361,7 +374,10 @@ def get_gold_config_distribution(gold_config, minimal_diffs):
     # get counts
     scores = list(map(lambda x: f(x, minimal_diffs), gold_config))
     # normalize
-    normalized_scores = list(map(lambda x: x/sum(scores), scores))
+    if not sum(scores) == 0:
+        normalized_scores = list(map(lambda x: x/sum(scores), scores))
+    else:
+        normalized_scores = scores
 
     print(scores)
     return normalized_scores

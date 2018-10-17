@@ -19,17 +19,17 @@ def get_built_config(observations_dict):
 
     built_config_raw = observations_dict["WorldStates"][-1]["BlocksInGrid"]
 
-    def reformat(block):
-        return {
-            "x": block["AbsoluteCoordinates"]["X"],
-            "y": block["AbsoluteCoordinates"]["Y"],
-            "z": block["AbsoluteCoordinates"]["Z"],
-            "type": color_regex.findall(str(block["Type"]))[0] # NOTE: DO NOT CHANGE! Unicode to str conversion needed downstream when stringifying the dict.
-        }
-
-    built_config = map(reformat, built_config_raw)
+    built_config = map(reformat_built_config_block, built_config_raw)
 
     return built_config
+
+def reformat_built_config_block(block):
+    return {
+        "x": block["AbsoluteCoordinates"]["X"],
+        "y": block["AbsoluteCoordinates"]["Y"],
+        "z": block["AbsoluteCoordinates"]["Z"],
+        "type": color_regex.findall(str(block["Type"]))[0] # NOTE: DO NOT CHANGE! Unicode to str conversion needed downstream when stringifying the dict.
+    }
 
 def get_gold_config(gold_config_xml_file):
     """
