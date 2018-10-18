@@ -352,9 +352,11 @@ def get_built_config_distribution(built_config, minimal_diffs):
     # get counts
     scores = list(map(lambda x: f(x, minimal_diffs), built_config))
     # normalize
-    normalized_scores = list(map(lambda x: x/sum(scores), scores))
+    if not sum(scores) == 0:
+        normalized_scores = list(map(lambda x: float(x)/float(sum(scores)), scores))
+    else:
+        normalized_scores = scores
 
-    print(scores)
     return normalized_scores
 
 def get_gold_config_distribution(gold_config, minimal_diffs):
@@ -375,11 +377,10 @@ def get_gold_config_distribution(gold_config, minimal_diffs):
     scores = list(map(lambda x: f(x, minimal_diffs), gold_config))
     # normalize
     if not sum(scores) == 0:
-        normalized_scores = list(map(lambda x: x/sum(scores), scores))
+        normalized_scores = list(map(lambda x: float(x)/float(sum(scores)), scores))
     else:
         normalized_scores = scores
 
-    print(scores)
     return normalized_scores
 
 if __name__  == "__main__":
