@@ -1,7 +1,7 @@
 import os, json, re, sys, argparse, csv
 from collections import Counter
+import xml.etree.ElementTree as ET
 from os.path import join, isdir
-from diff_check import get_gold_config, reformat_built_config_block
 sys.path.insert(0, '../config_diff_tool')
 from diff import get_diff, get_gold_config_distribution, get_built_config_distribution, dict_to_tuple, build_region_specs
 
@@ -124,6 +124,44 @@ def get_type_acc_to_diff(grid_location, diff):
         return occurence_in_placements["type"]
     elif occurence_in_removals:
         return "empty"
+
+color_regex = re.compile("red|orange|purple|blue|green|yellow")
+displacement = 100 # TODO: import from cwc_mission_utils
+
+def reformat_built_config_block(block):
+    return {
+        "x": block["AbsoluteCoordinates"]["X"],
+        "y": block["AbsoluteCoordinates"]["Y"],
+        "z": block["AbsoluteCoordinates"]["Z"],
+        "type": color_regex.findall(str(block["Type"]))[0] # NOTE: DO NOT CHANGE! Unicode to str conversion needed downstream when stringifying the dict.
+    }
+
+def get_gold_config(gold_config_xml_file):
+    """
+    Args:
+        gold_config_xml_file: The XML file for a gold configuration
+
+    Returns:
+        The gold config as a list of dicts -- one dict per block
+    """
+
+    with open(gold_config_xml_file) as f:
+        all_lines = list(map(lambda t: t.strip(), f.readlines()))
+
+    gold_config_raw = list(map(ET.fromstring, all_lines))
+
+    def reformat(block):
+        return {
+            "x": int(block.attrib["x"]) - displacement,
+            "y": int(block.attrib["y"]),
+            "z": int(block.attrib["z"]) - displacement,
+            "type": color_regex.findall(block.attrib["type"])[0]
+        }
+
+    gold_config = list(map(reformat, gold_config_raw))
+
+    return gold_config
+
 
 if __name__ == "__main__":
     logs_root_dir = "/Users/prashant/Work/cwc-minecraft-models/data/logs/data-4-5/logs"
