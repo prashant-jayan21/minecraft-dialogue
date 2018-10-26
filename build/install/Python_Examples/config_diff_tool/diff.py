@@ -75,27 +75,8 @@ def get_diff(gold_config, built_config):
         to take the built config state to the goal config state
     """
 
-    if not built_config:
-        d = {
-            "gold_minus_built": gold_config,
-            "built_minus_gold": []
-        }
-        a = PerturbedConfig(
-            perturbed_config = [],
-            rot_target = None,
-            rot_axis_pivot = None,
-            translation = None,
-            original_config = []
-        )
-        b = Diff(
-            diff_built_config_space = d,
-            diff_gold_config_space = d
-        )
-        c = len(gold_config)
-        return d, [((a, b), c)]
-
     # generate all possible perturbations of built config in the build region
-    perturbations = generate_perturbations(built_config)
+    perturbations = generate_perturbations(built_config, gold_config = gold_config)
 
     # compute diffs for each perturbation
     diffs = list(map(lambda t: diff(gold_config = gold_config, built_config = t.perturbed_config), perturbations))
@@ -156,7 +137,7 @@ def is_feasible_config(config):
 
     return all(is_feasible_block(block) for block in config)
 
-def diff(gold_config, built_config): # PROFILED
+def diff(gold_config, built_config):
     gold_config_reformatted = list(map(dict_to_tuple, gold_config))
     built_config_reformatted = list(map(dict_to_tuple, built_config))
 
@@ -174,7 +155,7 @@ def diff(gold_config, built_config): # PROFILED
 def dict_to_tuple(d):
     return tuple(sorted(d.items()))
 
-def generate_perturbations(config):
+def generate_perturbations(config, gold_config):
     """
     Args:
         config: A configuration
@@ -192,12 +173,58 @@ def generate_perturbations(config):
     for x in all_x_values:
         for z in all_z_values:
             for rot in all_rot_values:
-                perturbation = generate_perturbation(config, x_target = x, z_target = z, rot_target = rot)
+                perturbation = generate_perturbation(config, x_target = x, z_target = z, rot_target = rot, gold_config = gold_config)
                 perturbations.append(perturbation)
 
     return perturbations
 
-def generate_perturbation(config, x_target, z_target, rot_target): # PROFILED_3
+def generate_perturbation(config, x_target, z_target, rot_target, gold_config):
+
+    if not config:
+        # compute diff
+        x_source = x_target
+        z_source = z_target
+        x_target = gold_config[0]["x"]
+        z_target = gold_config[0]["z"]
+
+        x_diff = x_target - x_source
+        z_diff = z_target - z_source
+
+        # translate
+        def f(d, x_diff, z_diff):
+            return {
+                'x': d["x"] + x_diff,
+                'y': d["y"],
+                'z': d["z"] + z_diff,
+                'type': d["type"]
+            }
+
+        dummy_config = [
+            {
+                "x": x_source,
+                "z": z_source,
+                "y": gold_config[0]["y"],
+                "type": gold_config[0]["type"]
+            }
+        ]
+
+        dummy_config_translated = list(map(lambda t: f(t, x_diff = x_diff, z_diff = z_diff), dummy_config))
+
+        # rotate
+
+        # convert to pivot's frame of reference
+        x_source = dummy_config_translated[0]["x"]
+        y_source = dummy_config_translated[0]["y"]
+        z_source = dummy_config_translated[0]["z"]
+
+        return PerturbedConfig(
+            perturbed_config = [],
+            rot_target = -1 * rot_target,
+            rot_axis_pivot = (x_source, y_source, z_source),
+            translation = (x_diff, z_diff),
+            original_config = config
+        )
+
     # treat first block in config as pivot always
 
     # move config to x, z and with rotation
@@ -241,7 +268,7 @@ def generate_perturbation(config, x_target, z_target, rot_target): # PROFILED_3
     # obtain yaw rotation matrix
     R_yaw = rot_matrices_dict[rot_target]
 
-    def h(d, rot_matrix): #PROFILED
+    def h(d, rot_matrix):
         v = np.matrix([ [ d["x"] ], [ d["y"] ], [ d["z"] ] ])
         v_new = rot_matrix * v
 
@@ -265,7 +292,7 @@ def generate_perturbation(config, x_target, z_target, rot_target): # PROFILED_3
         original_config = config
     )
 
-def invert_perturbation_transform(config, perturbed_config): # PROFILED_2
+def invert_perturbation_transform(config, perturbed_config):
 
     # rotate
     rot_target = -1 * perturbed_config.rot_target
@@ -275,7 +302,7 @@ def invert_perturbation_transform(config, perturbed_config): # PROFILED_2
     y_source = perturbed_config.rot_axis_pivot[1]
     z_source = perturbed_config.rot_axis_pivot[2]
 
-    def g(d, x_source, y_source, z_source): # PROFILED
+    def g(d, x_source, y_source, z_source):
         return {
             'x': d["x"] - x_source,
             'y': d["y"] - y_source,
@@ -290,7 +317,7 @@ def invert_perturbation_transform(config, perturbed_config): # PROFILED_2
     # obtain yaw rotation matrix
     R_yaw = rot_matrices_dict[rot_target]
 
-    def h(d, rot_matrix): # PROFILED
+    def h(d, rot_matrix):
         v = np.matrix([ [ d["x"] ], [ d["y"] ], [ d["z"] ] ])
         v_new = rot_matrix * v
 
@@ -310,7 +337,7 @@ def invert_perturbation_transform(config, perturbed_config): # PROFILED_2
     z_diff = -1 * perturbed_config.translation[1]
 
     # translate
-    def f(d, x_diff, z_diff): # PROFILED
+    def f(d, x_diff, z_diff):
         return {
             'x': d["x"] + x_diff,
             'y': d["y"],
