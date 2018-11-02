@@ -97,14 +97,17 @@ def get_diff(gold_config, built_config):
     # select perturbation with min diff
     min_perturbation_and_diff = min(perturbations_and_diffs, key = lambda t: len(t[1].diff_built_config_space["gold_minus_built"]) + len(t[1].diff_built_config_space["built_minus_gold"]))
 
+    # get all minimal diffs
     diff_sizes = list(map(lambda t: len(t[1].diff_built_config_space["gold_minus_built"]) + len(t[1].diff_built_config_space["built_minus_gold"]), perturbations_and_diffs))
     min_diff_size = min(diff_sizes)
 
-    everything = list(zip(perturbations_and_diffs, diff_sizes))
-    everything_min = list(filter(lambda x: x[1] == min_diff_size, everything))
-    perturbed_configs_and_diffs = list(map(lambda x: PerturbedConfigAndDiff(perturbed_config=x[0][0], diff=x[0][1]), everything_min))
+    perturbations_and_diffs_and_diff_sizes = list(zip(perturbations_and_diffs, diff_sizes))
+    perturbations_and_minimal_diffs_and_diff_sizes = list(filter(lambda x: x[1] == min_diff_size, perturbations_and_diffs_and_diff_sizes))
 
-    return min_perturbation_and_diff[1].diff_built_config_space, perturbed_configs_and_diffs
+    # reformat final output
+    perturbations_and_minimal_diffs = list(map(lambda x: PerturbedConfigAndDiff(perturbed_config=x[0][0], diff=x[0][1]), perturbations_and_minimal_diffs_and_diff_sizes))
+
+    return min_perturbation_and_diff[1].diff_built_config_space, perturbations_and_minimal_diffs
 
 def is_feasible_perturbation(perturbed_config, diff):
     # NOTE: This function mutates `diff`. DO NOT CHANGE THIS BEHAVIOR!
