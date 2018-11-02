@@ -5,6 +5,8 @@ sys.path.insert(0, '../config_diff_tool')
 from diff import get_diff, get_gold_config_distribution, get_built_config_distribution, dict_to_tuple
 from diff_apps import get_type_distributions
 
+# NOTE: This code has not been checked for python 3 compatibility
+
 def process_log_dir(logs_root_dir, log_dir, gold_configs_dir):
     # get gold config
     config_name = re.sub(r"B\d+-A\d+-|-\d\d\d\d\d\d\d+", "", log_dir)
@@ -27,24 +29,23 @@ def process_dialog_states(observations_dict, gold_config):
         built_config_raw = world_state["BlocksInGrid"]
         built_config = list(map(reformat_built_config_block, built_config_raw))
 
-        _, everything_min = get_diff(gold_config = built_config, built_config = gold_config)
+        _, perturbations_and_diffs = get_diff(gold_config = gold_config, built_config = built_config)
 
-        minimal_diffs_built_config_space = list(map(lambda x: x[0][1].diff_built_config_space, everything_min))
+        diffs_built_config_space = list(map(lambda x: x.diff.diff_built_config_space, perturbations_and_diffs))
+        type_distributions_built_config_space = get_type_distributions(diffs_built_config_space=diffs_built_config_space, built_config=built_config)
 
-        # print(minimal_diffs_built_config_space)
+        # print(diffs_built_config_space)
         # print("\n\n")
-
-        all_grid_locations = get_type_distributions(minimal_diffs_built_config_space, gold_config)
 
         grid_locations_with_blocks = list(filter(
             lambda x: x.grid_location["type"] != "empty",
-            all_grid_locations
+            type_distributions_built_config_space
         ))
         print(len(grid_locations_with_blocks))
 
         empty_grid_locations_with_next_placements = list(filter(
             lambda x: x.grid_location["type"] == "empty" and x.type_distribution["empty"] < 1.0,
-            all_grid_locations
+            type_distributions_built_config_space
         ))
         print(len(empty_grid_locations_with_next_placements))
 
@@ -55,31 +56,6 @@ def process_dialog_states(observations_dict, gold_config):
         print("\n\n")
         print("empty_grid_locations_with_next_placements\n")
         pp.pprint(empty_grid_locations_with_next_placements)
-
-        # minimal_diffs_gold_config_space = list(map(lambda x: x[0][1].diff_gold_config_space, everything_min))
-        #
-        # # print(minimal_diffs_gold_config_space)
-        # # print("\n\n")
-        #
-        # all_grid_locations = get_type_distributions(minimal_diffs_gold_config_space, built_config)
-        #
-        # grid_locations_with_blocks = list(filter(
-        #     lambda x: x.grid_location["type"] != "empty",
-        #     all_grid_locations
-        # ))
-        #
-        # empty_grid_locations_with_next_placements = list(filter(
-        #     lambda x: x.grid_location["type"] == "empty" and x.type_distribution["empty"] < 1.0,
-        #     all_grid_locations
-        # ))
-        #
-        # import pprint
-        # pp = pprint.PrettyPrinter()
-        # print("grid_locations_with_blocks\n")
-        # pp.pprint(grid_locations_with_blocks)
-        # print("\n\n")
-        # print("empty_grid_locations_with_next_placements\n")
-        # pp.pprint(empty_grid_locations_with_next_placements)
 
         print("\n\n")
         print("*" * 100)
