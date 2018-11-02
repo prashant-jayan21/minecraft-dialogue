@@ -1,6 +1,8 @@
 from collections import Counter
 from diff import build_region_specs
 
+# NOTE: THIS CODE NEEDS TO BE MAINTAINED FOR BOTH PYTHON 2 AND 3 COMPATIBILITY
+
 def get_type_distributions(diffs_built_config_space, built_config):
     """
     Args:

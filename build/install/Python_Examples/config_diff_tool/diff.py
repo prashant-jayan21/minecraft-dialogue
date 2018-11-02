@@ -1,6 +1,8 @@
 import numpy as np, sys
 from scipy.spatial import distance
 
+# NOTE: THIS CODE NEEDS TO BE MAINTAINED FOR BOTH PYTHON 2 AND 3 COMPATIBILITY
+
 build_region_specs = { # FIXME: Import instead
     "x_min_build": -5,
     "x_max_build": 5,

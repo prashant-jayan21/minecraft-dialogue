@@ -5,7 +5,7 @@ sys.path.insert(0, '../config_diff_tool')
 from diff import get_diff, get_gold_config_distribution, get_built_config_distribution, dict_to_tuple
 from diff_apps import get_type_distributions
 
-# NOTE: This code has not been checked for python 3 compatibility
+# NOTE: THIS CODE HAS NOT BEEN CHECKED FOR PYTHON 3 COMPATIBILITY
 
 def process_log_dir(logs_root_dir, log_dir, gold_configs_dir):
     # get gold config
