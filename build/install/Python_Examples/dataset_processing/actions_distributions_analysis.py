@@ -37,13 +37,13 @@ def process_dialog_states(observations_dict, gold_config):
         all_grid_locations = get_type_distributions(minimal_diffs_built_config_space, gold_config)
 
         grid_locations_with_blocks = list(filter(
-            lambda x: x["grid_location"]["type"] != "empty",
+            lambda x: x.grid_location["type"] != "empty",
             all_grid_locations
         ))
         print(len(grid_locations_with_blocks))
 
         empty_grid_locations_with_next_placements = list(filter(
-            lambda x: x["grid_location"]["type"] == "empty" and x["type_distribution"]["empty"] < 1.0,
+            lambda x: x.grid_location["type"] == "empty" and x.type_distribution["empty"] < 1.0,
             all_grid_locations
         ))
         print(len(empty_grid_locations_with_next_placements))
@@ -64,12 +64,12 @@ def process_dialog_states(observations_dict, gold_config):
         # all_grid_locations = get_type_distributions(minimal_diffs_gold_config_space, built_config)
         #
         # grid_locations_with_blocks = list(filter(
-        #     lambda x: x["grid_location"]["type"] != "empty",
+        #     lambda x: x.grid_location["type"] != "empty",
         #     all_grid_locations
         # ))
         #
         # empty_grid_locations_with_next_placements = list(filter(
-        #     lambda x: x["grid_location"]["type"] == "empty" and x["type_distribution"]["empty"] < 1.0,
+        #     lambda x: x.grid_location["type"] == "empty" and x.type_distribution["empty"] < 1.0,
         #     all_grid_locations
         # ))
         #

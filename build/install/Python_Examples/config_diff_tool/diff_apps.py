@@ -1,7 +1,7 @@
 from collections import Counter
 from diff import build_region_specs
 
-all_types = ["empty", "red", "orange", "green", "blue", "yellow", "purple"]
+all_types = ["empty", "red", "orange", "green", "blue", "yellow", "purple"] # TODO: centralize this info somewhere
 
 def get_type_distributions(minimal_diffs_built_config_space, built_config):
     results = []
@@ -41,10 +41,10 @@ def get_type_distributions(minimal_diffs_built_config_space, built_config):
                     type_distribution[type] = float(counts[type]) / float(len(minimal_diffs_built_config_space))
 
                 results.append(
-                    {
-                        "grid_location": grid_location,
-                        "type_distribution": type_distribution
-                    }
+                    TypeDistribution(
+                        grid_location=grid_location,
+                        type_distribution=type_distribution
+                    )
                 )
 
     return results
@@ -66,3 +66,8 @@ def get_type_acc_to_diff(grid_location, diff):
         return occurence_in_placements["type"]
     elif occurence_in_removals:
         return "empty"
+
+class TypeDistribution:
+    def __init__(self, grid_location, type_distribution):
+        self.grid_location = grid_location
+        self.type_distribution = type_distribution
