@@ -71,8 +71,12 @@ def get_diff(gold_config, built_config):
         Both are lists of dicts. Each dict contains info on block type and block coordinates.
 
     Returns:
-        The diff in terms of actions -- blocks to remove and block to place --
+        A minimal diff in built config space -- in terms of placement and removal actions --
         to take the built config state to the goal config state
+
+        All minimal diffs (each in both built and gold config space) with corresponding complementary info --
+        complementary info would be the original built config, a perturbed config and the transformation to transform
+        the former into the latter
     """
 
     # generate all possible perturbations of built config in the build region
@@ -98,8 +102,9 @@ def get_diff(gold_config, built_config):
 
     everything = list(zip(perturbations_and_diffs, diff_sizes))
     everything_min = list(filter(lambda x: x[1] == min_diff_size, everything))
+    perturbed_configs_and_diffs = list(map(lambda x: PerturbedConfigAndDiff(perturbed_config=x[0][0], diff=x[0][1]), everything_min))
 
-    return min_perturbation_and_diff[1].diff_built_config_space, everything_min
+    return min_perturbation_and_diff[1].diff_built_config_space, perturbed_configs_and_diffs
 
 def is_feasible_perturbation(perturbed_config, diff):
     # NOTE: This function mutates `diff`. DO NOT CHANGE THIS BEHAVIOR!
@@ -361,6 +366,11 @@ class Diff:
     def __init__(self, diff_built_config_space, diff_gold_config_space):
         self.diff_built_config_space = diff_built_config_space
         self.diff_gold_config_space = diff_gold_config_space
+
+class PerturbedConfigAndDiff:
+    def __init__(self, perturbed_config, diff):
+        self.perturbed_config = perturbed_config
+        self.diff = diff
 
 def get_built_config_distribution(built_config, minimal_diffs):
     """
