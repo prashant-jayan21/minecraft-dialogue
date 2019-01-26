@@ -1,4 +1,4 @@
-import numpy as np, sys
+import numpy as np, sys, random
 from scipy.spatial import distance
 
 # NOTE: THIS CODE NEEDS TO BE MAINTAINED FOR BOTH PYTHON 2 AND 3 COMPATIBILITY
@@ -36,6 +36,10 @@ def get_next_actions(all_next_actions, num_next_actions_needed, last_action, bui
 
     all_next_removals = all_next_actions["built_minus_gold"]
     all_next_placements = all_next_actions["gold_minus_built"]
+
+    # shuffle (out of place to avoid mutation)
+    all_next_removals = random.sample(all_next_removals, len(all_next_removals))
+    all_next_placements = random.sample(all_next_placements, len(all_next_placements))
 
     if feasible_next_placements:
         all_next_placements = list(filter(lambda x: is_feasible_next_placement(x, built_config), all_next_placements))
