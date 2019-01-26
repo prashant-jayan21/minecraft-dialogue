@@ -20,20 +20,25 @@ for rot_value in all_possible_rot_values:
     R_yaw = np.matrix([ [ c, 0, -s ], [ 0, 1, 0 ], [ s, 0, c ] ])
     rot_matrices_dict[rot_value] = R_yaw
 
-def get_next_actions(all_next_actions, num_next_actions_needed, last_action):
+def get_next_actions(all_next_actions, num_next_actions_needed, last_action, built_config, feasible_next_placements):
     """
     Args:
         all_next_actions: The diff between current state and goal state
         num_next_actions_needed: The number of next actions to sample from all possible next actions
         last_action: The point in space where the last action took place
+        built_config: The built configuration
+        feasible_next_placements: Whether or not to select from pool of feasible next placements only
 
     Returns:
         The appropriate next actions in terms of a reduced diff
     """
+    assert num_next_actions_needed % 2 == 0 # an even split is needed between removals and placements
+
     all_next_removals = all_next_actions["built_minus_gold"]
     all_next_placements = all_next_actions["gold_minus_built"]
 
-    assert num_next_actions_needed % 2 == 0 # an even split is needed between removals and placements
+    if feasible_next_placements:
+        all_next_placements = list(filter(lambda x: is_feasible_next_placement(x, built_config), all_next_placements))
 
     if last_action:
         # sort all next actions by distance from last action and pick top-k
@@ -58,6 +63,37 @@ def get_next_actions(all_next_actions, num_next_actions_needed, last_action):
         "gold_minus_built": next_placements,
         "built_minus_gold": next_removals
     }
+
+def is_feasible_next_placement(block, built_config):
+
+    # check if block is on ground
+    if block_on_ground(block):
+        return True
+
+    # check if block has a supporting block
+    if block_with_support(block, built_config):
+        return True
+    else:
+        return False
+
+def block_on_ground(block):
+    return block["y"] == 1
+
+def block_with_support(block, built_config):
+    for existing_block in built_config:
+        if supports(existing_block, block):
+            return True
+
+    return False
+
+def supports(existing_block, block):
+    x_support = abs(existing_block["x"] - block["x"]) == 1 and existing_block["y"] == block["y"] and existing_block["z"] == block["z"]
+
+    y_support = abs(existing_block["y"] - block["y"]) == 1 and existing_block["x"] == block["x"] and existing_block["z"] == block["z"]
+
+    z_support = abs(existing_block["z"] - block["z"]) == 1 and existing_block["x"] == block["x"] and existing_block["y"] == block["y"]
+
+    return x_support or y_support or z_support
 
 def euclidean_distance(block_1, block_2):
     return distance.euclidean(
@@ -447,13 +483,7 @@ if __name__  == "__main__":
         },
         {
             "x": 1,
-            "y": 1,
-            "z": 4,
-            "type": "blue"
-        },
-        {
-            "x": 1,
-            "y": 1,
+            "y": 2,
             "z": 5,
             "type": "orange"
         }
@@ -464,19 +494,19 @@ if __name__  == "__main__":
             "x": 1,
             "y": 1,
             "z": 1,
-            "type": "blue"
+            "type": "red"
         },
         {
-            "x": 0,
+            "x": 1,
+            "y": 1,
+            "z": 2,
+            "type": "red"
+        },
+        {
+            "x": 1,
             "y": 1,
             "z": 3,
-            "type": "red"
-        },
-        {
-            "x": 0,
-            "y": 1,
-            "z": -1,
-            "type": "red"
+            "type": "blue"
         }
     ]
 
@@ -488,24 +518,24 @@ if __name__  == "__main__":
     # pp.pprint(everything_min)
     # print(len(everything_min))
 
-    print("BUILT")
-
-    minimal_diffs_built_config_space = list(map(lambda x: x[0][1].diff_built_config_space, everything_min))
-    # pp.pprint(minimal_diffs_built_config_space)
-
-    scores = get_built_config_distribution(built_config, minimal_diffs_built_config_space)
-    pp.pprint(scores)
-
-    print("\n")
-    print("GOLD")
-
-    minimal_diffs_gold_config_space = list(map(lambda x: x[0][1].diff_gold_config_space, everything_min))
-    # pp.pprint(minimal_diffs_gold_config_space)
-
-    scores = get_gold_config_distribution(gold_config, minimal_diffs_gold_config_space)
-    pp.pprint(scores)
+    # print("BUILT")
+    #
+    # minimal_diffs_built_config_space = list(map(lambda x: x[0][1].diff_built_config_space, everything_min))
+    # # pp.pprint(minimal_diffs_built_config_space)
+    #
+    # scores = get_built_config_distribution(built_config, minimal_diffs_built_config_space)
+    # pp.pprint(scores)
+    #
+    # print("\n")
+    # print("GOLD")
+    #
+    # minimal_diffs_gold_config_space = list(map(lambda x: x[0][1].diff_gold_config_space, everything_min))
+    # # pp.pprint(minimal_diffs_gold_config_space)
+    #
+    # scores = get_gold_config_distribution(gold_config, minimal_diffs_gold_config_space)
+    # pp.pprint(scores)
 
     # diff["built_minus_gold"] = []
     # diff["gold_minus_built"] = []
-    # next_actions = get_next_actions(diff, 4, {"x": 0, "y": 0, "z": 5})
-    # pp.pprint(next_actions)
+    next_actions = get_next_actions(diff, 4, {"x": 0, "y": 0, "z": 5}, built_config, True)
+    pp.pprint(next_actions)
