@@ -70,6 +70,10 @@ def get_next_actions(all_next_actions, num_next_actions_needed, last_action, bui
 
 def is_feasible_next_placement(block, built_config):
 
+    # check if there is an existing block at block's location
+    if conflicting_block_exists(block, built_config):
+        return False
+
     # check if block is on ground
     if block_on_ground(block):
         return True
@@ -79,6 +83,16 @@ def is_feasible_next_placement(block, built_config):
         return True
     else:
         return False
+
+def conflicting_block_exists(block, built_config):
+    for existing_block in built_config:
+        if conflicts(existing_block, block):
+            return True
+
+    return False
+
+def conflicts(existing_block, block):
+    return existing_block["x"] == block["x"] and existing_block["y"] == block["y"] and existing_block["z"] == block["z"]
 
 def block_on_ground(block):
     return block["y"] == 1
