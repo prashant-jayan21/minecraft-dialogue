@@ -68,10 +68,9 @@ def get_next_actions(all_next_actions, num_next_actions_needed, last_action, bui
         "built_minus_gold": next_removals
     }
 
-def is_feasible_next_placement(block, built_config):
-
+def is_feasible_next_placement(block, built_config, extra_check):
     # check if there is an existing block at block's location
-    if conflicting_block_exists(block, built_config):
+    if extra_check and conflicting_block_exists(block, built_config):
         return False
 
     # check if block is on ground
