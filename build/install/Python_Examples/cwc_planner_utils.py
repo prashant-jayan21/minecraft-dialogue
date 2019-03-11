@@ -46,5 +46,6 @@ def getPlans(human_input="row(a) ^ width(a,5)"):
 
 
 if __name__ == '__main__':
-    # getPlans(human_input="row(a) ^ width(a,5)")
-    getPlans(human_input="rectangle(a) ^ height(a, 1) ^ width(a,1)")
+    # getPlans(human_input="cube(a) ^ width(a,5)")
+    getPlans(human_input="row(a) ^ width(a,5)")
+    getPlans(human_input="rectangle(a) ^ height(a, 2) ^ width(a,4)")

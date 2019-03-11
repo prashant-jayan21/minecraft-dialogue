@@ -306,15 +306,20 @@ def cwc_run_mission(args):
                             print("#########chat received#########")
                             print(chat_instruction)
 
-                            # sem_rep = "row(a) ^ width(a, 4)"
+                            # sem_rep = "place row(a) ^ width(a, 4)"
                             # sem_rep = "rectangle(a) ^ height(a, 2) ^ width(a,3)"
                             if "and color" in sem_rep:
                                 c = sem_rep.split("and color ")[1]
                                 c = color_map[c]
                                 sem_rep = sem_rep.split("and color")[0]
                                 print("color ", c, " sem rep: ", sem_rep)
+
                             plan_list = planner_utils.getPlans(sem_rep)
                             print(plan_list)
+                            # Communication Protocol Planner-NLG 1
+                            if len(plan_list) == 0:
+                                print("Planner fails to solve: Planner-NLG 1")
+                                continue
                             seed_x, seed_y = init_location[N_SHAPES % 4]
                             for (x, y) in plan_list:
                                 c_x = x
@@ -419,6 +424,15 @@ def cwc_run_mission(args):
     # Mission has ended.
 
     time.sleep(2)
+
+
+def validate_semantic_representation(sem_rep):
+    """validate the semantic representaiton"""
+    # check for missing arguments
+
+    # check for unknown shapes
+
+    # check for context but how?
 
 
 def teleportMovement(ah, teleport_x=None, teleport_y=None, teleport_z=None):
