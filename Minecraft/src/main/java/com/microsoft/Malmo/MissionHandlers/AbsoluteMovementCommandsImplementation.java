@@ -93,6 +93,8 @@ public class AbsoluteMovementCommandsImplementation extends CommandBase
                 MinecraftForge.EVENT_BUS.post(event);
             }
             this.setX = this.setY = this.setZ = this.setYaw = this.setPitch = false;
+            player.capabilities.isFlying = true;
+            player.sendPlayerAbilities();
         }
     }
 
