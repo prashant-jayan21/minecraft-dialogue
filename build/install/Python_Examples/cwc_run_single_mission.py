@@ -234,8 +234,9 @@ def cwc_run_mission(args):
     # builder, architect
     my_mission = MalmoPython.MissionSpec(missionXML, True)
     my_mission.allowAllInventoryCommands()
+    my_mission.allowAllAbsoluteMovementCommands()
     my_mission.allowAllDiscreteMovementCommands()
-    my_mission.observeHotBar()
+    # my_mission.observeHotBar()
     # my_mission.allowInventoryCommand("swapInventoryItems")
     mission_utils.safeStartMission(
         agent_hosts[1],
@@ -269,6 +270,7 @@ def cwc_run_mission(args):
     timed_out = False
     c = -1
     all_observations = []
+
     while not timed_out:
         for i in range(3 + num_fixed_viewers):
             ah = agent_hosts[i]
@@ -276,12 +278,10 @@ def cwc_run_mission(args):
 
             if not world_state.is_mission_running:
                 timed_out = True
+
             elif i == 1 and world_state.number_of_observations_since_last_state > 0:
-                total_elements = 0
-                for observation in world_state.observations:
-                    total_elements += len(json.loads(observation.text))
-                # print "Received", len(world_state.observations), "observations. Total number of elements:", total_elements
-                # print(json.loads(observation.text))
+                chat_instruction = None
+
                 for observation in world_state.observations:
                     # print "Processing observation:",
                     # debug_utils.printObservationElements(
@@ -292,88 +292,100 @@ def cwc_run_mission(args):
                         # print("checking: ", observation.text)
                         # print("---------------------------")
                         obsrv = json.loads(observation.text)
-                        chat_instruction = obsrv.get("Chat")
-                        if chat_instruction is not None:
-                            print("******************")
-                            print(chat_instruction)
-                            print("******************")
-                        if chat_instruction is not None and 'place' in chat_instruction[
-                                0]:
-                            # semantic representation will be invoked here
-                            sem_rep = chat_instruction[0].replace(
-                                "<Architect> place ", "")
-                            print(sem_rep)
-                            print("#########chat received#########")
-                            print(chat_instruction)
+                        print(json.dumps(obsrv, indent=4))
+                        chat_instruction = obsrv["Chat"] if obsrv.get("Chat") is not None else chat_instruction
 
-                            # sem_rep = "place row(a) ^ width(a, 4)"
-                            # sem_rep = "rectangle(a) ^ height(a, 2) ^ width(a,3)"
-                            if "and color" in sem_rep:
-                                c = sem_rep.split("and color ")[1]
-                                c = color_map[c]
-                                sem_rep = sem_rep.split("and color")[0]
-                                print("color ", c, " sem rep: ", sem_rep)
+                if chat_instruction is not None:
+                    print("******************")
+                    print(chat_instruction)
+                    print("******************")
 
-                            plan_list = planner_utils.getPlans(sem_rep)
-                            print(plan_list)
-                            # Communication Protocol Planner-NLG 1
-                            if len(plan_list) == 0:
-                                print("Planner fails to solve: Planner-NLG 1")
-                                continue
-                            seed_x, seed_y = init_location[N_SHAPES % 4]
-                            for (x, y) in plan_list:
-                                c_x = x
-                                if y > 0:
-                                    c_y = 4
-                                    c_z = y
-                                else:
-                                    c_y = y
-                                    c_z = 0
+                if chat_instruction is not None and 'place' in chat_instruction[0]:
+                    # semantic representation will be invoked here
+                    sem_rep = chat_instruction[0].replace(
+                        "<Architect> place ", "")
 
-                                teleportMovement(
-                                    agent_hosts[1],
-                                    teleport_x=seed_x + c_x + 0.5,
-                                    teleport_y=c_y,
-                                    teleport_z=seed_y + c_z + 0.5)
-                                print(c_x, c_z)
-                                pickUpBlock(agent_hosts[1], index=c)
-                                adjustView(agent_hosts[1])
-                                world_state = ah.getWorldState()
-                                print(json.loads(
-                                    world_state.observations[-1].text))
-                                useBlock(agent_hosts[1])
-                                restoreView(agent_hosts[1])
-                                useBlock(agent_hosts[1])
-                            N_SHAPES += 1
-                            c = -1
-                            # teleportMovement(
-                            #     agent_hosts[1],
-                            #     teleport_x=0,
-                            #     teleport_y=8,
-                            #     teleport_z=5)
-                            # agent_hosts[1].sendCommand("discardCurrentItem")
-                            # for zidx in range(4, -6, -1):
-                            #     for xidx in range(5, -6, -1):
-                            #         teleportMovement(
-                            #             agent_hosts[1],
-                            #             teleport_x=xidx + 0.5,
-                            #             teleport_z=zidx + 0.5)
-                            #         print(xidx, zidx)
-                            #         # time.sleep(2)
-                            #         pickUpBlock(agent_hosts[1])
-                            #         adjustView(agent_hosts[1])
-                            #         useBlock(agent_hosts[1])
-                            #         restoreView(agent_hosts[1])
-                            #         useBlock(agent_hosts[1])
-                            #         # time.sleep(2)
-                            #         print("***********************")
-                            #         ws = agent_hosts[1].getWorldState()
-                            #         print(ws)
-                            #         for obws in ws.observations:
-                            #             print(obws)
-                            #         print("***********************")
-                        # else:
-                        #     agent_hosts[1].sendCommand('movenorth 1')
+                    print("#########chat received#########")
+                    print(chat_instruction)
+
+                    # sem_rep = "place row(a) ^ width(a, 4)"
+                    # sem_rep = "rectangle(a) ^ height(a, 2) ^ width(a,3)"
+                    if "and color" in sem_rep:
+                        c = sem_rep.split("and color ")[1]
+                        c = color_map[c]
+                        sem_rep = sem_rep.split("and color")[0]
+                        print("color ", c, " sem rep: ", sem_rep)
+
+                    print("Semantic representation:", sem_rep)
+
+                    try:
+                        plan_list = planner_utils.getPlans(sem_rep)
+                    except Exception:
+                        print("Error: Planner exception")
+                        plan_list = []
+
+                    print(plan_list)
+                    # Communication Protocol Planner-NLG 1
+                    if len(plan_list) == 0:
+                        print("Planner fails to solve: Planner-NLG 1")
+                        continue
+
+                    seed_x, seed_y = init_location[N_SHAPES % 4]
+                    for (x, y) in plan_list:
+                        c_x = x
+                        if y > 0:
+                            c_y = 4
+                            c_z = y
+                        else:
+                            c_y = y
+                            c_z = 0
+
+                        teleportMovement(
+                            agent_hosts[1],
+                            teleport_x=seed_x + c_x + 0.5,
+                            teleport_y=c_y+4.0,
+                            teleport_z=seed_y + c_z + 0.5)
+
+                        print("Teleported to:", c_x, c_y, c_z)
+                        pickUpBlock(agent_hosts[1], index=c)
+                        adjustView(agent_hosts[1])
+                        world_state = ah.getWorldState()
+                        # print(json.loads(
+                        #     world_state.observations[-1].text))
+                        useBlock(agent_hosts[1])
+                        restoreView(agent_hosts[1])
+                        # useBlock(agent_hosts[1])
+
+                    N_SHAPES += 1
+                    c = -1
+                    # teleportMovement(
+                    #     agent_hosts[1],
+                    #     teleport_x=0,
+                    #     teleport_y=8,
+                    #     teleport_z=5)
+                    # agent_hosts[1].sendCommand("discardCurrentItem")
+                    # for zidx in range(4, -6, -1):
+                    #     for xidx in range(5, -6, -1):
+                    #         teleportMovement(
+                    #             agent_hosts[1],
+                    #             teleport_x=xidx + 0.5,
+                    #             teleport_z=zidx + 0.5)
+                    #         print(xidx, zidx)
+                    #         # time.sleep(2)
+                    #         pickUpBlock(agent_hosts[1])
+                    #         adjustView(agent_hosts[1])
+                    #         useBlock(agent_hosts[1])
+                    #         restoreView(agent_hosts[1])
+                    #         useBlock(agent_hosts[1])
+                    #         # time.sleep(2)
+                    #         print("***********************")
+                    #         ws = agent_hosts[1].getWorldState()
+                    #         print(ws)
+                    #         for obws in ws.observations:
+                    #             print(obws)
+                    #         print("***********************")
+                # else:
+                #     agent_hosts[1].sendCommand('movenorth 1')
 
                     # add the planner output
 
@@ -437,41 +449,44 @@ def validate_semantic_representation(sem_rep):
 
 def teleportMovement(ah, teleport_x=None, teleport_y=None, teleport_z=None):
     """Teleport the agent in the map"""
-    if teleport_y is None:
-        y = 4
-    elif teleport_y >= 1:
-        y = teleport_y
-    else:
-        y = 4
+    # y = teleport_y
+    # if teleport_y is None or teleport_y < 1:
+    #     y = 4
+    # elif teleport_y >= 1:
+    #     y = teleport_y
+    # else:
+    #     y = 4
+
     sendCommand(
-        ah, "tp " + str(teleport_x) + " " + str(y) + " " + str(teleport_z))
-    time.sleep(2)
+        ah, "tp " + str(teleport_x) + " " + str(teleport_y) + " " + str(teleport_z))
+
+    time.sleep(1)
 
 
 def adjustView(ah, amount=None):
     """adjust the view for the agent for look down and look up"""
     if amount is None:
-        sendCommand(ah, "pitch 0.1")
-        time.sleep(2)
+        sendCommand(ah, "setPitch 40")
+        time.sleep(1)
     else:
-        sendCommand(ah, "pitch " + str(amount))
-        time.sleep(2)
+        sendCommand(ah, "setPitch " + str(amount))
+        time.sleep(1)
 
-    sendCommand(ah, "pitch 0")
-    time.sleep(1)
+    # sendCommand(ah, "setPitch 0")
+    # time.sleep(1)
 
 
 def restoreView(ah, amount=None):
     """restore the view for the agent for look down and look up"""
     if amount is None:
-        sendCommand(ah, "pitch -0.1")
-        time.sleep(2)
+        sendCommand(ah, "setPitch 0")
+        time.sleep(1)
     else:
-        sendCommand(ah, "pitch -" + str(amount))
-        time.sleep(2)
+        sendCommand(ah, "setPitch " + str(amount))
+        time.sleep(1)
 
-    sendCommand(ah, "pitch 0")
-    time.sleep(1)
+    # sendCommand(ah, "setPitch 0")
+    # time.sleep(1)
 
 
 def moveRight(ah):
@@ -506,8 +521,9 @@ def pickUpBlock(ah, index=-1):
 def useBlock(ah):
     """use the block in hand"""
     sendCommand(ah, 'use 1')
+    time.sleep(0.1)
     sendCommand(ah, 'use 0')
-
+    time.sleep(0.1)
 
 def sendCommand(ah, command):
     """execute all the commands through this method"""
