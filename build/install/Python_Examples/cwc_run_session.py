@@ -87,9 +87,9 @@ if __name__ == "__main__":
         cwc_run_mission(mission_args)
 
         print "\nROUND ENDED..."
-        print "\nWAITING..."
+        # print "\nWAITING..."
 
         # Wait for some time
-        time.sleep(10)
+        # time.sleep(10)
 
     print "\nSESSION COMPLETE!"

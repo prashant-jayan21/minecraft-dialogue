@@ -17,13 +17,13 @@ def main():
 	gf = "gold-configurations/"+ (gfn.replace(".json","") if args.config_name is None else args.config_name)+".xml"
 	gold = open(gf, 'w')
 
-	conf = log["WorldStates"][len(log["WorldStates"])-1]["BlocksInGrid"]
+	conf = log["WorldStates"][5]["BlocksInGrid"]
 	for block in conf:
-		bt = str(block["Type"])
-		bx = str(block["AbsoluteCoordinates"]["X"]+args.displacement)
-		by = str(block["AbsoluteCoordinates"]["Y"])
-		bz = str(block["AbsoluteCoordinates"]["Z"]+args.displacement)
-		gold.write("<DrawBlock type=\"cwcmod:"+bt+"\" x=\""+bx+"\" y=\""+by+"\" z=\""+bz+"\"/>\n")
+		bt = str(block["Type"]).replace("cwc_", "cwc_minecraft_") #  "cwcmod:" +
+		bx = str(int(block["AbsoluteCoordinates"]["X"]+args.displacement))
+		by = str(int(block["AbsoluteCoordinates"]["Y"]))
+		bz = str(int(block["AbsoluteCoordinates"]["Z"]+args.displacement))
+		gold.write("<DrawBlock type=\""+bt+"\" x=\""+bx+"\" y=\""+by+"\" z=\""+bz+"\"/>\n")
 
 	print "Wrote gold configuration to", gf
 	gold.close()
