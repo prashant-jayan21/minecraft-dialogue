@@ -1,5 +1,4 @@
 import time, csv, argparse
-from cwc_run_single_mission import cwc_run_mission
 
 if __name__ == "__main__":
     # Parse CLAs
@@ -11,7 +10,15 @@ if __name__ == "__main__":
     parser.add_argument("--lan", default=False, action="store_true", help="LAN mode")
     parser.add_argument("--draw_inventory_blocks", action="store_true", help="Starts the mission with inventory blocks on the ground")
     parser.add_argument("--existing_is_gold", action="store_true", help="Indicates existing configs are actually gold configs and need to be displaced")
+    parser.add_argument("--run_type", default="data_collection", help="Type of application to run: data_collection, architect_demo, builder_demo")
     args = parser.parse_args()
+
+    if args.run_type == 'data_collection':
+        from cwc_run_single_mission import cwc_run_mission
+    elif args.run_type == 'architect_demo':
+        pass # import me here
+    elif args.run_type == 'builder_demo':
+        from cwc_run_builder_demo import cwc_run_mission
 
     # Read user info from spreadsheet
     all_users = []
