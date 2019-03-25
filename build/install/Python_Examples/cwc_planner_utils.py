@@ -81,7 +81,7 @@ def convert_Response(output):
     if len(output) < 5:
         print("not enough information from the planner")
     planner_output = output[-6:]
-    print(planner_output)
+    # print(planner_output)
     for line in planner_output:
         if len(line) == 0:
             continue
@@ -89,7 +89,7 @@ def convert_Response(output):
         if "[" in splitted_line[1]:
             splitted_line[1] = splitted_line[
                 1].replace("[", "").replace("]", "")
-        print("splitted lines ", splitted_line)
+        # print("splitted lines ", splitted_line)
         if "Flag" in splitted_line[0]:
             flag = splitted_line[1]
         elif "Missing" in splitted_line[0]:
@@ -101,14 +101,15 @@ def convert_Response(output):
         elif "Constraints" in splitted_line[0]:
             constraints = splitted_line[1]
 
-    print("##parsed outputs##")
-    print(flag, missing, other, plan, constraints)
+    # print("##parsed outputs##")
+    # print(flag, missing, other, plan, constraints)
     response = Response(flag, missing, other, plan, constraints)
-    print(response)
-    print(response.responseFlag)
-    response.add_constraints('hellow')
-    print(response)
-    print("##end of parsed outputs##")
+    # print(response)
+    # print(response.responseFlag)
+    # response.add_constraints('hellow')
+    # print(response)
+    # print("##end of parsed outputs##")
+    return response
 
 
 def jarWrapper(*args):
@@ -152,16 +153,18 @@ def getPlans(human_input="row(a) ^ width(a,5)"):
     # args = ["planner/uct_44.jar"]
     args = ["planner/jshop2-master.jar", human_input]
     result = jarWrapper(*args)
-    print("-----begin o/p from planner----")
-    print(result[-6:])
-    print("-----end o/p from planner------")
-    convert_Response(result)
-    print("planner is providing this result")
-    return
-    instruction_list = result[-2].replace("[", "").replace("]", "")
-    instruction_list = instruction_list.replace(
-        ",", "").replace("(", "").replace(")", "")
-    instruction_list = instruction_list.split(" ")
+    response = convert_Response(result)
+    print(response.responseFlag)
+    # TODO:
+    if "COMPLETED" not in response.responseFlag:
+        return
+    instruction_list = list()
+    print(response.plan)
+    for item in response.plan:
+        instruction = item.replace("[", "").replace("]", "")
+        instruction = instruction.replace(
+            ",", "").replace("(", "").replace(")", "")
+        instruction_list.append(instruction)
     print(instruction_list)
     n_instr = len(instruction_list)
 
@@ -169,9 +172,11 @@ def getPlans(human_input="row(a) ^ width(a,5)"):
     x_l = list()
     y_l = list()
     z_l = list()
-    for i in range(0, n_instr, 4):
-        x_l.append(int(float(instruction_list[i + 2])))
-        y_l.append(int(float(instruction_list[i + 3])))
+    for item in instruction_list:
+        print("item ", item)
+        action, block_id, x, y = item.strip().split(" ")
+        x_l.append(int(float(x)))
+        y_l.append(int(float(y)))
         # todo: Rakib when Mayukh is done with the 3D planner.
         z_l.append(int(0))
 
