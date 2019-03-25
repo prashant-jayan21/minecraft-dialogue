@@ -165,7 +165,7 @@ def getPlans(human_input="row(a) ^ width(a,5)"):
         instruction = instruction.replace(
             ",", "").replace("(", "").replace(")", "")
         instruction_list.append(instruction)
-    print(instruction_list)
+    # print(instruction_list)
     n_instr = len(instruction_list)
 
     command_list = list()
