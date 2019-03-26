@@ -34,7 +34,7 @@ public class CwCMod {
 	public static final String ORACLE = "Oracle";
 	public static String[] FIXED_VIEWERS;
 
-	public static boolean enableAIToggle = false;		// whether or not the original Malmo AI/Human toggle option is enabled
+	public static boolean enableAIToggle = true;		// whether or not the original Malmo AI/Human toggle option is enabled
 	public static final int DEFAULT_STACK_SIZE = 20;	// stack size of blocks in Builder's inventory
 	protected static int NUM_FIXED_VIEWERS = 4;
 
