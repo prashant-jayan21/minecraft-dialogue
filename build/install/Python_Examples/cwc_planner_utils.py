@@ -153,6 +153,7 @@ def getPlans(human_input="row(a) ^ width(a,5)"):
     # args = ["planner/uct_44.jar"]
     args = ["planner/jshop2-master.jar", human_input]
     result = jarWrapper(*args)
+
     response = convert_Response(result)
     print(response.responseFlag)
     # TODO:
@@ -165,6 +166,7 @@ def getPlans(human_input="row(a) ^ width(a,5)"):
         instruction = instruction.replace(
             ",", "").replace("(", "").replace(")", "")
         instruction_list.append(instruction)
+
     # print(instruction_list)
     n_instr = len(instruction_list)
 
@@ -182,10 +184,9 @@ def getPlans(human_input="row(a) ^ width(a,5)"):
 
     command_list = zip(x_l, y_l, z_l)
     command_list.sort(key=lambda t: t[1], reverse=True)
-    print(command_list)
+    # print(command_list)
 
     return (command_list)
-
 
 if __name__ == '__main__':
     # getPlans(human_input="cube(a) ^ width(a,5)")
