@@ -109,8 +109,8 @@ function Install-Ffmpeg
     if ($env:path -notmatch "ffmpeg")
     {
         Display-Heading "Installing ffmpeg"
-        Download-File "http://ffmpeg.zeranoe.com/builds/win64/static/ffmpeg-latest-win64-static.7z" ($env:HOMEPATH + "\temp\ffmpeg.7z")
-        & 'C:\Program Files\7-Zip\7z.exe' x .\temp\ffmpeg.7z -oC:\ffmpeg | Out-Host
+        Download-File "http://ffmpeg.zeranoe.com/builds/win64/static/ffmpeg-latest-win64-static.zip" ($env:HOMEPATH + "\temp\ffmpeg.zip")
+        & 'C:\Program Files\7-Zip\7z.exe' x .\temp\ffmpeg.zip -oC:\ffmpeg | Out-Host
         if ($?)
         {
             cp -r C:\ffmpeg\ffmpeg-latest-win64-static\* C:\ffmpeg
@@ -167,7 +167,7 @@ function Install-Java
     return $True
 }
 
-function Install-Python
+function Install-Python2
 {
     if (Should-Install "Python 2.7")
     {
@@ -179,50 +179,29 @@ function Install-Python
             Append-Path "C:\Python27"
             return $True
         }
-        Write-Host "FAILED TO INSTALL PYTHON"
+        Write-Host "FAILED TO INSTALL PYTHON 2"
         Start-Sleep 3
         exit 1
     }
-    Write-Host "Python already installed."
+    Write-Host "Python2 already installed."
 }
 
-function Install-XSD
+function Install-Python3
 {
-    if (Should-Install "CodeSynthesis")
+    if (Should-Install "Python 3.6")
     {
-        Display-Heading "Installing codesynthesis"
-        Download-File "http://www.codesynthesis.com/download/xsd/4.0/windows/i686/xsd-4.0.msi" ($env:HOMEPATH + "\temp\xsd.msi")
-        Start-Process .\temp\xsd.msi -ArgumentList "/qn" -Wait
+        Display-Heading "Installing python"
+        Download-File "https://www.python.org/ftp/python/3.6.3/python-3.6.3-amd64.exe" ($env:HOMEPATH + "\temp\python_install.exe")
+        Start-Process .\temp\python_install.exe -ArgumentList "/quiet PrependPath=1" -Wait
         if ($?)
         {
-            Append-Path "C:\Program Files (x86)\CodeSynthesis XSD 4.0\bin64;C:\Program Files (x86)\CodeSynthesis XSD 4.0\bin"
             return $True
         }
-        Write-Host "FAILED TO INSTALL CODESYNTHESIS"
+        Write-Host "FAILED TO INSTALL PYTHON3"
         Start-Sleep 3
         exit 1
     }
-    Write-Host "XSD already installed."
-}
-
-function Install-VCRedist
-{
-    if (Should-Install 'Microsoft Visual C++ 2013 Redistributable (x64)')
-    {
-        Display-Heading "Installing Visual C++ runtime"
-        Download-File "http://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x64.exe" ($env:HOMEPATH + "\temp\vcredist_x64.exe")
-        &.\temp\vcredist_x64.exe /quiet /norestart | Out-Host
-        if (-Not $?)
-        {
-            Write-Host "FAILED TO INSTALL VCREDIST"
-            Start-Sleep 3
-            exit 1
-        }
-    }
-    else
-    {
-        Write-Host "MSVCRT already installed."
-    }
+    Write-Host "Python3 already installed."
 }
 
 function Add-MalmoXSDPathEnv

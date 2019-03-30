@@ -57,11 +57,11 @@ void parsePythonList( ArgumentParser* p, const boost::python::list& list )
     p->parse( listToStrings( list ) );
 }
 
-// Make sure we get all of the useful information from xml_schema::exception
-void translateXMLSchemaException(xml_schema::exception const& e)
+// Make sure we get all of the useful information from std::exception
+void translateXMLStdException(std::exception const& e)
 {
     std::ostringstream oss;
-    oss << "Caught xml_schema::exception: " << e.what() << "\n" << e;
+    oss << "Caught std::exception: " << e.what() << "\n";
     PyErr_SetString(PyExc_RuntimeError, oss.str().c_str() );
 }
 
@@ -94,6 +94,9 @@ void (AgentHost::*startMissionComplex)(const MissionSpec&, const ClientPool&, co
 void (AgentHost::*sendCommand)(std::string) = &AgentHost::sendCommand;
 void (AgentHost::*sendCommandWithKey)(std::string, std::string) = &AgentHost::sendCommand;
 
+void (MissionRecordSpec::*recordMP4General)(int, int64_t bit_rate) = &MissionRecordSpec::recordMP4;
+void (MissionRecordSpec::*recordMP4Specific)(TimestampedVideoFrame::FrameType, int, int64_t, bool) = &MissionRecordSpec::recordMP4;
+
 #ifdef WRAP_ALE
 void (ALEAgentHost::*startALEMissionSimple)(const MissionSpec&, const MissionRecordSpec&) = &ALEAgentHost::startMission;
 void (ALEAgentHost::*startALEMissionComplex)(const MissionSpec&, const ClientPool&, const MissionRecordSpec&, int, std::string) = &ALEAgentHost::startMission;
@@ -110,7 +113,7 @@ struct ptime_to_python_datetime
         std::int64_t fracsecs = td.fractional_seconds();
         std::int64_t usecs = (resolution > 1000000) ? fracsecs / (resolution / 1000000) : fracsecs * (1000000 / resolution);
 
-        return PyDateTime_FromDateAndTime((int)date.year(), (int)date.month(), (int)date.day(), td.hours(), td.minutes(), td.seconds(), (int)usecs);
+        return PyDateTime_FromDateAndTime((int)date.year(), (int)date.month(), (int)date.day(), (int)td.hours(), (int)td.minutes(), (int)td.seconds(), (int)usecs);
     }
 };
 
@@ -144,6 +147,8 @@ BOOST_PYTHON_MODULE(MalmoPython)
         .value("MISSION_SERVER_NOT_FOUND", MissionException::MISSION_SERVER_NOT_FOUND)
         .value("MISSION_NO_COMMAND_PORT", MissionException::MISSION_NO_COMMAND_PORT)
         .value("MISSION_BAD_INSTALLATION", MissionException::MISSION_BAD_INSTALLATION)
+        .value("MISSION_CAN_NOT_KILL_BUSY_CLIENT", MissionException::MISSION_CAN_NOT_KILL_BUSY_CLIENT)
+        .value("MISSION_CAN_NOT_KILL_IRREPLACEABLE_CLIENT", MissionException::MISSION_CAN_NOT_KILL_IRREPLACEABLE_CLIENT)
         ;
 
     enum_< Logger::LoggingSeverityLevel >("LoggingSeverityLevel")
@@ -156,8 +161,17 @@ BOOST_PYTHON_MODULE(MalmoPython)
         .value("LOG_ALL", Logger::LOG_ALL)
         ;
 
+    enum_< Logger::LoggingComponent >("LoggingComponent")
+        .value("LOG_TCP", Logger::LOG_TCP)
+        .value("LOG_RECORDING", Logger::LOG_RECORDING)
+        .value("LOG_VIDEO", Logger::LOG_VIDEO)
+        .value("LOG_AGENTHOST", Logger::LOG_AGENTHOST)
+        .value("LOG_ALL_COMPONENTS", Logger::LOG_ALL_COMPONENTS)
+        ;
+
     def("setLogging", &Logger::setLogging);
     def("appendToLog", &Logger::appendToLog);
+    def("setLoggingComponent", &Logger::setLoggingComponent);
 
     class_< MissionException >("MissionExceptionDetails", init< const std::string&, MissionException::MissionErrorCode >())
         .add_property("errorCode", &MissionException::getMissionErrorCode)
@@ -201,9 +215,11 @@ BOOST_PYTHON_MODULE(MalmoPython)
         .value( "LATEST_OBSERVATION_ONLY",  AgentHost::LATEST_OBSERVATION_ONLY )
         .value( "KEEP_ALL_OBSERVATIONS",    AgentHost::KEEP_ALL_OBSERVATIONS )
     ;
+
     class_< AgentHost, bases< ArgumentParser >, boost::noncopyable >("AgentHost", init<>())
         .def( "startMission",                   startMissionSimple )
         .def( "startMission",                   startMissionComplex )
+        .def( "killClient",                     &AgentHost::killClient )
         .def( "peekWorldState",                 &AgentHost::peekWorldState )
         .def( "getWorldState",                  &AgentHost::getWorldState )
         .def( "setVideoPolicy",                 &AgentHost::setVideoPolicy )
@@ -281,22 +297,31 @@ BOOST_PYTHON_MODULE(MalmoPython)
     ;
     class_< MissionRecordSpec >("MissionRecordSpec", init<>())
         .def(init < std::string >())
-        .def("recordMP4",               &MissionRecordSpec::recordMP4)
+        .def("recordMP4",               recordMP4General)
+        .def("recordMP4",               recordMP4Specific)
+        .def("recordBitmaps",           &MissionRecordSpec::recordBitmaps)
         .def("recordObservations",      &MissionRecordSpec::recordObservations)
         .def("recordRewards",           &MissionRecordSpec::recordRewards)
         .def("recordCommands",          &MissionRecordSpec::recordCommands)
         .def("setDestination",          &MissionRecordSpec::setDestination)
         .def(self_ns::str(self_ns::self))
     ;
+    register_ptr_to_python< boost::shared_ptr< ClientInfo > >();
     class_< ClientInfo >("ClientInfo", init<>())
         .def(init<const std::string &>())
-        .def(init<const std::string &, int>())
+        .def(init<const std::string &, int>()) // address & control_port
+        .def(init<const std::string &, int, int>()) // address, control port and command port
         .def_readonly("ip_address",     &ClientInfo::ip_address)
-        .def_readonly("port",           &ClientInfo::port)
+        .def_readonly("control_port",           &ClientInfo::control_port)
+        .def_readonly("command_port",           &ClientInfo::command_port)
         .def(self_ns::str(self_ns::self))
+    ;
+    class_< std::vector< boost::shared_ptr< ClientInfo > > >( "ClientInfoVector" )
+        .def( vector_indexing_suite< std::vector< boost::shared_ptr< ClientInfo > >, true >() )
     ;
     class_< ClientPool >("ClientPool", init<>())
         .def("add",                     &ClientPool::add)
+        .def_readonly("clients",       &ClientPool::clients)
         .def(self_ns::str(self_ns::self))
     ;
     class_<ParameterSet>("ParameterSet", init<>())
@@ -319,15 +344,22 @@ BOOST_PYTHON_MODULE(MalmoPython)
     ;
     register_ptr_to_python< boost::shared_ptr< TimestampedReward > >();
     class_< TimestampedReward >( "TimestampedReward", no_init )
-        .add_property( "timestamp",   make_getter(&TimestampedString::timestamp, return_value_policy<return_by_value>()))
+        .add_property( "timestamp",   make_getter(&TimestampedReward::timestamp, return_value_policy<return_by_value>()))
         .def("hasValueOnDimension",   &TimestampedReward::hasValueOnDimension)
         .def("getValueOnDimension",   &TimestampedReward::getValueOnDimension)
         .def("getValue",              &TimestampedReward::getValue)
         .def(self_ns::str(self_ns::self))
     ;
+
+    enum_< TimestampedVideoFrame::FrameType >("FrameType")
+        .value("VIDEO", TimestampedVideoFrame::VIDEO)
+        .value("DEPTH_MAP", TimestampedVideoFrame::DEPTH_MAP)
+        .value("LUMINANCE", TimestampedVideoFrame::LUMINANCE)
+        .value("COLOUR_MAP", TimestampedVideoFrame::COLOUR_MAP);
+
     register_ptr_to_python< boost::shared_ptr< TimestampedVideoFrame > >();
     class_< TimestampedVideoFrame >( "TimestampedVideoFrame", no_init )
-        .add_property( "timestamp",   make_getter(&TimestampedString::timestamp, return_value_policy<return_by_value>()))
+        .add_property( "timestamp",   make_getter(&TimestampedVideoFrame::timestamp, return_value_policy<return_by_value>()))
         .def_readonly( "width",       &TimestampedVideoFrame::width )
         .def_readonly( "height",      &TimestampedVideoFrame::height )
         .def_readonly( "channels",    &TimestampedVideoFrame::channels )
@@ -336,6 +368,7 @@ BOOST_PYTHON_MODULE(MalmoPython)
         .def_readonly( "zPos",        &TimestampedVideoFrame::zPos)
         .def_readonly( "yaw",         &TimestampedVideoFrame::yaw)
         .def_readonly( "pitch",       &TimestampedVideoFrame::pitch)
+        .def_readonly( "frametype",   &TimestampedVideoFrame::frametype)
         .add_property( "pixels",      make_getter(&TimestampedVideoFrame::pixels, return_value_policy<return_by_value>()))
         .def(self_ns::str(self_ns::self))
     ;
@@ -351,6 +384,6 @@ BOOST_PYTHON_MODULE(MalmoPython)
     class_< std::vector< std::string > >( "StringVector" )
         .def( vector_indexing_suite< std::vector< std::string >, true >() )
     ;
-    register_exception_translator<xml_schema::exception>(&translateXMLSchemaException);
+    register_exception_translator<std::exception>(&translateXMLStdException);
     register_exception_translator<MissionException>(&translateMissionException);
 }

@@ -36,7 +36,16 @@ namespace malmo
     {
         enum Transform {
             IDENTITY                //!< Don't alter the incoming bytes in any way
+            , RAW_BMP               //!< Layout bytes as raw BMP data (bottom-to-top RGB)
             , REVERSE_SCANLINE      //!< Interpret input bytes as reverse scanline BGR
+        };
+        enum FrameType {
+            _MIN_FRAME_TYPE = 0
+            , VIDEO = _MIN_FRAME_TYPE //!< Normal video, either 24bpp RGB or 32bpp RGBD
+            , DEPTH_MAP               //!< 32bpp float depthmap
+            , LUMINANCE               //!< 8bpp greyscale bitmap
+            , COLOUR_MAP              //!< 24bpp colour map
+            , _MAX_FRAME_TYPE
         };
         static const int FRAME_HEADER_SIZE = 20;
 
@@ -51,6 +60,9 @@ namespace malmo
         
         //! The number of channels. e.g. 3 for RGB data, 4 for RGBD
         short channels;
+
+        //! The type of video data - eg 24bpp RGB, or 32bpp float depth
+        FrameType frametype;
 
         //! The pitch of the player at render time
         float pitch;
@@ -71,10 +83,11 @@ namespace malmo
         std::vector<unsigned char> pixels;
 
         TimestampedVideoFrame();
-        TimestampedVideoFrame(short width, short height, short channels, TimestampedUnsignedCharVector& message, Transform transform = IDENTITY);
+        TimestampedVideoFrame(short width, short height, short channels, TimestampedUnsignedCharVector& message, Transform transform = IDENTITY, FrameType frametype = VIDEO);
         
         bool operator==(const TimestampedVideoFrame& other) const;
         friend std::ostream& operator<<(std::ostream& os, const TimestampedVideoFrame& tsvidframe);
+        friend std::ostream& operator<<(std::ostream& os, const TimestampedVideoFrame::FrameType& frametype);
         float ntoh_float(uint32_t value) const;
     };
 }

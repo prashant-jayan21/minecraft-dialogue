@@ -83,6 +83,8 @@ public:
     MissionRecordSpec();
     MissionRecordSpec(std::string destination);
     void recordMP4(int frames_per_second, int64_t bit_rate);
+    void recordMP4(TimestampedVideoFrame::FrameType type, int frames_per_second, int64_t bit_rate, bool drop_input_frames);
+    void recordBitmaps(TimestampedVideoFrame::FrameType type);
     void recordObservations();
     void recordRewards();
     void recordCommands();
@@ -199,7 +201,9 @@ public:
         MISSION_SERVER_WARMING_UP,
         MISSION_SERVER_NOT_FOUND,
         MISSION_NO_COMMAND_PORT,
-        MISSION_BAD_INSTALLATION
+        MISSION_BAD_INSTALLATION,
+        MISSION_CAN_NOT_KILL_BUSY_CLIENT,
+        MISSION_CAN_NOT_KILL_IRREPLACEABLE_CLIENT
     };
     MissionException(const std::string& message, MissionErrorCode code);
     ~MissionException();
@@ -239,6 +243,8 @@ public:
       const MissionSpec& mission
     , const MissionRecordSpec& mission_record
   ) throw (MissionException const &);
+
+  bool killClient(const ClientInfo& client);
 
   WorldState peekWorldState() const;
   
@@ -330,11 +336,6 @@ public:
   %javaexception("java.lang.Exception") MissionSpec(const std::string& rawMissionXML,bool validate) %{
     try {
       $action
-    } catch (const xml_schema::exception& e) {
-      std::ostringstream oss;
-      oss << "Caught xml_schema::exception: " << e.what() << "\n" << e;
-      jclass clazz = jenv->FindClass("java/lang/Exception");
-      jenv->ThrowNew(clazz, oss.str().c_str());
     } catch (const std::runtime_error& e) {
       std::ostringstream oss;
       oss << "Caught std::runtime_error: " << e.what();
@@ -465,6 +466,13 @@ private:
   TimestampedVideoFrame(short width, short height, short channels, TimestampedUnsignedCharVector& message);
 
 public:
+    enum FrameType {
+        VIDEO
+        , DEPTH_MAP
+        , LUMINANCE
+        , COLOUR_MAP
+    };
+
   const boost::posix_time::ptime timestamp;
 
   const short width;
@@ -483,6 +491,8 @@ public:
 
   const float pitch;
 
+  const FrameType frametype;
+
   const std::vector<unsigned char> pixels;
 };
 
@@ -490,10 +500,12 @@ struct ClientInfo {
 public:
     ClientInfo();
     ClientInfo(const std::string& ip_address);
-    ClientInfo(const std::string& ip_address, int channel);
+    ClientInfo(const std::string& ip_address, int control_port);
+    ClientInfo(const std::string& ip_address, int control_port, int command_port);
 
     std::string ip_address;
-    int port;
+    int control_port;
+    int command_port;
 };
 
 class ClientPool {

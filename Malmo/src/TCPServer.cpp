@@ -32,6 +32,8 @@ using boost::asio::ip::tcp;
 #include <chrono>
 #include <random>
 
+#define LOG_COMPONENT Logger::LOG_TCP
+
 namespace malmo
 {
     TCPServer::TCPServer( boost::asio::io_service& io_service, int port, boost::function<void(const TimestampedUnsignedCharVector) > callback, const std::string& log_name )
@@ -102,7 +104,11 @@ namespace malmo
 
     int TCPServer::getPort() const
     {
-        return this->acceptor->local_endpoint().port();
+        boost::system::error_code ec;
+        int port = this->acceptor->local_endpoint(ec).port();
+        if (ec)
+            LOGERROR(LT("TCPServer::getPort failed to resolve endpoint - port returned will be meaningless! Error: "), ec.message());
+        return port;
     }
     
     void TCPServer::bindToRandomPortInRange(boost::asio::io_service& io_service, int port_min, int port_max)
@@ -144,6 +150,11 @@ namespace malmo
             LOGERROR(this->log_name, LT(" couldn't bind to "), endpt, LT(" - "), e.code().message());
             throw e;
         }
-        LOGFINE(this->log_name, LT(" bound local endpoint "), this->acceptor->local_endpoint(), LT(" to "), endpt);
+        boost::system::error_code ec;
+        LOGFINE(this->log_name, LT(" bound local endpoint "), this->acceptor->local_endpoint(ec), LT(" to "), endpt);
+        if (ec)
+            LOGERROR(this->log_name, LT(" failed to resolve local endpoint: "), ec.message());
     }
 }
+
+#undef LOG_COMPONENT
