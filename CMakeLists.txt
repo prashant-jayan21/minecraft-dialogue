@@ -1,15 +1,15 @@
 # ------------------------------------------------------------------------------------------------
 # Copyright (c) 2016 Microsoft Corporation
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 # associated documentation files (the "Software"), to deal in the Software without restriction,
 # including without limitation the rights to use, copy, modify, merge, publish, distribute,
 # sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all copies or
 # substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
 # NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
 # NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
@@ -52,9 +52,9 @@ set( STATIC_BOOST        ON CACHE BOOL ${STATIC_BOOST_DESC} )
 if( INCLUDE_PYTHON )
   set( USE_PYTHON_VERSIONS_DESC "Specifies which version of Python to build Malmo with Python bindings" )
   set( MACOS_USE_PYTHON_MODULE_DESC "Specifies which Python module to build Malmo on Apple MacOS" )
-  set( USE_PYTHON_VERSIONS 3.6 CACHE STRING ${USE_PYTHON_VERSIONS_DESC} )
+  set( USE_PYTHON_VERSIONS 3.7 CACHE STRING ${USE_PYTHON_VERSIONS_DESC} )
   # Boost has switched to using a 2 digit naming convention for python on MacOS.
-  set( MACOS_USE_PYTHON_MODULE "python36" CACHE STRING ${MACOS_USE_PYTHON_MODULE_DESC} )
+  set( MACOS_USE_PYTHON_MODULE "python37" CACHE STRING ${MACOS_USE_PYTHON_MODULE_DESC} )
 endif()
 
 set( WARNINGS_AS_ERRORS OFF )
@@ -104,14 +104,14 @@ SET(Boost_ADDITIONAL_VERSIONS "1.65" "1.65.0")
 SET(Boost_ADDITIONAL_VERSIONS "1.66" "1.66.0")
 SET(Boost_ADDITIONAL_VERSIONS "1.67" "1.67.0")
 
-SET(BOOST_PYTHON_MODULE_NAME "python")
-if ( USE_PYTHON_VERSIONS VERSION_GREATER 3 )
-    if ( APPLE )
-        SET( BOOST_PYTHON_MODULE_NAME ${MACOS_USE_PYTHON_MODULE} )
-    else()
-        SET( BOOST_PYTHON_MODULE_NAME "python3" )
-    endif()
-endif()
+SET(BOOST_PYTHON_MODULE_NAME "python37")
+# if ( USE_PYTHON_VERSIONS VERSION_GREATER 3 )
+#     if ( APPLE )
+#         SET( BOOST_PYTHON_MODULE_NAME ${MACOS_USE_PYTHON_MODULE} )
+#     else()
+#         SET( BOOST_PYTHON_MODULE_NAME "python3" )
+#     endif()
+# endif()
 
 if( WIN32 )
   SET(Boost_USE_STATIC_LIBS ON)
@@ -145,11 +145,11 @@ find_package( Git REQUIRED )
 find_package( ZLIB REQUIRED )
 
 if ( INCLUDE_JAVA OR BUILD_MOD )
-   find_package( Java REQUIRED COMPONENTS Runtime Development ) 
+   find_package( Java REQUIRED COMPONENTS Runtime Development )
 endif()
 
 if( INCLUDE_JAVA )
-  find_package( JNI REQUIRED) 
+  find_package( JNI REQUIRED)
 endif()
 
 if( INCLUDE_PYTHON )
@@ -182,7 +182,7 @@ if (CMAKE_VERSION VERSION_LESS "3.1")
 else ()
   set (CMAKE_CXX_STANDARD 11)
 endif ()
- 
+
 if( MSVC )
   set( MALMO_PYTHON_DIR ${CMAKE_BINARY_DIR}/Malmo/src/PythonWrapper/$<CONFIG> )
   set( MALMO_CSHARP_DIR ${CMAKE_BINARY_DIR}/Malmo/src/CSharpWrapper/$<CONFIG> )
@@ -200,7 +200,7 @@ else()
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror" )
   else()
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations" ) # get a lot of warnings from Boost about auto_ptr
-  endif()  
+  endif()
 endif()
 
 if( APPLE )
