@@ -125,7 +125,7 @@ def generateOracleXML(experiment_id, gold_config_xml_substring):
                 </Mission>'''
 
 def cwc_run_mission(args):
-    print("Calling cwc_run_mission with args:", args, "\n")
+    print(("Calling cwc_run_mission with args:", args, "\n"))
     start_time = time.time()
 
     builder_ip, builder_port = args["builder_ip_addr"], args["builder_port"]
@@ -155,9 +155,9 @@ def cwc_run_mission(args):
         for i in range(num_fixed_viewers):
             client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10003+i))
     else:
-        print(("Builder IP: "+builder_ip), "\tPort:", builder_port)
-        print("Architect IP:", architect_ip, "\tPort:", architect_port)
-        print("FixedViewer IP:", fixed_viewer_ip, "\tPort:", fixed_viewer_port, "\tNumber of clients:", num_fixed_viewers, "\n")
+        print((("Builder IP: "+builder_ip), "\tPort:", builder_port))
+        print(("Architect IP:", architect_ip, "\tPort:", architect_port))
+        print(("FixedViewer IP:", fixed_viewer_ip, "\tPort:", fixed_viewer_port, "\tNumber of clients:", num_fixed_viewers, "\n"))
 
         client_pool.add(MalmoPython.ClientInfo(architect_ip, architect_port+1))
         client_pool.add(MalmoPython.ClientInfo(builder_ip, builder_port))
@@ -211,7 +211,7 @@ def cwc_run_mission(args):
                 for observation in world_state.observations:
                     total_elements += len(json.loads(observation.text))
 
-                print("Received", len(world_state.observations), "observations. Total number of elements:", total_elements)
+                print(("Received", len(world_state.observations), "observations. Total number of elements:", total_elements))
                 for observation in world_state.observations:
                     print("Processing observation:", end=' ')
                     debug_utils.printObservationElements(json.loads(observation.text))
@@ -219,7 +219,7 @@ def cwc_run_mission(args):
                     all_observations.append(observation)
 
                 for observation in world_state.observations:
-                    if json.loads(observation.text).get('Chat') == [u'<Builder> XXX']:
+                    if json.loads(observation.text).get('Chat') == ['<Builder> XXX']:
                         print("Speak Architect")
                         # agent_hosts[2].sendCommand("chat hahaha")
 
@@ -269,7 +269,7 @@ def cwc_run_mission(args):
 
                         all_observations = all_observations[:-1 * len(world_state.observations)]
 
-                print "-----"
+                print("-----")
 
         time.sleep(1)
 
@@ -289,7 +289,7 @@ def cwc_run_mission(args):
 
     m, s = divmod(time_elapsed, 60)
     h, m = divmod(m, 60)
-    print("Done! Mission time elapsed: %d:%02d:%02d (%.2fs)" % (h, m, s, time_elapsed))
+    print(("Done! Mission time elapsed: %d:%02d:%02d (%.2fs)" % (h, m, s, time_elapsed)))
     print()
 
     print("Waiting for mission to end...")
