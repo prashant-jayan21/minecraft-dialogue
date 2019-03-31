@@ -2,31 +2,36 @@
 # Two humans - w/ abilities to chat and build block structures
 # Record all observations
 
-import os, sys, time, json, datetime, copy
+import os, sys, time, json, datetime, copy, pprint
+from argparse import Namespace
 import MalmoPython, numpy as np
 import cwc_mission_utils as mission_utils, cwc_debug_utils as debug_utils, cwc_io_utils as io_utils
+from cwc_postprocess_observations import reformatObservations, mergeObservations
+
+sys.path.append('../../../../cwc-minecraft-models/python')
+import generate_seq2seq_online
 
 def addFixedViewers(n):
     fvs = ''
     for i in range(n):
-        fvs += '''<AgentSection mode="Spectator"> 
-                    <Name>FixedViewer'''+str(i+1)+'''</Name> 
-                    <AgentStart> 
+        fvs += '''<AgentSection mode="Spectator">
+                    <Name>FixedViewer'''+str(i+1)+'''</Name>
+                    <AgentStart>
                       ''' + mission_utils.fv_placements[i] + '''
-                      </AgentStart> 
-                    <AgentHandlers/> 
+                      </AgentStart>
+                    <AgentHandlers/>
                   </AgentSection>
                 '''
     return fvs
 
 def drawInventoryBlocks():
-    return ''' 
+    return '''
                 <DrawCuboid type="cwcmod:cwc_minecraft_orange_rn" x1="5" y1="1" z1="7" x2="1" y2="2" z2="8"/>
                 <DrawCuboid type="cwcmod:cwc_minecraft_yellow_rn" x1="-1" y1="1" z1="7" x2="-5" y2="2" z2="8"/>
                 <DrawCuboid type="cwcmod:cwc_minecraft_green_rn" x1="7" y1="1" z1="6" x2="8" y2="2" z2="2"/>
                 <DrawCuboid type="cwcmod:cwc_minecraft_blue_rn" x1="7" y1="1" z1="0" x2="8" y2="2" z2="-4"/>
                 <DrawCuboid type="cwcmod:cwc_minecraft_purple_rn" x1="-7" y1="1" z1="6" x2="-8" y2="2" z2="2"/>
-                 <DrawCuboid type="cwcmod:cwc_minecraft_red_rn" x1="-7" y1="1" z1="0" x2="-8" y2="2" z2="-4"/> 
+                 <DrawCuboid type="cwcmod:cwc_minecraft_red_rn" x1="-7" y1="1" z1="0" x2="-8" y2="2" z2="-4"/>
             '''
 
 def generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_viewers, draw_inventory_blocks):
@@ -76,7 +81,9 @@ def generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_v
                     <AgentStart>
                       <Placement x = "0" y = "5" z = "-6" pitch="45"/>
                     </AgentStart>
-                    <AgentHandlers/>
+                    <AgentHandlers>
+                      <ChatCommands/>
+                    </AgentHandlers>
                   </AgentSection>
 
                   '''+addFixedViewers(num_fixed_viewers)+'''
@@ -176,7 +183,7 @@ def cwc_run_mission(args):
     # oracle
     my_mission_oracle = MalmoPython.MissionSpec(missionXML_oracle, True)
     mission_utils.safeStartMission(agent_hosts[0], my_mission_oracle, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission_oracle")
-    
+
     # builder, architect
     my_mission = MalmoPython.MissionSpec(missionXML, True)
     mission_utils.safeStartMission(agent_hosts[1], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission")
@@ -206,11 +213,63 @@ def cwc_run_mission(args):
 
                 print("Received", len(world_state.observations), "observations. Total number of elements:", total_elements)
                 for observation in world_state.observations:
-                    print("Processing observation:", end=' ') 
+                    print("Processing observation:", end=' ')
                     debug_utils.printObservationElements(json.loads(observation.text))
+                    # pprint.PrettyPrinter(indent=4).pprint(json.loads(observation.text))
                     all_observations.append(observation)
 
-                print("-----")
+                for observation in world_state.observations:
+                    if json.loads(observation.text).get('Chat') == [u'<Builder> XXX']:
+                        print("Speak Architect")
+                        # agent_hosts[2].sendCommand("chat hahaha")
+
+                        def f(all_observations):
+                            all_world_states = []
+
+                            for observation in all_observations:
+                                world_state = json.loads(observation.text)
+                                world_state["Timestamp"] = observation.timestamp.replace(microsecond=0).isoformat(' ')
+                                # debug_utils.prettyPrintObservation(world_state)
+                                all_world_states.append(world_state)
+
+                            return all_world_states
+
+                        all_world_states = f(all_observations)
+
+                        reformatted = reformatObservations(all_world_states)
+                        all_world_states_merged = mergeObservations(reformatted)
+
+                        log = {}
+                        log["WorldStates"] = all_world_states_merged
+
+                        config_name = args["gold_config"].split("/")[-1].split(".")[0]
+
+                    	# parser.add_argument('--data_dir', type=str, default='../data/logs/', help='path for data jsons')
+                    	# parser.add_argument('--gold_configs_dir', type=str, default='../data/gold-configurations/', help='path for gold config xmls')
+                    	# parser.add_argument('--saved_dataset_dir', type=str, default=None, help='path for saved dataset to use')
+                    	# parser.add_argument('--vocab_dir', type=str, default="../vocabulary/", help='path for vocabulary files')
+                    	# parser.add_argument('--output_path', type=str, default=None, help='path for output file of generated sentences')
+                    	# parser.add_argument('--num_workers', type=int, default=0, help='number of workers')
+                    	# parser.add_argument('--seed', type=int, default=1234, help='random seed')
+                    	# parser.add_argument('--beam_size', type=int, default=10, help='beam size for beam search decoding')
+                    	# parser.add_argument('--max_decoding_length', type=int, default=50, help='max iterations for decoder when decoding w/o ground truth inputs') # FIXME: Do not use hard coded string
+                    	# parser.add_argument("--development_mode", default=False, action="store_true", help="Whether or not to run in development mode, i.e., with less data")
+                    	# parser.add_argument('--decoding_strategy', type=str, default='beam', help='multinomial/beam')
+                    	# parser.add_argument('--gamma', type=float, default=0.8, help='gamma penalty')
+                    	# parser.add_argument('--regenerate_sentences', default=False, action='store_true', help='generate sentences for a model even if a generated sentences file already exists in its directory')
+                    	# parser.add_argument('--model_iteration', default='best', help='iteration of model to be evaluated: "best" or "final"')
+                    	# parser.add_argument('--split', default='val', help='data split from which sentences should be generated')
+                    	# parser.add_argument('--disable_shuffle', default=False, action='store_true', help='disable shuffling of the data to be generated from')
+
+                        args2 = Namespace(
+                            model_dir = '../models/utterances_and_block_counters/20190223/utterances_and_block_counters_trainer-1550960969400/1550960969401/'
+                        )
+
+                        generate_seq2seq_online.main(args2, config_name, log)
+
+                        all_observations = all_observations[:-1 * len(world_state.observations)]
+
+                print "-----"
 
         time.sleep(1)
 
