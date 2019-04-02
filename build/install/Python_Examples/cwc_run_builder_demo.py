@@ -355,9 +355,9 @@ class DialogueManager:
                 # TODO: IMPLEMENT ME! In case of planner exception
                 return
 
-            # self.last_plan = response.plan
+            self.last_plan = response.plan
             # self.last_plan = [("putdown", -5, 1, -5), ("putdown", -5, 2, -5), ("putdown", -4, 2, -5), ("pickup", -5, 2, -5)]  # FIXME: DEBUG
-            self.last_plan = [("putdown", -4, 3, -4)]  # FIXME: DEBUG USE ONLY
+            # self.last_plan = [("putdown", -4, 3, -4)]  # FIXME: DEBUG USE ONLY
             print("DialogueManager::plan returned:", self.last_plan)
             self.plans.append(self.last_plan)
 
