@@ -160,7 +160,7 @@ def getPlans(human_input="row(a) ^ width(a,5)"):
     if "COMPLETED" not in response.responseFlag:
         return
     instruction_list = list()
-    print(response.plan)
+    # print(response.plan)
     for item in response.plan:
         instruction = item.replace("[", "").replace("]", "")
         instruction = instruction.replace(
@@ -191,6 +191,7 @@ def getPlans(human_input="row(a) ^ width(a,5)"):
 
     return (command_list)
 
+
 if __name__ == '__main__':
     # getPlans(human_input="cube(a) ^ width(a,5)")
     print("*****solving \"row(a) ^ width(a,5)\"*****")
@@ -202,7 +203,9 @@ if __name__ == '__main__':
     getPlans(human_input="rectangle(a) ^ height(a, 2) ^ width(a,4)")
 
     print("3D Planning problem")
-    getPlans(human_input="tower(a)^height(a,4)^square(b)^size(b,2)^right(b,a)^ block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d) ^location(w2)^block-location(d,w2)^lower_left_near(a,d)^spatial-rel(top,0,w1,w2)")
+    getPlans(human_input="tower(a)^height(a,4)^square(b)^size(b,2)^right(b,a)"
+             + "^ block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)"
+             + " ^location(w2)^block-location(d,w2)^lower_left_near(a,d)^spatial-rel(top,0,w1,w2)")
 
-    print("3D Planning problem")
-    getPlans(human_input="tower(a)^height(a,4)^square(b)^size(b,2)^right(b,a)^ block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^lower_left_near(a,d)^spatial-rel(top,0,w1,w2)")
+    print("3D Planning problem missing multiple dimensions")
+    getPlans(human_input="tower(a)^square(b)^right(b,a)^ block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^lower_left_near(a,d)^spatial-rel(top,0,w1,w2)")
