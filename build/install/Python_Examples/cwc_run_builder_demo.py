@@ -4,6 +4,7 @@
 
 from __future__ import print_function
 from enum import Enum
+from collections import defaultdict
 import os, sys, time, json, datetime, copy, random, traceback, MalmoPython, numpy as np
 import cwc_mission_utils as mission_utils
 import cwc_debug_utils as debug_utils
@@ -14,8 +15,10 @@ import cwc_planner_utils as planner_utils
 SHOW_COMMANDS = False
 N_SHAPES = 0
 ATTEMPT_LIMIT = 4
-init_location = [(0, 0), (-5, 0), (0, -5), (-5, -5)]
+write_logfiles = False
+verbose_observations = False
 
+# map of colors to corresponding hotbar IDs
 color_map = {
     'red': 1,
     'orange': 2,
@@ -25,12 +28,123 @@ color_map = {
     'purple': 6
 }
 
+# agent default location
+default_loc = {
+    "x": 0,
+    "y": 1,
+    "z": -6
+}
+
+# default pitch values by direction
+pitch_dirs = {
+    "north": 60,
+    "east": 60,
+    "south": 60,
+    "west": 60,
+    "top": 90,
+    "bottom": -90,
+    "bottom_north": -60,
+    "bottom_east": -60,
+    "bottom_south": -60,
+    "bottom_west": -60,
+    "top_north": 55,
+    "top_east": 55,
+    "top_south": 55,
+    "top_west": 55
+}
+
+# default yaw values by direction
+yaw_dirs = {
+    "north": 180,
+    "east": 270,
+    "south": 0,
+    "west": 90,
+    "bottom_north": 180,
+    "bottom_east": 270,
+    "bottom_south": 0,
+    "bottom_west": 90,
+    "top_north": 180,
+    "top_east": 270,
+    "top_south": 0,
+    "top_west": 90,
+}
+
+# map of relative to cardinal directions
+relative_to_cardinal = {
+    "ahead": "south",
+    "left": "east",
+    "right": "west", 
+    "behind": "north"
+}
+
+# delta values by which coordinates should be added to access blocks in specific directions
+coord_deltas = {
+    "ahead": {
+        "north": (0, 0, -1),
+        "south": (0, 0, 1),
+        "east": (1, 0, 0),
+        "west": (-1, 0, 0),
+        "top": (0, 0, 1),
+        "bottom": (0, 0, 1),
+        "bottom_north": (0, 0, -1),
+        "bottom_south": (0, 0, 1),
+        "bottom_east": (1, 0, 0),
+        "bottom_west": (-1, 0, 0),
+        "top_north": (0, 0, -1),
+        "top_south": (0, 0, 1),
+        "top_east": (1, 0, 0),
+        "top_west": (-1, 0, 0)
+    },
+    "left": {
+        "north": (-1, 0, 0),
+        "south": (1, 0, 0),
+        "east": (0, 0, -1),
+        "west": (0, 0, 1),
+        "top": (1, 0, 0),
+        "bottom": (1, 0, 0)  
+    },
+    "right": {
+        "north": (1, 0, 0),
+        "south": (-1, 0, 0),
+        "east": (0, 0, 1),
+        "west": (0, 0, -1),
+        "top": (-1, 0, 0),
+        "bottom": (-1, 0, 0)
+    },
+    "behind": {
+        "top": (0, 0, -1),
+        "bottom": (0, 0, -1)    
+    },
+    "above": {
+        "bottom_north": (0, 1, 0),
+        "bottom_south": (0, 1, 0),
+        "bottom_east": (0, 1, 0),
+        "bottom_west": (0, 1, 0)
+    }
+}
+
+# delta values by which pitch/yaw values should be added to modify view based on direction
+view_deltas = {
+    "ahead": (-30, 0),
+    "left": (-15, -35),
+    "right": (-15, 30),
+    "behind": (0, 0),
+    "above_bottom": (30, 0),
+    "ahead_bottom": (60, 0),
+    "ahead_top": (0, 0),
+    "top": (-15, 0),
+    "bottom": (15, 0)
+}
+
 class DummyParser:
     def __init__(self):
         pass
 
     def parse(self, text):
         return "column(a) ^ height(a,8)"
+
+    def reset(self):
+        pass
 
 class State(Enum):
     START = 0                        # start state
@@ -56,6 +170,7 @@ class DialogueState:
         self.plan = plan
 
     def __str__(self):
+        """ String representation of a dialogue state, including input/output text, semantic parse, and plan at this state. """
         print_str = "State: "+str(self.state)
         if self.input is not None:
             print_str += "\nInput: "+str(self.input)
@@ -68,88 +183,151 @@ class DialogueState:
 
 class DialogueManager:
     def __init__(self, ah):
-        self.parser = init_parser()
-        self.next_state = State.START
-        self.dialogue_history = [DialogueState(State.START)]
-        self.parser_outputs = []
-        self.plans = []
-        self.description_attempts = 0
-        self.verification_attempts = 0
-        self.clarification_attempts = 0
-        self.system_text = ""
+        """ Initializes a dialogue manager for a given agent. """
+        # agent host handle of the player this dialogue manager is for
         self.agent_host = ah
 
-        self.parse("")
+        # semantic parser
+        self.parser = init_parser()
+        self.parser_outputs = []    # list of outputs produced by parser
+        self.last_parse = None      # last (successful) semantic parse
+
+        # planner
+        self.plans = []             # list of outputs produced by planner
+        self.last_plan = None       # last (successful) plan
+        self.blocks_in_grid = None  # dict of existing blocks in grid
+
+        # dialogue manager
+        self.next_state = State.START                                               # next dialogue state
+        self.dialogue_history = [DialogueState(State.START)]                        # history of dialogue states
+        self.attempts = {"description": 0, "verification": 0, "clarification": 0}   # counter of attempt types
+        self.system_text = ""                                                       # system text to be pushed to chat
+
+        # begin a dialogue
+        self.parse("", {}, 0.0, 0.0)
 
     def reset(self):
-        # self.parser.reset()
+        """ Resets the dialogue manager, semantic parser, and planner modules. """
+        # reset the parser
+        self.parser.reset()
+        self.parser_outputs = []
+        self.last_parse = None
+
+        # reset the planner
+        self.plans = []
+        self.last_plan = None
+        self.blocks_in_grid = None
+
+        # reset the dialogue manager
         self.next_state = State.START
         self.dialogue_history = [DialogueState(State.START)]
-        self.last_parse = None
-        self.parser_outputs = []
-        self.last_plan = None
-        self.plans = []
-        self.description_attempts = 0
-        self.verification_attempts = 0
-        self.clarification_attempts = 0
+        self.attempts = {"description": 0, "verification": 0, "clarification": 0}
         self.system_text = ""
 
-    def output_text(self):
+        # begin a dialogue
+        self.parse("", {}, 0.0, 0.0)
+
+    def send_chat(self):
+        """ Pushes the system text to the Minecraft chat interface. """
         sendCommand(self.agent_host, 'chat '+self.system_text)
 
-    def execute_plan(self):
+    def execute_plan(self, pitch, yaw):
+        """ Executes the last successful plan. """
+        # no plan exists
+        if self.last_plan is None:
+            print("execute_plan::Error: last plan is undefined!")
+            return "FAILURE"
+
+        # empty plan (this failure case should be caught before execution)
+        if len(self.last_plan) < 1:
+            print("execute_plan::Warning: execute_plan was called, but the last plan was empty!")
+            return "FAILURE"
+
         plan_list = self.last_plan
-        seed_x, seed_y = init_location[N_SHAPES % 4]
-        index = np.random.random_integers(6)
+        index = np.random.random_integers(6)  # FIXME: remove this when colors are returned by planner
+        last_pitch, last_yaw = pitch, yaw
 
-        # FIXME: collision detection
-        delta = 1.0
-        for (x, y) in plan_list:
-            # FIXME: for 3D
-            c_x, c_z = x, y
-            c_y = 0.0
+        # execute the plan
+        for (action, x, y, z) in plan_list:
+            # trying to putdown in an occupied location
+            if action == "putdown" and not location_is_empty(self.blocks_in_grid, x,y,z):
+                print("execute_plan::Error: 'putdown' action for non-empty location")
+                return "FAILURE"
 
-            # c_x = x
-            # if y > 0:
-            #     c_y = 4
-            #     c_z = y
-            # else:
-            #     c_y = y
-            #     c_z = 0
+            # trying to pickup a block from an empty location
+            if action == "pickup" and location_is_empty(self.blocks_in_grid, x,y,z):
+                print("execute_plan::Error: 'pickup' action for empty location")
+                return "FAILURE"
 
-            print("execute_plan::Teleporting to:", seed_x+c_x+0.5, c_y+delta, seed_y+c_z+0.5)
-            teleportMovement(self.agent_host, teleport_x=seed_x+c_x+0.5, teleport_y=c_y+delta, teleport_z=0.5)
-            delta += 1.0
+            # find an unoccupied location, pitch, yaw to teleport the agent to
+            tx, ty, tz, t_pitch, t_yaw = find_teleport_location(self.blocks_in_grid, x, y, z, action)
+            
+            # failed to find valid location
+            if tx is None:
+                print("execute_plan::Error executing plan")
+                # TODO: what to do here?
+                return "FAILURE"
 
-            pickUpBlock(self.agent_host, index=index)
-            adjustView(self.agent_host)
+            # teleport the agent
+            print("execute_plan::Teleporting to:", tx, ty, tz)
+            teleportMovement(self.agent_host, teleport_x=tx, teleport_y=ty, teleport_z=tz)
+
+            # for putdown actions, choose the color of block to be placed
+            if action == 'putdown':
+                chooseInventorySlot(self.agent_host, index=index)
+
+            # set the pitch and yaw of the agent (only update these values if they differ from before, for efficiency)
+            print("execute_plan::Setting pitch and yaw to:", t_pitch, t_yaw)
+            setPitchYaw(self.agent_host, pitch=t_pitch if t_pitch != last_pitch else None, yaw=t_yaw if t_yaw != last_yaw else None)
+
+            # perform the action (pickup or putdown)
+            performAction(self.agent_host, 'use' if action == 'putdown' else 'attack')
+
+            # update the blocks in grid representation from the received observations
+            blocks_in_grid_new = None
             world_state = self.agent_host.getWorldState()
-            # print(json.loads(world_state.observations[-1].text))
-            useBlock(self.agent_host)
-            restoreView(self.agent_host)
+            for observation in world_state.observations:
+                if observation.text is not None:
+                    obsrv = json.loads(observation.text)
+                    blocks_in_grid_new = obsrv.get("BuilderGridAbsolute", blocks_in_grid_new) #obsrv["BuilderGridAbsolute"] if obsrv.get("BuilderGridAbsolute") is not None else blocks_in_grid_new
 
-    def parse(self, text):
+            if blocks_in_grid_new is not None:
+                self.blocks_in_grid = reformat_builder_grid(blocks_in_grid_new)
+                print("execute_plan::updated blocks_in_grid:", self.blocks_in_grid)
+
+            last_pitch = t_pitch
+            last_yaw = t_yaw
+
+        return "SUCCESS"
+
+    def parse(self, text, blocks_in_grid, pitch, yaw):
+        """ Calls the dialogue manager to parse an input Architect utterance and handle it appropriately according to the dialogue manager's current dialogue state. """
         print("DialogueManager::parsing text:", text)
+        self.blocks_in_grid = blocks_in_grid
 
+        # State: request additional description
         if self.next_state == State.REQUEST_DESCRIPTION:
             self.system_text = random.choice(["Okay, what's next?", "Okay, now what?", "What are we doing next?"])
             self.append_to_history(DialogueState(State.REQUEST_DESCRIPTION, output=self.system_text))
             self.next_state = State.PARSE_DESCRIPTION
-            self.output_text()
+            self.send_chat()
             return
 
+        # State: start; ask for initial description
         if self.next_state == State.START:
-            self.system_text = random.choice(["Hi Architect, what are we building today?", "I'm ready! What are we building?"])
+            self.system_text = random.choice(["Hi Architect, what are we building today?", "I'm ready! What are we building?", "Hello! What are we building?", "Hello Architect, I'm ready!"])
             self.next_state = State.PARSE_DESCRIPTION
-            self.output_text()
+            self.send_chat()
+            self.goto_default_loc()
             return
 
+        # State: parse a provided description
         if self.next_state == State.PARSE_DESCRIPTION:
             ds = DialogueState(State.PARSE_DESCRIPTION, input=text)
             self.last_parse = self.parser.parse(text)
-            self.description_attempts += 1
+            self.attempts["description"] += 1
 
-            # IMPLEMENT ME: in case of parse failure
+            # TODO: IMPLEMENT ME: in case of parse failure
             if self.last_parse is None:
                 return
 
@@ -158,53 +336,79 @@ class DialogueManager:
             self.append_to_history(ds)
             self.next_state = State.PLAN
 
+        # State: produce and execute a plan
         if self.next_state == State.PLAN:
             self.system_text = random.choice(["Okay.", ""])
             if len(self.system_text) > 0:
-                self.output_text()
+                self.send_chat()
 
             print("DialogueManager::input to planner:", self.last_parse)
+
+            # produce a plan
             try:
-                self.last_plan = planner_utils.getPlans(self.last_parse)
+                response =  planner_utils.getPlans(self.last_parse)
             except Exception:
                 print("DialogueManager::planner exception occurred")
                 traceback.print_exc(file=sys.stdout)
                 self.last_plan = None
                 self.plans.append(None)
+                # TODO: IMPLEMENT ME! In case of planner exception
                 return
 
+            # self.last_plan = response.plan
+            # self.last_plan = [("putdown", -5, 1, -5), ("putdown", -5, 2, -5), ("putdown", -4, 2, -5), ("pickup", -5, 2, -5)]  # FIXME: DEBUG
+            self.last_plan = [("putdown", -4, 3, -4)]  # FIXME: DEBUG USE ONLY
             print("DialogueManager::plan returned:", self.last_plan)
             self.plans.append(self.last_plan)
 
+            # TODO: IMPLEMENT ME: response flag checking
             if len(self.last_plan) == 0:
                 print("DialogueManager::empty response received from planner")
-                # IMPLEMENT ME: clarifications
+                # TODO: IMPLEMENT ME: what now?
                 return
 
-            # IMPLEMENT ME: response flag checking
-            self.execute_plan()
+            # execute the plan and return to the default starting location
+            execute_status = self.execute_plan(pitch, yaw)
+            self.goto_default_loc()            
             
-            global N_SHAPES
-            N_SHAPES += 1
+            # plan executed successfully
+            if execute_status == "SUCCESS":
+                global N_SHAPES
+                N_SHAPES += 1
 
-            self.description_attempts = 0
-            self.append_to_history(DialogueState(State.PLAN, output=self.system_text))
-            self.next_state = State.REQUEST_VERIFICATION
+                self.description_attempts = 0
+                self.append_to_history(DialogueState(State.PLAN, output=self.system_text))
+                self.next_state = State.REQUEST_VERIFICATION
 
+            # plan execution failed
+            else:
+                # TODO: IMPLEMENT ME!
+                return
+
+        # State: request verification from the user
+        # FIXME: do we still need this state?
         if self.next_state == State.REQUEST_VERIFICATION:
             self.clarification_attempts = 0
             self.system_text = random.choice(["How's that?", "Like this?", "Is this right?"])
-            self.output_text()
+            self.send_chat()
             self.append_to_history(DialogueState(State.REQUEST_VERIFICATION, output=self.system_text))
             self.next_state = State.PARSE_VERIFICATION
             return
 
+        # State: parse verification from the user
+        # FIXME: do we still need this state?
         if self.next_state == State.PARSE_VERIFICATION:
             # IMPLEMENT ME: how do we want to implement verifications?
             self.next_state = State.REQUEST_DESCRIPTION
-            self.parse("")
+            self.parse("", blocks_in_grid, pitch, yaw)
+
+    def goto_default_loc(self):
+        """ Teleports the agent to the default starting location. Should be used after executing every Architect instruction. """
+        teleportMovement(self.agent_host, teleport_x=default_loc["x"], teleport_y=default_loc["y"], teleport_z=default_loc["z"])
+        setPitchYaw(self.agent_host, pitch=0.0, yaw=0.0)
 
     def append_to_history(self, state):
+        """ Appends a dialogue state to the history of dialogue states. """
         self.dialogue_history.append(state)
         self.print_state(state)
 
@@ -283,7 +487,7 @@ def generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_v
                   <AgentSection mode="Spectator">
                     <Name>Architect</Name>
                     <AgentStart>
-                      <Placement x = "0" y = "5" z = "-6" pitch="45"/>
+                      <Placement x = "0" y = "6" z = "-7" pitch="45"/>
                     </AgentStart>
                     <AgentHandlers/>
                   </AgentSection>
@@ -372,6 +576,7 @@ def cwc_run_mission(args):
     print("Calling cwc_run_builder_demo with args:", args, "\n")
     start_time = time.time()
 
+    # initialize the agents
     agent_hosts, client_pool = initialize_agents(args)
 
     num_fixed_viewers = args["num_fixed_viewers"]
@@ -414,8 +619,10 @@ def cwc_run_mission(args):
 
     # poll for observations
     timed_out = False
-    all_observations = []
+
     dm = None
+    all_observations = []
+    blocks_in_grid, pitch, yaw = None, None, None
 
     while not timed_out:
         for i in range(3+num_fixed_viewers):
@@ -426,17 +633,33 @@ def cwc_run_mission(args):
                 timed_out = True
 
             elif i == 1 and world_state.number_of_observations_since_last_state > 0:
+                # initialize the dialogue manager
                 if dm is None:
                     dm = DialogueManager(agent_hosts[1])
 
                 chat_instruction = None
 
+                # get the next chat instruction & corresponding world state
                 for observation in world_state.observations:
                     all_observations.append(observation)
                     if observation.text is not None:
                         obsrv = json.loads(observation.text)
-                        print("Observation received:\n", json.dumps(obsrv, indent=4), '\n')
-                        chat_instruction = obsrv["Chat"] if obsrv.get("Chat") is not None else chat_instruction
+                        print("Observation processed:")
+                        if verbose_observations:
+                            print(json.dumps(obsrv, indent=4), '\n')
+
+                        chat_instruction = obsrv.get("Chat", chat_instruction) #obsrv["Chat"] if obsrv.get("Chat") is not None else chat_instruction
+                        blocks_in_grid = obsrv.get("BuilderGridAbsolute", blocks_in_grid) #obsrv["BuilderGridAbsolute"] if obsrv.get("BuilderGridAbsolute") is not None else blocks_in_grid
+                        pitch = obsrv.get("Pitch", pitch) #obsrv["Pitch"] if obsrv.get("Pitch") is not None else pitch
+                        yaw = obsrv.get("Yaw", yaw) #obsrv["Yaw"] if obsrv.get("Yaw") is not None else yaw
+
+                        if obsrv.get("Chat") is not None:
+                            print("Chat:", chat_instruction)
+
+                        if obsrv.get("BuilderGridAbsolute") is not None:
+                            print("BuilderGridAbsolute:", obsrv["BuilderGridAbsolute"])
+
+                        print()
 
                 if chat_instruction is not None:
                     utterances = ""
@@ -445,7 +668,8 @@ def cwc_run_mission(args):
                             utterances += utterance.replace("<Architect>", "")+" "
 
                     if len(utterances) > 0:
-                        dm.parse(utterances)
+                        blocks_in_grid = reformat_builder_grid(blocks_in_grid)
+                        dm.parse(utterances, blocks_in_grid, pitch, yaw)
 
     time_elapsed = time.time() - start_time
 
@@ -454,19 +678,18 @@ def cwc_run_mission(args):
     all_world_states = []
     for observation in all_observations:
         world_state = json.loads(observation.text)
-        world_state["Timestamp"] = observation.timestamp.replace(
-            microsecond=0).isoformat(' ')
+        world_state["Timestamp"] = observation.timestamp.replace(microsecond=0).isoformat(' ')
         debug_utils.prettyPrintObservation(world_state)
         all_world_states.append(world_state)
 
     raw_observations = {
         "WorldStates": all_world_states,
         "TimeElapsed": time_elapsed,
-        "NumFixedViewers": num_fixed_viewers}
-    io_utils.writeJSONtoLog(
-        experiment_id,
-        "raw-observations.json",
-        raw_observations)
+        "NumFixedViewers": num_fixed_viewers
+    }
+
+    if write_logfiles:
+        io_utils.writeJSONtoLog(experiment_id, "raw-observations.json", raw_observations)
 
     m, s = divmod(time_elapsed, 60)
     h, m = divmod(m, 60)
@@ -490,6 +713,111 @@ def cwc_run_mission(args):
 
     time.sleep(2)
 
+def reformat_builder_grid(blocks_in_grid):
+    """ Reformats BuilderGridAbsolute blocks into a nested dictionary of coordinate values, ordered x, z, y. """
+    blocks_dict = {}
+
+    if blocks_in_grid is not None:
+        for block in blocks_in_grid:
+            x = block["X"]
+            y = block["Y"]
+            z = block["Z"]
+
+            if blocks_dict.get(x) is None:
+                blocks_dict[x] = defaultdict(list)
+
+            blocks_dict[x][z].append(y)
+
+    return blocks_dict
+
+def find_teleport_location(blocks_in_grid, x, y, z, action):
+    """ Finds a feasible (open) location, pitch, and yaw to teleport the agent to such that a block can be placed at (x,y,z). """
+    print("find_teleport_location::finding feasible location for block:", x, y, z, "where blocks_in_grid:", blocks_in_grid)
+
+    # check for unoccupied locations that the agent can teleport to: south/east/north/west of location; above/below location; below and to the south/east/north/west of location
+    for px, py, pz, direction in [(x, y, z-1, "south"), (x-1, y, z, "east"), (x, y, z+1, "north"), (x+1, y, z, "west"), (x, y+1, z, "top"), (x, y-2, z, "bottom"), \
+                                  (x, y+1, z-1, "top_south"), (x-1, y+1, z, "top_east"), (x, y+1, z+1, "top_north"), (x+1, y+1, z, "top_west"), \
+                                  (x, y-1, z-1, "bottom_south"), (x-1, y-1, z, "bottom_east"), (x, y-1, z+1, "bottom_north"), (x+1, y-1, z, "bottom_west")]:
+        
+        # location is too low
+        if py < 1:
+            print("find_teleport_location::", px, py, pz, direction, "is too low!")
+            continue 
+
+        # location is occupied
+        if not location_is_empty(blocks_in_grid, px, py, pz) or not location_is_empty(blocks_in_grid, px, py+1, pz):
+            print("find_teleport_location::", px, py, pz, direction, "is occupied!")
+            continue
+
+        # get default pitch/yaw (facing downwards, to place a block on top of a surface)
+        pitch = pitch_dirs.get(direction)
+        yaw = yaw_dirs.get(direction, 0)
+
+        # return the default pitch/yaw values if the the block can be placed feasibly with the default view
+        if action == 'pickup' or (direction == "bottom" and not location_is_empty(blocks_in_grid, x, y+1, z)) or ("_" not in direction and not location_is_empty(blocks_in_grid, x, y-1, z)):
+            print("find_teleport_location::", px, py, pz, direction, "with default view is eligible!")
+            return px+0.5, py, pz+0.5, pitch, yaw
+
+        # check if a block can feasibly be placed from a location in the above or below planes
+        if '_' in direction:
+            general_dir = 'bottom' if 'bottom' in direction else 'top'
+
+            # cannot place a block from above if the location is obscured by another block from above
+            if general_dir == 'top' and not location_is_empty(blocks_in_grid, x, y+1, z):
+                print("find_teleport_location::ineligible direction", direction, "-- view is blocked!")
+                continue
+
+            # consider ahead, above directions from below; consider only ahead direction from above
+            view_keys = ["ahead", "above"] if general_dir == 'bottom' else ["ahead"]
+
+            for key in view_keys:
+                dx, dy, dz = coord_deltas[key][direction]
+                print("find_teleport_location::checking location", x+dx, y+dy, z+dz, "using view", key, "while facing from the", direction)
+
+                # check if block can feasibly be placed from this location (i.e., an adjacent block exists in that direction)
+                # if so, return this with appropriate pitch/yaw modifications
+                if not location_is_empty(blocks_in_grid, x+dx, y+dy, z+dz):
+                    print("find_teleport_location::found adjacent block with view", key, "while facing from the", direction)
+                    d_pitch, d_yaw = view_deltas[key+'_'+general_dir]
+                    return px+0.5, py, pz+0.5, pitch+d_pitch, yaw+d_yaw
+
+        # check if a block can feasibly be placed from any of its six immediate sides
+        else:
+            for key in ["ahead", "left", "right", "behind"]:
+                if coord_deltas[key].get(direction) is None:
+                    continue
+
+                dx, dy, dz = coord_deltas[key][direction]
+                print("find_teleport_location::Checking location", x+dx, y+dy, z+dz, "using view", key, "while facing from the", direction)
+
+                # cannot place a block if the location is obscured by another block from above
+                if not location_is_empty(blocks_in_grid, x, y+1, z):
+                    print("find_teleport_location::ineligible direction", direction, "-- view is blocked!")
+                    continue
+
+                # check if block can feasibly be placed from this location (i.e., an adjacent block exists in that direction)
+                # if so, return this with appropriate pitch/yaw modifications
+                if not location_is_empty(blocks_in_grid, x+dx, y+dy, z+dz):
+                    print("find_teleport_location::Found adjacent block with view", key, "while facing from the", direction)
+
+                    d_pitch, d_yaw = view_deltas[key] 
+                    final_yaw = yaw+d_yaw
+
+                    if direction == "top" or direction == "bottom":
+                        d_pitch, _ = view_deltas[direction]
+                        final_yaw = yaw_dirs[relative_to_cardinal[key]]
+
+                    final_pitch = pitch+d_pitch
+                    return px+0.5, py, pz+0.5, final_pitch, final_yaw
+
+    # we went through all that effort and still found nothing :(
+    print("find_teleport_location::Error: no feasible location found!")
+    return None, None, None, None, None
+
+def location_is_empty(blocks_in_grid, x, y, z):
+    """ Checks whether or not a grid location is empty given the current world state. """
+    blocks_list = blocks_in_grid.get(x, {}).get(z, [])
+    return y not in blocks_list and y > 0
 
 def validate_semantic_representation(sem_rep):
     """validate the semantic representaiton"""
@@ -498,86 +826,38 @@ def validate_semantic_representation(sem_rep):
     # check for unknown shapes
 
     # check for context but how?
-
+    return
 
 def teleportMovement(ah, teleport_x=None, teleport_y=None, teleport_z=None):
-    """Teleport the agent in the map"""
-    # y = teleport_y
-    # if teleport_y is None or teleport_y < 1:
-    #     y = 4
-    # elif teleport_y >= 1:
-    #     y = teleport_y
-    # else:
-    #     y = 4
-
+    """ Teleports the agent to a specific (x,y,z) location in the map. """
     sendCommand(ah, "tp " + str(teleport_x) + " " + str(teleport_y) + " " + str(teleport_z))
     time.sleep(1)
 
-
-def adjustView(ah, amount=None):
-    """adjust the view for the agent for look down and look up"""
-    if amount is None:
-        sendCommand(ah, "setPitch 40")
-        time.sleep(1)
-    else:
-        sendCommand(ah, "setPitch " + str(amount))
+def setPitchYaw(ah, pitch=None, yaw=None):
+    """ Sets the pitch and yaw of the agent. For efficiency, only set pitch/yaw to non-None values if they differ from the agent's current pitch/yaw values. """
+    if yaw is not None:
+        sendCommand(ah, "setYaw "+str(yaw))
         time.sleep(1)
 
-    # sendCommand(ah, "setPitch 0")
-    # time.sleep(1)
-
-
-def restoreView(ah, amount=None):
-    """restore the view for the agent for look down and look up"""
-    if amount is None:
-        sendCommand(ah, "setPitch 0")
-        time.sleep(1)
-    else:
-        sendCommand(ah, "setPitch " + str(amount))
+    if pitch is not None:
+        sendCommand(ah, "setPitch "+str(pitch))
         time.sleep(1)
 
-    # sendCommand(ah, "setPitch 0")
-    # time.sleep(1)
-
-
-def moveRight(ah):
-    """move the agent to right"""
-    sendCommand(ah, "strafe .1")
-    time.sleep(3)
-    sendCommand(ah, "strafe 0")
-
-
-def moveLeft(ah):
-    """move the agent to right"""
-    sendCommand(ah, "strafe -.1")
-    time.sleep(3)
-    sendCommand(ah, "strafe 0")
-
-
-def pickUpBlock(ah, index):
-    """select the mentioned color block from the hotbar"""
-    # print("color index: ", index)
+def chooseInventorySlot(ah, index):
+    """ Selects the given block color from the hotbar. """
     selection = "hotbar." + str(index)
-    # if index == -1:
-    #     ind = 
-    #     # print("ind ", ind)
-    #     selection = "hotbar." + str(ind)
-    # else:
-    #     selection = "hotbar." + str(int(index))
+    sendCommand(ah, selection+" 1")
+    sendCommand(ah, selection+" 0")
 
-    sendCommand(ah, selection + " 1")
-    sendCommand(ah, selection + " 0")
-
-
-def useBlock(ah):
-    """use the block in hand"""
-    sendCommand(ah, 'use 1')
+def performAction(ah, action_type):
+    """ Instructs agent to perform a given action with their hand. """
+    sendCommand(ah, action_type+' 1')
     time.sleep(0.1)
-    sendCommand(ah, 'use 0')
+    sendCommand(ah, action_type+' 0')
     time.sleep(0.1)
 
 def sendCommand(ah, command):
-    """execute all the commands through this method"""
+    """ Use this method to send all commands to the agent. """
     if SHOW_COMMANDS is True:
         print(command)
     ah.sendCommand(command)

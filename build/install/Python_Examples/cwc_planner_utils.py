@@ -1,6 +1,7 @@
+from __future__ import print_function
 from subprocess import *
 from enum import Enum
-
+import json
 
 class Response(object):
     """Response classs.
@@ -36,7 +37,15 @@ class Response(object):
             self.other = other.split(",")
 
         if plan is not None:
-            self.plan = plan.split(",")
+            instruction_list = list()
+            for item in plan.split(","):
+                instruction = item.replace("[", "").replace("]", "")
+                instruction = instruction.replace(",", "").replace("(", "").replace(")", "")
+                action, block_id, x, z = instruction.strip().split()
+                instruction = [action, float(x), 1.0, float(z)]
+                instruction_list.append(instruction)
+
+            self.plan = instruction_list
 
         if constraints is not None:
             self.constraints = constraints.split(",")
@@ -57,16 +66,15 @@ class Response(object):
         self.constraints.append(constraints)
 
     def __str__(self):
-        content = {}
-        content['responseFlag'] = self.responseFlag
-        content['missing'] = self.missing
-        content['other'] = self.other
-        content['plan'] = self.plan
-        content['constraints'] = self.constraints
-        return str(content)
+        return_str = ""
+        return_str += "Response flag: "+self.responseFlag+"\n"
+        return_str += "Plan: "+str(self.plan)+"\n"
+        return_str += "Constraints: "+str(self.constraints)+"\n"
+        return_str += "Missing: "+str(self.missing)+"\n"
+        return_str += "Other: "+str(self.other)+"\n"
+        return return_str
 
-
-def convert_Response(output):
+def convert_response(output):
     """Convert the planner response to Response classs.
 
     Args:
@@ -79,16 +87,19 @@ def convert_Response(output):
 
     """
     if len(output) < 5:
-        print("not enough information from the planner")
+        print("convert_response::Error: not enough information from the planner")
+        return None
+
     planner_output = output[-6:]
-    # print(planner_output)
+    print("convert_response::", planner_output)
+
     for line in planner_output:
         if len(line) == 0:
             continue
+
         splitted_line = line.strip().split(": ")
         if "[" in splitted_line[1]:
-            splitted_line[1] = splitted_line[
-                1].replace("[", "").replace("]", "")
+            splitted_line[1] = splitted_line[1].replace("[", "").replace("]", "")
         # print("splitted lines ", splitted_line)
         if "Flag" in splitted_line[0]:
             flag = splitted_line[1]
@@ -103,7 +114,9 @@ def convert_Response(output):
 
     # print("##parsed outputs##")
     # print(flag, missing, other, plan, constraints)
+
     response = Response(flag, missing, other, plan, constraints)
+    print
     # print(response)
     # print(response.responseFlag)
     # response.add_constraints('hellow')
@@ -149,44 +162,47 @@ def getPlans(human_input="row(a) ^ width(a,5)"):
         till now nothing
 
     """
-    print("get plans")
+    # print("get plans")
     # args = ["planner/uct_44.jar"]
     args = ["planner/jshop2-master.jar", human_input]
     result = jarWrapper(*args)
 
-    response = convert_Response(result)
-    print(response.responseFlag)
+    response = convert_response(result)
+    print("getPlans::\n"+str(response))
+    return response
+
     # TODO:
-    if "COMPLETED" not in response.responseFlag:
-        return
-    instruction_list = list()
-    print(response.plan)
-    for item in response.plan:
-        instruction = item.replace("[", "").replace("]", "")
-        instruction = instruction.replace(
-            ",", "").replace("(", "").replace(")", "")
-        instruction_list.append(instruction)
+    # if "COMPLETED" not in response.responseFlag:
+    #     return response
 
-    # print(instruction_list)
-    n_instr = len(instruction_list)
+    # instruction_list = list()
+    # for item in response.plan:
+    #     instruction = item.replace("[", "").replace("]", "")
+    #     instruction = instruction.replace(",", "").replace("(", "").replace(")", "")
+    #     action, block_id, x, z = instruction.strip().split()
+    #     instruction = [action, float(x), 1.0, float(z)]
+    #     instruction_list.append(instruction)
 
-    command_list = list()
-    x_l = list()
-    y_l = list()
-    z_l = list()
-    for item in instruction_list:
-        print("item ", item)
-        action, block_id, x, y = item.strip().split(" ")
-        x_l.append(int(float(x)))
-        y_l.append(int(float(y)))
-        # todo: Rakib when Mayukh is done with the 3D planner.
-        z_l.append(int(0))
+    # # print(instruction_list)
+    # n_instr = len(instruction_list)
 
-    command_list = zip(x_l, y_l, z_l)
-    command_list.sort(key=lambda t: t[1], reverse=True)
-    # print(command_list)
+    # command_list = list()
+    # x_l = list()
+    # y_l = list()
+    # z_l = list()
+    # for item in instruction_list:
+    #     print("item ", item)
+    #     action, block_id, x, y = item.strip().split(" ")
+    #     x_l.append(int(float(x)))
+    #     y_l.append(int(float(y)))
+    #     # todo: Rakib when Mayukh is done with the 3D planner.
+    #     z_l.append(int(0))
 
-    return (command_list)
+    # command_list = zip(x_l, y_l, z_l)
+    # command_list.sort(key=lambda t: t[1], reverse=True) # why?
+    # # print(command_list)
+
+    # return (command_list)
 
 if __name__ == '__main__':
     # getPlans(human_input="cube(a) ^ width(a,5)")
