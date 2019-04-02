@@ -90,6 +90,7 @@ import com.microsoft.Malmo.Utils.TCPUtils;
 import com.microsoft.Malmo.Utils.TimeHelper;
 import com.mojang.authlib.properties.Property;
 
+import static cwc.CwCUtils.playerNameMatches;
 import static cwc.CwCUtils.playerNameMatchesAny;
 
 /**
@@ -1582,7 +1583,7 @@ public class ClientStateMachine extends StateMachine implements IMalmoMessageLis
 
             // Make sure we have mouse control:
             // FIXME: now initiates missions with human control (unless fixed viewer) -- modified from original Malmo code
-            if (playerNameMatchesAny(Minecraft.getMinecraft(), CwCMod.FIXED_VIEWERS))
+            if (playerNameMatchesAny(Minecraft.getMinecraft(), CwCMod.FIXED_VIEWERS) || playerNameMatches(Minecraft.getMinecraft(), CwCMod.BUILDER))
                 ClientStateMachine.this.inputController.setInputType(InputType.AI);
             else
                 ClientStateMachine.this.inputController.setInputType(InputType.HUMAN);

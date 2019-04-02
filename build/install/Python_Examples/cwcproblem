@@ -1,0 +1,21 @@
+(defproblem cwcproblem cwcdomain
+ (
+(block b1 100 100)
+(on-table b1)(clear b1)
+(block b2 100 101)
+(on-table b2)(clear b2)
+(block b3 100 102)
+(on-table b3)(clear b3)
+(block b4 100 103)
+(on-table b4)(clear b4)
+)
+(
+  (achieve-goals
+   ((block b1 0 0)( clear b1)
+(block b2 0 1)( clear b2)
+(block b3 0 2)( clear b3)
+(block b4 0 3)( clear b4)
+)
+  )
+ )
+)

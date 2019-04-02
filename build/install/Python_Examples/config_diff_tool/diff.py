@@ -1,5 +1,7 @@
-import numpy as np, sys
+import numpy as np, sys, random
 from scipy.spatial import distance
+
+# NOTE: THIS CODE NEEDS TO BE MAINTAINED FOR BOTH PYTHON 2 AND 3 COMPATIBILITY
 
 build_region_specs = { # FIXME: Import instead
     "x_min_build": -5,
@@ -18,20 +20,29 @@ for rot_value in all_possible_rot_values:
     R_yaw = np.matrix([ [ c, 0, -s ], [ 0, 1, 0 ], [ s, 0, c ] ])
     rot_matrices_dict[rot_value] = R_yaw
 
-def get_next_actions(all_next_actions, num_next_actions_needed, last_action):
+def get_next_actions(all_next_actions, num_next_actions_needed, last_action, built_config, feasible_next_placements):
     """
     Args:
         all_next_actions: The diff between current state and goal state
         num_next_actions_needed: The number of next actions to sample from all possible next actions
         last_action: The point in space where the last action took place
+        built_config: The built configuration
+        feasible_next_placements: Whether or not to select from pool of feasible next placements only
 
     Returns:
         The appropriate next actions in terms of a reduced diff
     """
+    assert num_next_actions_needed % 2 == 0 # an even split is needed between removals and placements
+
     all_next_removals = all_next_actions["built_minus_gold"]
     all_next_placements = all_next_actions["gold_minus_built"]
 
-    assert num_next_actions_needed % 2 == 0 # an even split is needed between removals and placements
+    # shuffle (out of place to avoid mutation)
+    all_next_removals = random.sample(all_next_removals, len(all_next_removals))
+    all_next_placements = random.sample(all_next_placements, len(all_next_placements))
+
+    if feasible_next_placements:
+        all_next_placements = list(filter(lambda x: is_feasible_next_placement(x, built_config), all_next_placements))
 
     if last_action:
         # sort all next actions by distance from last action and pick top-k
@@ -57,6 +68,37 @@ def get_next_actions(all_next_actions, num_next_actions_needed, last_action):
         "built_minus_gold": next_removals
     }
 
+def is_feasible_next_placement(block, built_config):
+
+    # check if block is on ground
+    if block_on_ground(block):
+        return True
+
+    # check if block has a supporting block
+    if block_with_support(block, built_config):
+        return True
+    else:
+        return False
+
+def block_on_ground(block):
+    return block["y"] == 1
+
+def block_with_support(block, built_config):
+    for existing_block in built_config:
+        if supports(existing_block, block):
+            return True
+
+    return False
+
+def supports(existing_block, block):
+    x_support = abs(existing_block["x"] - block["x"]) == 1 and existing_block["y"] == block["y"] and existing_block["z"] == block["z"]
+
+    y_support = abs(existing_block["y"] - block["y"]) == 1 and existing_block["x"] == block["x"] and existing_block["z"] == block["z"]
+
+    z_support = abs(existing_block["z"] - block["z"]) == 1 and existing_block["x"] == block["x"] and existing_block["y"] == block["y"]
+
+    return x_support or y_support or z_support
+
 def euclidean_distance(block_1, block_2):
     return distance.euclidean(
         [block_1["x"], block_1["y"], block_1["z"]],
@@ -71,18 +113,16 @@ def get_diff(gold_config, built_config):
         Both are lists of dicts. Each dict contains info on block type and block coordinates.
 
     Returns:
-        The diff in terms of actions -- blocks to remove and block to place --
+        A minimal diff in built config space -- in terms of placement and removal actions --
         to take the built config state to the goal config state
+
+        All minimal diffs (each in both built and gold config space) with corresponding complementary info --
+        complementary info would be the original built config, a perturbed config and the transformation to transform
+        the former into the latter
     """
 
-    if not built_config:
-        return {
-            "gold_minus_built": gold_config,
-            "built_minus_gold": []
-        }
-
     # generate all possible perturbations of built config in the build region
-    perturbations = generate_perturbations(built_config)
+    perturbations = generate_perturbations(built_config, gold_config = gold_config)
 
     # compute diffs for each perturbation
     diffs = list(map(lambda t: diff(gold_config = gold_config, built_config = t.perturbed_config), perturbations))
@@ -91,10 +131,25 @@ def get_diff(gold_config, built_config):
     # filter out perturbations that yield infeasible diff actions (those outside the build region)
     perturbations_and_diffs = list(filter(lambda x: is_feasible_perturbation(x[0], x[1]), list(zip(perturbations, diffs))))
 
-    # select perturbation with min diff
-    min_perturbation_and_diff = min(perturbations_and_diffs, key = lambda t: len(t[1]["gold_minus_built"]) + len(t[1]["built_minus_gold"]))
+    # recompute diffs in gold config space
+    orig_diffs = list(map(lambda x: diff(gold_config = gold_config, built_config = x[0].perturbed_config), perturbations_and_diffs))
+    perturbations_diffs_and_orig_diffs = [x + (y,) for x, y in zip(perturbations_and_diffs, orig_diffs)]
+    perturbations_and_diffs = list(map(lambda x: (x[0], Diff(diff_built_config_space = x[1], diff_gold_config_space = x[2])), perturbations_diffs_and_orig_diffs))
 
-    return min_perturbation_and_diff[1]
+    # select perturbation with min diff
+    min_perturbation_and_diff = min(perturbations_and_diffs, key = lambda t: len(t[1].diff_built_config_space["gold_minus_built"]) + len(t[1].diff_built_config_space["built_minus_gold"]))
+
+    # get all minimal diffs
+    diff_sizes = list(map(lambda t: len(t[1].diff_built_config_space["gold_minus_built"]) + len(t[1].diff_built_config_space["built_minus_gold"]), perturbations_and_diffs))
+    min_diff_size = min(diff_sizes)
+
+    perturbations_and_diffs_and_diff_sizes = list(zip(perturbations_and_diffs, diff_sizes))
+    perturbations_and_minimal_diffs_and_diff_sizes = list(filter(lambda x: x[1] == min_diff_size, perturbations_and_diffs_and_diff_sizes))
+
+    # reformat final output
+    perturbations_and_minimal_diffs = list(map(lambda x: PerturbedConfigAndDiff(perturbed_config=x[0][0], diff=x[0][1]), perturbations_and_minimal_diffs_and_diff_sizes))
+
+    return min_perturbation_and_diff[1].diff_built_config_space, perturbations_and_minimal_diffs
 
 def is_feasible_perturbation(perturbed_config, diff):
     # NOTE: This function mutates `diff`. DO NOT CHANGE THIS BEHAVIOR!
@@ -109,7 +164,7 @@ def is_feasible_perturbation(perturbed_config, diff):
 
     for key, diff_config in diff.items():
         if key == "built_minus_gold": # retrieve from original built config instead of applying inverse transform
-            block_pairs = zip(perturbed_config.perturbed_config, perturbed_config.original_config)
+            block_pairs = list(zip(perturbed_config.perturbed_config, perturbed_config.original_config))
             diff[key] = list(map(lambda x: find_orig_block(x, block_pairs), diff_config))
         else:
             diff[key] = invert_perturbation_transform(
@@ -132,7 +187,7 @@ def is_feasible_config(config):
 
     return all(is_feasible_block(block) for block in config)
 
-def diff(gold_config, built_config): # PROFILED
+def diff(gold_config, built_config):
     gold_config_reformatted = list(map(dict_to_tuple, gold_config))
     built_config_reformatted = list(map(dict_to_tuple, built_config))
 
@@ -150,7 +205,7 @@ def diff(gold_config, built_config): # PROFILED
 def dict_to_tuple(d):
     return tuple(sorted(d.items()))
 
-def generate_perturbations(config):
+def generate_perturbations(config, gold_config):
     """
     Args:
         config: A configuration
@@ -168,12 +223,58 @@ def generate_perturbations(config):
     for x in all_x_values:
         for z in all_z_values:
             for rot in all_rot_values:
-                perturbation = generate_perturbation(config, x_target = x, z_target = z, rot_target = rot)
+                perturbation = generate_perturbation(config, x_target = x, z_target = z, rot_target = rot, gold_config = gold_config)
                 perturbations.append(perturbation)
 
     return perturbations
 
-def generate_perturbation(config, x_target, z_target, rot_target): # PROFILED_3
+def generate_perturbation(config, x_target, z_target, rot_target, gold_config):
+
+    if not config:
+        # compute diff
+        x_source = x_target
+        z_source = z_target
+        x_target = gold_config[0]["x"]
+        z_target = gold_config[0]["z"]
+
+        x_diff = x_target - x_source
+        z_diff = z_target - z_source
+
+        # translate
+        def f(d, x_diff, z_diff):
+            return {
+                'x': d["x"] + x_diff,
+                'y': d["y"],
+                'z': d["z"] + z_diff,
+                'type': d["type"]
+            }
+
+        dummy_config = [
+            {
+                "x": x_source,
+                "z": z_source,
+                "y": gold_config[0]["y"],
+                "type": gold_config[0]["type"]
+            }
+        ]
+
+        dummy_config_translated = list(map(lambda t: f(t, x_diff = x_diff, z_diff = z_diff), dummy_config))
+
+        # rotate
+
+        # convert to pivot's frame of reference
+        x_source = dummy_config_translated[0]["x"]
+        y_source = dummy_config_translated[0]["y"]
+        z_source = dummy_config_translated[0]["z"]
+
+        return PerturbedConfig(
+            perturbed_config = [],
+            rot_target = -1 * rot_target,
+            rot_axis_pivot = (x_source, y_source, z_source),
+            translation = (x_diff, z_diff),
+            original_config = config
+        )
+
     # treat first block in config as pivot always
 
     # move config to x, z and with rotation
@@ -217,7 +318,7 @@ def generate_perturbation(config, x_target, z_target, rot_target): # PROFILED_3
     # obtain yaw rotation matrix
     R_yaw = rot_matrices_dict[rot_target]
 
-    def h(d, rot_matrix): #PROFILED
+    def h(d, rot_matrix):
         v = np.matrix([ [ d["x"] ], [ d["y"] ], [ d["z"] ] ])
         v_new = rot_matrix * v
 
@@ -241,7 +342,7 @@ def generate_perturbation(config, x_target, z_target, rot_target): # PROFILED_3
         original_config = config
     )
 
-def invert_perturbation_transform(config, perturbed_config): # PROFILED_2
+def invert_perturbation_transform(config, perturbed_config):
 
     # rotate
     rot_target = -1 * perturbed_config.rot_target
@@ -251,7 +352,7 @@ def invert_perturbation_transform(config, perturbed_config): # PROFILED_2
     y_source = perturbed_config.rot_axis_pivot[1]
     z_source = perturbed_config.rot_axis_pivot[2]
 
-    def g(d, x_source, y_source, z_source): # PROFILED
+    def g(d, x_source, y_source, z_source):
         return {
             'x': d["x"] - x_source,
             'y': d["y"] - y_source,
@@ -266,7 +367,7 @@ def invert_perturbation_transform(config, perturbed_config): # PROFILED_2
     # obtain yaw rotation matrix
     R_yaw = rot_matrices_dict[rot_target]
 
-    def h(d, rot_matrix): # PROFILED
+    def h(d, rot_matrix):
         v = np.matrix([ [ d["x"] ], [ d["y"] ], [ d["z"] ] ])
         v_new = rot_matrix * v
 
@@ -286,7 +387,7 @@ def invert_perturbation_transform(config, perturbed_config): # PROFILED_2
     z_diff = -1 * perturbed_config.translation[1]
 
     # translate
-    def f(d, x_diff, z_diff): # PROFILED
+    def f(d, x_diff, z_diff):
         return {
             'x': d["x"] + x_diff,
             'y': d["y"],
@@ -305,6 +406,64 @@ class PerturbedConfig:
         self.rot_axis_pivot = rot_axis_pivot
         self.translation = translation
         self.original_config = original_config
+
+class Diff:
+    def __init__(self, diff_built_config_space, diff_gold_config_space):
+        self.diff_built_config_space = diff_built_config_space
+        self.diff_gold_config_space = diff_gold_config_space
+
+class PerturbedConfigAndDiff:
+    def __init__(self, perturbed_config, diff):
+        self.perturbed_config = perturbed_config
+        self.diff = diff
+
+def get_built_config_distribution(built_config, minimal_diffs):
+    """
+    Args:
+        built_config: Configuration built so far
+        minimal_diffs: List of all the minimal diffs in built config space
+
+    Returns:
+        A probability distribution over blocks in the built config -- probabilities of next removal
+    """
+
+    def f(block, minimal_diffs):
+        diffs_containing_block = list(filter(lambda x: block in x["built_minus_gold"], minimal_diffs))
+        return len(diffs_containing_block)
+
+    # get counts
+    scores = list(map(lambda x: f(x, minimal_diffs), built_config))
+    # normalize
+    if not sum(scores) == 0:
+        normalized_scores = list(map(lambda x: float(x)/float(sum(scores)), scores))
+    else:
+        normalized_scores = scores
+
+    return normalized_scores
+
+def get_gold_config_distribution(gold_config, minimal_diffs):
+    """
+    Args:
+        gold_config: Gold configuration
+        minimal_diffs: List of all the minimal diffs in gold config space
+
+    Returns:
+        A probability distribution over blocks in the gold config -- probabilities of next placement
+    """
+
+    def f(block, minimal_diffs):
+        diffs_containing_block = list(filter(lambda x: block in x["gold_minus_built"], minimal_diffs))
+        return len(diffs_containing_block)
+
+    # get counts
+    scores = list(map(lambda x: f(x, minimal_diffs), gold_config))
+    # normalize
+    if not sum(scores) == 0:
+        normalized_scores = list(map(lambda x: float(x)/float(sum(scores)), scores))
+    else:
+        normalized_scores = scores
+
+    return normalized_scores
 
 if __name__  == "__main__":
     gold_config = [
@@ -328,13 +487,7 @@ if __name__  == "__main__":
         },
         {
             "x": 1,
-            "y": 1,
-            "z": 4,
-            "type": "blue"
-        },
-        {
-            "x": 1,
-            "y": 1,
+            "y": 2,
             "z": 5,
             "type": "orange"
         }
@@ -350,12 +503,12 @@ if __name__  == "__main__":
         {
             "x": 1,
             "y": 1,
-            "z": 3,
-            "type": "blue"
+            "z": 2,
+            "type": "red"
         },
         {
             "x": 1,
-            "y": 4,
+            "y": 1,
             "z": 3,
             "type": "blue"
         }
@@ -363,11 +516,30 @@ if __name__  == "__main__":
 
     import pprint
     pp = pprint.PrettyPrinter()
-    diff = get_diff(gold_config, built_config)
-    pp.pprint(diff)
-    print("\n\n")
+    diff, everything_min = get_diff(gold_config, built_config)
+    # pp.pprint(diff)
+    # print("\n\n")
+    # pp.pprint(everything_min)
+    # print(len(everything_min))
+
+    # print("BUILT")
+    #
+    # minimal_diffs_built_config_space = list(map(lambda x: x[0][1].diff_built_config_space, everything_min))
+    # # pp.pprint(minimal_diffs_built_config_space)
+    #
+    # scores = get_built_config_distribution(built_config, minimal_diffs_built_config_space)
+    # pp.pprint(scores)
+    #
+    # print("\n")
+    # print("GOLD")
+    #
+    # minimal_diffs_gold_config_space = list(map(lambda x: x[0][1].diff_gold_config_space, everything_min))
+    # # pp.pprint(minimal_diffs_gold_config_space)
+    #
+    # scores = get_gold_config_distribution(gold_config, minimal_diffs_gold_config_space)
+    # pp.pprint(scores)
 
     # diff["built_minus_gold"] = []
     # diff["gold_minus_built"] = []
-    next_actions = get_next_actions(diff, 4, {"x": 0, "y": 0, "z": 5})
+    next_actions = get_next_actions(diff, 4, {"x": 0, "y": 0, "z": 5}, built_config, True)
     pp.pprint(next_actions)
