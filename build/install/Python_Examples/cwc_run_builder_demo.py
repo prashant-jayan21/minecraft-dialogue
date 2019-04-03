@@ -5,6 +5,8 @@
 from __future__ import print_function
 from enum import Enum
 from collections import defaultdict
+from cwc_mission_utils import x_min_build, x_max_build, y_min_build, y_max_build, z_min_build, z_max_build
+from cwc_parsers import DummyParser, RuleBasedParser
 import os, sys, time, json, datetime, copy, random, traceback, MalmoPython, numpy as np
 import cwc_mission_utils as mission_utils
 import cwc_debug_utils as debug_utils
@@ -16,7 +18,7 @@ SHOW_COMMANDS = False
 N_SHAPES = 0
 ATTEMPT_LIMIT = 4
 write_logfiles = False
-verbose_observations = False
+verbose = True
 
 # map of colors to corresponding hotbar IDs
 color_map = {
@@ -136,15 +138,8 @@ view_deltas = {
     "bottom": (15, 0)
 }
 
-class DummyParser:
-    def __init__(self):
-        pass
-
-    def parse(self, text):
-        return "column(a) ^ height(a,8)"
-
-    def reset(self):
-        pass
+yes_responses = ["yes", "yeah", "good", "ok", "great"]
+no_responses = ["no", "nope", "sorry", "wrong", "incorrect"]
 
 class State(Enum):
     START = 0                        # start state
@@ -162,12 +157,14 @@ class State(Enum):
     FAILURE = 12                     # failure
 
 class DialogueState:
-    def __init__(self, state, input=None, output=None, parse=None, plan=None):
+    def __init__(self, state, input=None, output=None, parse=None, response=None, execute_status=None, blocks_in_grid={}):
         self.state = state
         self.input = input
         self.output = output
         self.parse = parse
-        self.plan = plan
+        self.planner_response = response
+        self.execute_status = execute_status
+        self.blocks_in_grid = undo_reformat(blocks_in_grid)
 
     def __str__(self):
         """ String representation of a dialogue state, including input/output text, semantic parse, and plan at this state. """
@@ -177,8 +174,11 @@ class DialogueState:
         print_str += "\nOutput: "+str(self.output)
         if self.parse is not None:
             print_str += "\nParse: "+str(self.parse)
-        if self.plan is not None:
-            print_str += "\nPlan: "+str(self.plan)
+        if self.planner_response is not None:
+            print_str += "\nPlanner response: "+str(self.planner_response)
+        if self.execute_status is not None:
+            print_str += "\nPlanner execution status: "+str(self.execute_status)
+        print_str += "\nBlocks in grid: "+str(self.blocks_in_grid)
         return print_str
 
 class DialogueManager:
@@ -193,9 +193,11 @@ class DialogueManager:
         self.last_parse = None      # last (successful) semantic parse
 
         # planner
-        self.plans = []             # list of outputs produced by planner
-        self.last_plan = None       # last (successful) plan
-        self.blocks_in_grid = None  # dict of existing blocks in grid
+        self.plans = []                    # list of outputs produced by planner
+        self.last_planner_response = None  # last (successful) plan
+        self.blocks_in_grid = None         # dict of existing blocks in grid
+        self.block_id_map = {}             # dict of blocks in grid to their unique ID identifiers
+        self.highest_block_id = -1         # highest block ID value used, such that new ones can be allocated if needed
 
         # dialogue manager
         self.next_state = State.START                                               # next dialogue state
@@ -215,8 +217,10 @@ class DialogueManager:
 
         # reset the planner
         self.plans = []
-        self.last_plan = None
+        self.last_planner_response = None
         self.blocks_in_grid = None
+        self.block_id_map = {}
+        self.highest_block_id = -1
 
         # reset the dialogue manager
         self.next_state = State.START
@@ -234,21 +238,21 @@ class DialogueManager:
     def execute_plan(self, pitch, yaw):
         """ Executes the last successful plan. """
         # no plan exists
-        if self.last_plan is None:
+        if self.last_planner_response is None:
             print("execute_plan::Error: last plan is undefined!")
             return "FAILURE"
 
         # empty plan (this failure case should be caught before execution)
-        if len(self.last_plan) < 1:
+        if len(self.last_planner_response.plan) < 1:
             print("execute_plan::Warning: execute_plan was called, but the last plan was empty!")
             return "FAILURE"
 
-        plan_list = self.last_plan
-        index = np.random.random_integers(6)  # FIXME: remove this when colors are returned by planner
+        plan_list = self.last_planner_response.plan
+        index = np.random.random_integers(6)  # FIXME: remove this when colors are randomly assigned by planner
         last_pitch, last_yaw = pitch, yaw
 
         # execute the plan
-        for (action, x, y, z) in plan_list:
+        for (action, block_id, x, y, z, color) in plan_list:
             # trying to putdown in an occupied location
             if action == "putdown" and not location_is_empty(self.blocks_in_grid, x,y,z):
                 print("execute_plan::Error: 'putdown' action for non-empty location")
@@ -269,36 +273,83 @@ class DialogueManager:
                 return "FAILURE"
 
             # teleport the agent
-            print("execute_plan::Teleporting to:", tx, ty, tz)
-            teleportMovement(self.agent_host, teleport_x=tx, teleport_y=ty, teleport_z=tz)
+            if verbose:
+                print("execute_plan::Teleporting to:", tx, ty, tz)
 
+            teleportMovement(self.agent_host, teleport_x=tx, teleport_y=ty, teleport_z=tz)
+            
             # for putdown actions, choose the color of block to be placed
             if action == 'putdown':
-                chooseInventorySlot(self.agent_host, index=index)
+                chooseInventorySlot(self.agent_host, index=index if color == 'white' else color_map[color])
 
             # set the pitch and yaw of the agent (only update these values if they differ from before, for efficiency)
-            print("execute_plan::Setting pitch and yaw to:", t_pitch, t_yaw)
+            if verbose:
+                print("execute_plan::Setting pitch and yaw to:", t_pitch, t_yaw)
+
             setPitchYaw(self.agent_host, pitch=t_pitch if t_pitch != last_pitch else None, yaw=t_yaw if t_yaw != last_yaw else None)
 
             # perform the action (pickup or putdown)
             performAction(self.agent_host, 'use' if action == 'putdown' else 'attack')
 
             # update the blocks in grid representation from the received observations
-            blocks_in_grid_new = None
+            blocks_in_grid_new, pitch_new, yaw_new = None, None, None
             world_state = self.agent_host.getWorldState()
             for observation in world_state.observations:
                 if observation.text is not None:
                     obsrv = json.loads(observation.text)
-                    blocks_in_grid_new = obsrv.get("BuilderGridAbsolute", blocks_in_grid_new) #obsrv["BuilderGridAbsolute"] if obsrv.get("BuilderGridAbsolute") is not None else blocks_in_grid_new
+                    blocks_in_grid_new = obsrv.get("BuilderGridAbsolute", blocks_in_grid_new)
+                    pitch_new = obsrv.get("Pitch", pitch_new) 
+                    yaw_new = obsrv.get("Yaw", yaw_new)
 
             if blocks_in_grid_new is not None:
                 self.blocks_in_grid = reformat_builder_grid(blocks_in_grid_new)
-                print("execute_plan::updated blocks_in_grid:", self.blocks_in_grid)
+                if verbose:
+                    print("execute_plan::updated blocks_in_grid:", self.blocks_in_grid)
 
-            last_pitch = t_pitch
-            last_yaw = t_yaw
+            last_pitch = pitch_new
+            last_yaw = yaw_new
+
+            self.update_block_ids(action, block_id, x, y, z)
 
         return "SUCCESS"
+
+    def update_block_ids(self, action, block_id, x, y, z):
+        """ Updates the map of locations in the builder grid with their respective planner-assigned block IDs given a planner-returned instruction. """
+        bid = int(block_id.replace('b',''))
+
+        # update highest block id encountered
+        if bid > self.highest_block_id:
+            self.highest_block_id = bid
+
+        # record block id, or remove it if the block is being picked up
+        if action == 'putdown':
+            self.block_id_map[(x,y,z)] = block_id
+        else:
+            try:
+                self.block_id_map.pop((x,y,z))
+            except KeyError:
+                print("update_block_ids::Warning: tried to remove non-existent block id for", (x,y,z), "from id map!")
+
+    def get_block_id(self, x, y, z):
+        """ Gets the unique block ID for a given location in the grid. If an ID does not exist for that location, assigns a new ID and returns it. """
+        if self.block_id_map.get((x,y,z)) is None:
+            new_id = self.highest_block_id+1
+            self.block_id_map[(x,y,z)] = 'b'+str(new_id)
+            self.highest_block_id += 1
+
+        return self.block_id_map[(x,y,z)]
+
+    def get_blocks_in_grid_repr(self):
+        """ Produces a string representation of the existing blocks in the grid, to be used as input by the planner. """
+        blocks_in_grid_repr = ""
+        for x in self.blocks_in_grid:
+            for z in self.blocks_in_grid[x]:
+                for y in self.blocks_in_grid[x][z]:
+                    color = self.blocks_in_grid[x][z][y]
+                    block_id = self.get_block_id(x,y,z)
+                    blocks_in_grid_repr += block_id+","+str(x-x_min_build)+","+str(y-y_min_build)+","+str(z-z_min_build)+","+color+"\n"
+
+        return blocks_in_grid_repr
 
     def parse(self, text, blocks_in_grid, pitch, yaw):
         """ Calls the dialogue manager to parse an input Architect utterance and handle it appropriately according to the dialogue manager's current dialogue state. """
@@ -308,7 +359,7 @@ class DialogueManager:
         # State: request additional description
         if self.next_state == State.REQUEST_DESCRIPTION:
             self.system_text = random.choice(["Okay, what's next?", "Okay, now what?", "What are we doing next?"])
-            self.append_to_history(DialogueState(State.REQUEST_DESCRIPTION, output=self.system_text))
+            self.append_to_history(DialogueState(State.REQUEST_DESCRIPTION, output=self.system_text, blocks_in_grid=blocks_in_grid))
             self.next_state = State.PARSE_DESCRIPTION
             self.send_chat()
             return
@@ -323,15 +374,18 @@ class DialogueManager:
 
         # State: parse a provided description
         if self.next_state == State.PARSE_DESCRIPTION:
-            ds = DialogueState(State.PARSE_DESCRIPTION, input=text)
-            self.last_parse = self.parser.parse(text)
+            parse = self.parser.parse(text)
+            ds = DialogueState(State.PARSE_DESCRIPTION, input=text, parse=parse, blocks_in_grid=blocks_in_grid)
             self.attempts["description"] += 1
 
-            # TODO: IMPLEMENT ME: in case of parse failure
-            if self.last_parse is None:
+            # TODO: verify well-formedness of semantic parse
+            if parse is None or len(parse) < 1:
+                self.system_text = random.choice(["Sorry, I had trouble understanding that. Could you explain it differently?", "Sorry, I don't understand. Can you try again?", "Sorry, I'm having trouble understanding. Could you reword that?"])
+                ds.output = self.system_text
+                self.append_to_history(ds)
                 return
 
-            ds.parse = self.last_parse
+            self.last_parse = parse
             self.parser_outputs.append(self.last_parse)
             self.append_to_history(ds)
             self.next_state = State.PLAN
@@ -342,7 +396,12 @@ class DialogueManager:
             if len(self.system_text) > 0:
                 self.send_chat()
 
-            print("DialogueManager::input to planner:", self.last_parse)
+            ds = DialogueState(State.PLAN, output=self.system_text, blocks_in_grid=blocks_in_grid)
+
+            existing_blocks = self.get_blocks_in_grid_repr()
+
+            print("DialogueManager::semantic parse to planner:", self.last_parse)
+            print("DialogueManager::blocks_in_grid to planner:\n'"+existing_blocks+"'")
 
             # produce a plan
             try:
@@ -350,57 +409,89 @@ class DialogueManager:
             except Exception:
                 print("DialogueManager::planner exception occurred")
                 traceback.print_exc(file=sys.stdout)
-                self.last_plan = None
-                self.plans.append(None)
-                # TODO: IMPLEMENT ME! In case of planner exception
+                self.last_planner_response = None
+                self.system_text = random.choice(["Sorry, I'm not able to do that. Could we try again?", "Sorry, I'm not able to build that. Could you reword that?", "Sorry, something went wrong. Could you explain it differently?"])
+                ds.output = (ds.output+"\n"+self.system_text).strip()
+                self.append_to_history(ds)
+                self.next_state = State.PARSE_DESCRIPTION
                 return
 
-            self.last_plan = response.plan
-            # self.last_plan = [("putdown", -5, 1, -5), ("putdown", -5, 2, -5), ("putdown", -4, 2, -5), ("pickup", -5, 2, -5)]  # FIXME: DEBUG
-            # self.last_plan = [("putdown", -4, 3, -4)]  # FIXME: DEBUG USE ONLY
-            print("DialogueManager::plan returned:", self.last_plan)
-            self.plans.append(self.last_plan)
+            ds.planner_response = response
 
-            # TODO: IMPLEMENT ME: response flag checking
-            if len(self.last_plan) == 0:
-                print("DialogueManager::empty response received from planner")
-                # TODO: IMPLEMENT ME: what now?
-                return
+            # planner returned a successful plan
+            if response.responseFlag == 'COMPLETED':
+                # print("DialogueManager::plan returned:", self.last_planner_response)
+                if len(response.plan) == 0:
+                    print("DialogueManager::empty complete plan received from planner")
+                    self.system_text = random.choice(["Sorry, I'm not able to do that. Could we try again?", "Sorry, I'm not able to build that. Could you reword that?", "Sorry, something went wrong. Could you explain it differently?"])
+                    ds.output = (ds.output+"\n"+self.system_text).strip()
+                    self.append_to_history(ds)
+                    self.next_state = State.PARSE_DESCRIPTION
+                    return
 
-            # execute the plan and return to the default starting location
-            execute_status = self.execute_plan(pitch, yaw)
-            self.goto_default_loc()            
+                self.last_planner_response = response
+                self.plans.append(self.last_planner_response)
+
+                # execute the plan and return to the default starting location
+                execute_status = self.execute_plan(pitch, yaw)
+                ds.execute_status = execute_status
+                self.goto_default_loc()            
             
-            # plan executed successfully
-            if execute_status == "SUCCESS":
-                global N_SHAPES
-                N_SHAPES += 1
+                # plan executed successfully
+                if execute_status == "SUCCESS":
+                    global N_SHAPES
+                    N_SHAPES += 1
 
-                self.description_attempts = 0
-                self.append_to_history(DialogueState(State.PLAN, output=self.system_text))
-                self.next_state = State.REQUEST_VERIFICATION
+                    self.description_attempts = 0
+                    self.append_to_history(ds)
+                    self.next_state = State.REQUEST_VERIFICATION
 
-            # plan execution failed
-            else:
+                # plan execution failed
+                else:
+                    self.system_text = random.choice(["I may not have done that correctly. What do I do now?", "I think something went wrong. How can I fix this?", "I'm not sure I did that correctly. What should I do?"])
+                    ds.output = (ds.output+"\n"+self.system_text).strip()
+                    self.append_to_history(ds)
+                    self.next_state = State.PARSE_DESCRIPTION
+                    return
+
+            elif response.responseFlag == 'MISSING':
                 # TODO: IMPLEMENT ME!
-                return
+                self.append_to_history(ds)
+                self.next_state = State.REQUEST_CLARIFICATION
+
+            else:
+                self.last_planner_response = None
+                self.system_text = random.choice(["Sorry, I'm not able to do that. Could we try again?", "Sorry, I'm not able to build that. Could you reword that?", "Sorry, something went wrong. Could you explain it differently?"])
+                ds.output = (ds.output+"\n"+self.system_text).strip()
+                self.append_to_history(ds)
+                self.next_state = State.PARSE_DESCRIPTION
 
         # State: request verification from the user
-        # FIXME: do we still need this state?
         if self.next_state == State.REQUEST_VERIFICATION:
-            self.clarification_attempts = 0
             self.system_text = random.choice(["How's that?", "Like this?", "Is this right?"])
             self.send_chat()
-            self.append_to_history(DialogueState(State.REQUEST_VERIFICATION, output=self.system_text))
+            self.append_to_history(DialogueState(State.REQUEST_VERIFICATION, output=self.system_text, blocks_in_grid=blocks_in_grid))
             self.next_state = State.PARSE_VERIFICATION
             return
 
         # State: parse verification from the user
-        # FIXME: do we still need this state?
         if self.next_state == State.PARSE_VERIFICATION:
-            # IMPLEMENT ME: how do we want to implement verifications?
-            self.next_state = State.REQUEST_DESCRIPTION
-            self.parse("", blocks_in_grid, pitch, yaw)
+            ds = DialogueState(State.PARSE_VERIFICATION, input=text, blocks_in_grid=blocks_in_grid)
+            if any(substring in text for substring in yes_responses):
+                self.append_to_history(ds)
+                self.next_state = State.REQUEST_DESCRIPTION
+                self.parse("", blocks_in_grid, pitch, yaw)
+                return
+
+            elif any(substring in text for substring in no_responses):
+                # TODO: IMPLEMENT ME
+                self.next_state = State.REQUEST_DESCRIPTION
+                self.parse("", blocks_in_grid, pitch, yaw)
+                return
+
+        if self.next_state == State.REQUEST_CLARIFICATION:
+            # TODO: IMPLEMENT ME!
+            return
 
     def goto_default_loc(self):
         """ Teleports the agent to the default starting location. Should be used after executing every Architect instruction. """
@@ -645,13 +736,13 @@ def cwc_run_mission(args):
                     if observation.text is not None:
                         obsrv = json.loads(observation.text)
                         print("Observation processed:")
-                        if verbose_observations:
+                        if verbose:
                             print(json.dumps(obsrv, indent=4), '\n')
 
-                        chat_instruction = obsrv.get("Chat", chat_instruction) #obsrv["Chat"] if obsrv.get("Chat") is not None else chat_instruction
-                        blocks_in_grid = obsrv.get("BuilderGridAbsolute", blocks_in_grid) #obsrv["BuilderGridAbsolute"] if obsrv.get("BuilderGridAbsolute") is not None else blocks_in_grid
-                        pitch = obsrv.get("Pitch", pitch) #obsrv["Pitch"] if obsrv.get("Pitch") is not None else pitch
-                        yaw = obsrv.get("Yaw", yaw) #obsrv["Yaw"] if obsrv.get("Yaw") is not None else yaw
+                        chat_instruction = obsrv.get("Chat", chat_instruction) 
+                        blocks_in_grid = obsrv.get("BuilderGridAbsolute", blocks_in_grid)
+                        pitch = obsrv.get("Pitch", pitch) 
+                        yaw = obsrv.get("Yaw", yaw)
 
                         if obsrv.get("Chat") is not None:
                             print("Chat:", chat_instruction)
@@ -722,17 +813,32 @@ def reformat_builder_grid(blocks_in_grid):
             x = block["X"]
             y = block["Y"]
             z = block["Z"]
+            color = block["Type"].replace("cwc_minecraft_","").replace("_rn","")
 
             if blocks_dict.get(x) is None:
-                blocks_dict[x] = defaultdict(list)
+                blocks_dict[x] = {}
 
-            blocks_dict[x][z].append(y)
+            if blocks_dict[x].get(z) is None:
+                blocks_dict[x][z] = defaultdict(str)
+
+            blocks_dict[x][z][y] = color
 
     return blocks_dict
 
+def undo_reformat(blocks_in_grid):
+    """ Reformats nested dictionary of blocks in grid back to list format. """
+    blocks_list = []
+    for x in blocks_in_grid:
+        for z in blocks_in_grid[x]:
+            for y in blocks_in_grid[x][z]:
+                blocks_list.append((x,y,z,blocks_in_grid[x][z][y]))
+
+    return blocks_list
+
 def find_teleport_location(blocks_in_grid, x, y, z, action):
     """ Finds a feasible (open) location, pitch, and yaw to teleport the agent to such that a block can be placed at (x,y,z). """
-    print("find_teleport_location::finding feasible location for block:", x, y, z, "where blocks_in_grid:", blocks_in_grid)
+    if verbose:
+        print("find_teleport_location::finding feasible location for block:", x, y, z, "where blocks_in_grid:", blocks_in_grid)
 
     # check for unoccupied locations that the agent can teleport to: south/east/north/west of location; above/below location; below and to the south/east/north/west of location
     for px, py, pz, direction in [(x, y, z-1, "south"), (x-1, y, z, "east"), (x, y, z+1, "north"), (x+1, y, z, "west"), (x, y+1, z, "top"), (x, y-2, z, "bottom"), \
@@ -741,12 +847,14 @@ def find_teleport_location(blocks_in_grid, x, y, z, action):
         
         # location is too low
         if py < 1:
-            print("find_teleport_location::", px, py, pz, direction, "is too low!")
+            if verbose:
+                print("find_teleport_location::", px, py, pz, direction, "is too low!")
             continue 
 
         # location is occupied
         if not location_is_empty(blocks_in_grid, px, py, pz) or not location_is_empty(blocks_in_grid, px, py+1, pz):
-            print("find_teleport_location::", px, py, pz, direction, "is occupied!")
+            if verbose:
+                print("find_teleport_location::", px, py, pz, direction, "is occupied!")
             continue
 
         # get default pitch/yaw (facing downwards, to place a block on top of a surface)
@@ -755,7 +863,8 @@ def find_teleport_location(blocks_in_grid, x, y, z, action):
 
         # return the default pitch/yaw values if the the block can be placed feasibly with the default view
         if action == 'pickup' or (direction == "bottom" and not location_is_empty(blocks_in_grid, x, y+1, z)) or ("_" not in direction and not location_is_empty(blocks_in_grid, x, y-1, z)):
-            print("find_teleport_location::", px, py, pz, direction, "with default view is eligible!")
+            if verbose: 
+                print("find_teleport_location::", px, py, pz, direction, "with default view is eligible!")
             return px+0.5, py, pz+0.5, pitch, yaw
 
         # check if a block can feasibly be placed from a location in the above or below planes
@@ -764,7 +873,8 @@ def find_teleport_location(blocks_in_grid, x, y, z, action):
 
             # cannot place a block from above if the location is obscured by another block from above
             if general_dir == 'top' and not location_is_empty(blocks_in_grid, x, y+1, z):
-                print("find_teleport_location::ineligible direction", direction, "-- view is blocked!")
+                if verbose:
+                    print("find_teleport_location::ineligible direction", direction, "-- view is blocked!")
                 continue
 
             # consider ahead, above directions from below; consider only ahead direction from above
@@ -772,12 +882,15 @@ def find_teleport_location(blocks_in_grid, x, y, z, action):
 
             for key in view_keys:
                 dx, dy, dz = coord_deltas[key][direction]
-                print("find_teleport_location::checking location", x+dx, y+dy, z+dz, "using view", key, "while facing from the", direction)
+                if verbose:
+                    print("find_teleport_location::checking location", x+dx, y+dy, z+dz, "using view", key, "while facing from the", direction)
 
                 # check if block can feasibly be placed from this location (i.e., an adjacent block exists in that direction)
                 # if so, return this with appropriate pitch/yaw modifications
                 if not location_is_empty(blocks_in_grid, x+dx, y+dy, z+dz):
-                    print("find_teleport_location::found adjacent block with view", key, "while facing from the", direction)
+                    if verbose:
+                        print("find_teleport_location::found adjacent block with view", key, "while facing from the", direction)
+
                     d_pitch, d_yaw = view_deltas[key+'_'+general_dir]
                     return px+0.5, py, pz+0.5, pitch+d_pitch, yaw+d_yaw
 
@@ -788,17 +901,20 @@ def find_teleport_location(blocks_in_grid, x, y, z, action):
                     continue
 
                 dx, dy, dz = coord_deltas[key][direction]
-                print("find_teleport_location::Checking location", x+dx, y+dy, z+dz, "using view", key, "while facing from the", direction)
+                if verbose:
+                    print("find_teleport_location::Checking location", x+dx, y+dy, z+dz, "using view", key, "while facing from the", direction)
 
                 # cannot place a block if the location is obscured by another block from above
                 if not location_is_empty(blocks_in_grid, x, y+1, z):
-                    print("find_teleport_location::ineligible direction", direction, "-- view is blocked!")
+                    if verbose:
+                        print("find_teleport_location::ineligible direction", direction, "-- view is blocked!")
                     continue
 
                 # check if block can feasibly be placed from this location (i.e., an adjacent block exists in that direction)
                 # if so, return this with appropriate pitch/yaw modifications
                 if not location_is_empty(blocks_in_grid, x+dx, y+dy, z+dz):
-                    print("find_teleport_location::Found adjacent block with view", key, "while facing from the", direction)
+                    if verbose:
+                        print("find_teleport_location::Found adjacent block with view", key, "while facing from the", direction)
 
                     d_pitch, d_yaw = view_deltas[key] 
                     final_yaw = yaw+d_yaw
@@ -816,7 +932,7 @@ def find_teleport_location(blocks_in_grid, x, y, z, action):
 
 def location_is_empty(blocks_in_grid, x, y, z):
     """ Checks whether or not a grid location is empty given the current world state. """
-    blocks_list = blocks_in_grid.get(x, {}).get(z, [])
+    blocks_list = blocks_in_grid.get(x, {}).get(z, {})
     return y not in blocks_list and y > 0
 
 def validate_semantic_representation(sem_rep):

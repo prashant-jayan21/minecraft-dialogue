@@ -1,7 +1,7 @@
 from __future__ import print_function
 from subprocess import *
 from enum import Enum
-
+from cwc_mission_utils import x_min_build, x_max_build, y_min_build, y_max_build, z_min_build, z_max_build
 
 class Response(object):
     """Response classs.
@@ -47,13 +47,14 @@ class Response(object):
             for item in plan:
                 instruction = item.replace("[", "").replace("]", "")
                 instruction = instruction.replace(",", "").replace("(", "").replace(")", "")
+                action = "putdown"
 
                 if "stack" in instruction.strip():
-                    action, block_id, reference_block_id, x, y, z, color = instruction.strip().split()
+                    _, block_id, reference_block_id, x, y, z, color = instruction.strip().split()
                 else:
                     action, block_id, x, y, z, color = instruction.strip().split()
 
-                instruction = [action, float(x), float(y), float(z), color]
+                instruction = [action, block_id, float(x)+x_min_build, float(y)+y_min_build, float(z)+z_min_build, color]
                 instruction_list.append(instruction)
 
             self.plan = instruction_list
@@ -179,7 +180,7 @@ def getPlans(human_input="row(a) ^ width(a,5)"):
     result = jarWrapper(*args)
 
     response = convert_response(result)
-    print("getPlans::\n"+str(response))
+    print("getPlans::response received\n"+str(response))
     return response
 
 
