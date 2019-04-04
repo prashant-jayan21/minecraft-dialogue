@@ -199,8 +199,8 @@ if __name__ == '__main__':
     print("*****solving missing \"row(a) ^ width(a,5)\"*****")
     getPlans(human_input="row(a)")
 
-    print("*****solving \"rectangle(a) ^ height(a, 2) ^ width(a,4)\"*****")
-    getPlans(human_input="rectangle(a) ^ height(a, 2) ^ width(a,4)")
+    print("*****solving \"rectangle(a) ^ height(a, 2) ^ length(a,4)\"*****")
+    getPlans(human_input="rectangle(a) ^ height(a, 2) ^ length(a,4)")
 
     print("3D Planning problem")
     getPlans(human_input="tower(a)^height(a,4)^square(b)^size(b,2)^right(b,a)"
@@ -209,3 +209,5 @@ if __name__ == '__main__':
 
     print("3D Planning problem missing multiple dimensions")
     getPlans(human_input="tower(a)^square(b)^right(b,a)^ block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^lower_left_near(a,d)^spatial-rel(top,0,w1,w2)")
+
+    getPlans(human_input="tower(a)^height(a,4)^color(a,purple)^square(b)^size(b,2)^color(b,blue)^right(b,a)^block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^lower_left_near(a,d)^spatial-rel(top,0,w1,w2)")
