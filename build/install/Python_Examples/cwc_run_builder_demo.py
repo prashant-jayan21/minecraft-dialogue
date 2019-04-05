@@ -16,7 +16,7 @@ import cwc_planner_utils as planner_utils
 # GLOBAL VARIABLES FOR DEBUGGING
 SHOW_COMMANDS = False
 N_SHAPES = 0
-ATTEMPT_LIMIT = 4
+ATTEMPT_LIMIT = 3
 write_logfiles = False
 verbose = True
 
@@ -28,6 +28,7 @@ color_map = {
     'green': 4,
     'blue': 5,
     'purple': 6,
+    'white': 1,
     'violet': 6  # FIXME when this is fixed in the planner
 }
 
@@ -161,7 +162,7 @@ class DialogueState:
     def __init__(self, state, input=None, output=None, parse=None, response=None, execute_status=None, blocks_in_grid={}):
         self.state = state
         self.input = input
-        self.output = output
+        self.output = output if output is not None and len(output) > 0 else None
         self.parse = parse
         self.planner_response = response
         self.execute_status = execute_status
@@ -176,7 +177,7 @@ class DialogueState:
         if self.parse is not None:
             print_str += "\nParse: "+str(self.parse)
         if self.planner_response is not None:
-            print_str += "\nPlanner response: "+str(self.planner_response)
+            print_str += "\nPlanner response:"+("\n" if self.planner_response is not None else "")+str(self.planner_response).strip()
         if self.execute_status is not None:
             print_str += "\nPlanner execution status: "+str(self.execute_status)
         print_str += "\nBlocks in grid: "+str(self.blocks_in_grid)
@@ -211,71 +212,68 @@ class DialogueManager:
         self.system_text = ""                                                       # system text to be pushed to chat
 
         # begin a dialogue
-        self.parse(all_observations, "", {}, 0.0, 0.0)
+        self.parse(all_observations, "")
 
     def send_chat(self):
         """ Pushes the system text to the Minecraft chat interface. """
         sendCommand(self.agent_host, 'chat '+self.system_text)
 
-    def execute_plan(self, pitch, yaw, all_observations):
+    def execute_plan(self, pitch, yaw, all_observations, verify=False):
         """ Executes the last successful plan. """
         # no plan exists
         if self.last_planner_response is None:
             print("execute_plan::Error: last plan is undefined!")
-            return "FAILURE", [], None, None
+            return "FAILURE", None, None
 
         # empty plan (this failure case should be caught before execution)
         if len(self.last_planner_response.plan) < 1:
             print("execute_plan::Warning: execute_plan was called, but the last plan was empty!")
-            return "FAILURE", [], None, None
+            return "FAILURE", None, None
 
-        plan_list = self.last_planner_response.plan
-        index = np.random.random_integers(6)  # FIXME: remove this when colors are randomly assigned by planner
+        plan_list = self.last_planner_response.plan if not verify else get_executed_plan_result(self.blocks_in_grid, self.last_planner_response.plan)
         last_pitch, last_yaw = pitch, yaw
-        successfully_executed = []
+        print("\nexecute_plan::"+("executing" if not verify else "verifying"), "the plan:", self.last_planner_response.plan)
 
         # execute the plan
         for (action, block_id, x, y, z, color) in plan_list:
             # trying to putdown in an occupied location
-            if action == "putdown" and not location_is_empty(self.blocks_in_grid, x,y,z):
+            if not verify and action == "putdown" and not location_is_empty(self.blocks_in_grid, x,y,z):
                 print("execute_plan::Error: 'putdown' action for non-empty location")
-                return "FAILURE", successfully_executed, None, None
+                return "FAILURE", last_pitch, last_yaw
 
             # trying to pickup a block from an empty location
-            if action == "pickup" and location_is_empty(self.blocks_in_grid, x,y,z):
+            if not verify and action == "pickup" and location_is_empty(self.blocks_in_grid, x,y,z):
                 print("execute_plan::Error: 'pickup' action for empty location")
-                return "FAILURE", successfully_executed, None, None
+                return "FAILURE", last_pitch, last_yaw
 
-            # find an unoccupied location, pitch, yaw to teleport the agent to
-            tx, ty, tz, t_pitch, t_yaw = find_teleport_location(self.blocks_in_grid, x, y, z, action)
-            
-            # failed to find valid location
-            if tx is None:
-                print("execute_plan::Error executing plan")
-                # TODO: what to do here?
-                return "FAILURE", successfully_executed, None, None
+            if not verify or (action == 'putdown' and location_is_empty(self.blocks_in_grid, x, y, z)) or (action == 'pickup' and not location_is_empty(self.blocks_in_grid, x, y, z)):
+                # find an unoccupied location, pitch, yaw to teleport the agent to
+                tx, ty, tz, t_pitch, t_yaw = find_teleport_location(self.blocks_in_grid, x, y, z, action)
+                
+                # failed to find valid location
+                if tx is None:
+                    print("execute_plan::Error executing plan")
+                    # TODO: what to do here?
+                    return "FAILURE", last_pitch, last_yaw
 
-            # teleport the agent
-            if verbose:
-                print("execute_plan::Teleporting to:", tx, ty, tz)
+                self.execute_action(action=action, tx=tx, ty=ty, tz=tz, t_pitch=t_pitch if t_pitch != last_pitch else None, t_yaw=t_yaw if t_yaw != last_yaw else None, color=color)
+                pitch_new, yaw_new = self.update_blocks_in_grid(all_observations)
+                last_pitch, last_yaw = pitch_new, yaw_new
+                self.update_block_ids(action, block_id, x, y, z)
 
-            self.execute_action(action=action, tx=tx, ty=ty, tz=tz, t_pitch=t_pitch if t_pitch != last_pitch else None, t_yaw=t_yaw if t_yaw != last_yaw else None, color=color)
-
-            pitch_new, yaw_new = self.update_blocks_in_grid(all_observations)
-            last_pitch, last_yaw = pitch_new, yaw_new
-            self.update_block_ids(action, block_id, x, y, z)
-            successfully_executed.append((action, block_id, x, y, z, color))
-
-        return "SUCCESS", successfully_executed, last_pitch, last_yaw
+        return "SUCCESS", last_pitch, last_yaw
 
     def execute_action(self, action, tx, ty, tz, t_pitch, t_yaw, color):
-        """ Executes an action with the agent. """
+        """ Executes an action using the agent. """
+        if verbose:
+                print("execute_plan::teleporting to:", tx, ty, tz, t_pitch, t_yaw, "to", action, color)
+
         # teleport the agent
         teleportMovement(self.agent_host, teleport_x=tx, teleport_y=ty, teleport_z=tz)
 
         # choose block color to be placed (if putdown)
         if action == 'putdown':
-            chooseInventorySlot(self.agent_host, index=1 if color == 'white' else color_map[color])
+            chooseInventorySlot(self.agent_host, color_map[color])
 
         # set agent's pitch and yaw
         setPitchYaw(self.agent_host, pitch=t_pitch, yaw=t_yaw)
@@ -283,11 +281,16 @@ class DialogueManager:
         # perform the action
         performAction(self.agent_host, action)
 
-    def update_blocks_in_grid(self, all_observations):
+    def update_blocks_in_grid(self, all_observations, debug=False):
+        """ Updates the blocks in grid representation with any changes received from recent observations. """
         blocks_in_grid_new, pitch_new, yaw_new = None, None, None
         num_attempts = 0
 
-        while blocks_in_grid_new is None and num_attempts < 100:
+        if debug: 
+            return pitch_new, yaw_new
+
+        # keep polling for observations until one returns updated blocks in grid (or times out)
+        while blocks_in_grid_new is None and num_attempts < 999:
             world_state = self.agent_host.getWorldState()
 
             # retrieve relevant information from the most recent observations
@@ -309,30 +312,7 @@ class DialogueManager:
 
         return pitch_new, yaw_new
 
-    def verify_executed_plan(self, executed_plan, pitch, yaw, all_observations):
-        if verbose:
-            print("verify_executed_plan::verifying the execution...")
-
-        plan_result = get_executed_plan_result(self.blocks_in_grid, executed_plan)
-        last_pitch, last_yaw = pitch, yaw
-
-        for (action, block_id, x, y, z, color) in plan_result:
-            if (action == 'putdown' and location_is_empty(self.blocks_in_grid, x, y, z)) or (action == 'pickup' and not location_is_empty(self.blocks_in_grid, x, y, z)):
-                tx, ty, tz, t_pitch, t_yaw = find_teleport_location(self.blocks_in_grid, x, y, z, action)
-
-                if tx is None:
-                    print("verify_executed_plan::Error executing plan")
-                    # TODO: what to do here?
-                    return "FAILURE"
-
-                self.execute_action(action=action, tx=tx, ty=ty, tz=tz, t_pitch=t_pitch if t_pitch != last_pitch else None, t_yaw=t_yaw if t_yaw != last_yaw else None, color=color)
-                pitch_new, yaw_new = self.update_blocks_in_grid(all_observations)
-                last_pitch, last_yaw = pitch_new, yaw_new
-                self.update_block_ids(action, block_id, x, y, z)
-
-        return "SUCCESS"
-
-    def undo_executed_plan(self, executed_plan, pitch, yaw):
+    def undo_executed_plan(self, pitch, yaw):
         # FIXME: IMPLEMENT ME SOMEHOW!
         return
 
@@ -370,15 +350,14 @@ class DialogueManager:
 
         return blocks_in_grid_repr
 
-    def parse(self, all_observations, text, blocks_in_grid, pitch, yaw):
+    def parse(self, all_observations, text, pitch=0, yaw=0):
         """ Calls the dialogue manager to parse an input Architect utterance and handle it appropriately according to the dialogue manager's current dialogue state. """
         print("DialogueManager::parsing text:", text)
-        self.blocks_in_grid = blocks_in_grid
 
         # State: request additional description
         if self.next_state == State.REQUEST_DESCRIPTION:
             self.system_text = random.choice(["Okay, what's next?", "Okay, now what?", "What are we doing next?"])
-            self.append_to_history(DialogueState(State.REQUEST_DESCRIPTION, output=self.system_text, blocks_in_grid=blocks_in_grid), all_observations)
+            self.append_to_history(DialogueState(State.REQUEST_DESCRIPTION, output=self.system_text, blocks_in_grid=self.blocks_in_grid), all_observations)
             self.next_state = State.PARSE_DESCRIPTION
             self.send_chat()
             return
@@ -386,6 +365,7 @@ class DialogueManager:
         # State: start; ask for initial description
         if self.next_state == State.START:
             self.system_text = random.choice(["Hi Architect, what are we building today?", "I'm ready! What are we building?", "Hello! What are we building?", "Hello Architect, I'm ready!"])
+            self.append_to_history(DialogueState(State.START, output=self.system_text, blocks_in_grid=self.blocks_in_grid), all_observations)
             self.next_state = State.PARSE_DESCRIPTION
             self.send_chat()
             self.goto_default_loc()
@@ -394,12 +374,15 @@ class DialogueManager:
         # State: parse a provided description
         if self.next_state == State.PARSE_DESCRIPTION:
             parse = self.parser.parse(text)
-            ds = DialogueState(State.PARSE_DESCRIPTION, input=text, parse=parse, blocks_in_grid=blocks_in_grid)
+            ds = DialogueState(State.PARSE_DESCRIPTION, input=text, parse=parse, blocks_in_grid=self.blocks_in_grid)
             self.attempts["description"] += 1
+            self.attempts["verification"] = 0
 
             # TODO: verify well-formedness of semantic parse
             if parse is None or len(parse) < 1:
                 self.system_text = random.choice(["Sorry, I had trouble understanding that. Could you explain it differently?", "Sorry, I don't understand. Can you try again?", "Sorry, I'm having trouble understanding. Could you reword that?"])
+                self.check_for_failure(ds)
+                self.send_chat()
                 ds.output = self.system_text
                 self.append_to_history(ds, all_observations)
                 return
@@ -410,11 +393,11 @@ class DialogueManager:
 
         # State: produce and execute a plan
         if self.next_state == State.PLAN:
-            self.system_text = random.choice(["Okay.", ""])
+            self.system_text = random.choice(["Okay.", "", "Let me try."])
             if len(self.system_text) > 0:
                 self.send_chat()
 
-            ds = DialogueState(State.PLAN, output=self.system_text, blocks_in_grid=blocks_in_grid)
+            ds = DialogueState(State.PLAN, output=self.system_text, blocks_in_grid=self.blocks_in_grid)
 
             existing_blocks = self.get_blocks_in_grid_repr()
 
@@ -428,31 +411,42 @@ class DialogueManager:
                 print("DialogueManager::planner exception occurred")
                 traceback.print_exc(file=sys.stdout)
                 self.last_planner_response = None
+                self.next_state = State.PARSE_DESCRIPTION
                 self.system_text = random.choice(["Sorry, I'm not able to do that. Could we try again?", "Sorry, I'm not able to build that. Could you reword that?", "Sorry, something went wrong. Could you explain it differently?"])
+                self.check_for_failure(ds)
+                self.send_chat()
                 ds.output = (ds.output+"\n"+self.system_text).strip()
                 self.append_to_history(ds, all_observations)
-                self.next_state = State.PARSE_DESCRIPTION
                 return
 
             ds.planner_response = response
 
             # planner returned a successful plan
             if response.responseFlag == 'COMPLETED':
-                # print("DialogueManager::plan returned:", self.last_planner_response)
                 if len(response.plan) == 0:
                     print("DialogueManager::empty complete plan received from planner")
                     self.system_text = random.choice(["Sorry, I'm not able to do that. Could we try again?", "Sorry, I'm not able to build that. Could you reword that?", "Sorry, something went wrong. Could you explain it differently?"])
+                    self.next_state = State.PARSE_DESCRIPTION
+                    self.check_for_failure(ds)
+                    self.send_chat()
                     ds.output = (ds.output+"\n"+self.system_text).strip()
                     self.append_to_history(ds, all_observations)
-                    self.next_state = State.PARSE_DESCRIPTION
                     return
 
                 self.last_planner_response = response
                 self.plans.append(self.last_planner_response)
 
                 # execute the plan and return to the default starting location
-                execute_status, successfully_executed, last_pitch, last_yaw = self.execute_plan(pitch, yaw, all_observations)
-                execute_status = "FAILURE" if execute_status == "FAILURE" else self.verify_executed_plan(successfully_executed, last_pitch, last_yaw, all_observations)
+                execute_status, last_pitch, last_yaw = self.execute_plan(pitch, yaw, all_observations)
+                updated_pitch, updated_yaw = self.update_blocks_in_grid(all_observations)
+                last_pitch = updated_pitch if updated_pitch is not None else last_pitch
+                last_yaw = updated_yaw if updated_yaw is not None else last_yaw
+                print("DialogueManager::execute_plan returned with status:", execute_status)
+
+                execute_status, _, _ = self.execute_plan(last_pitch, last_yaw, all_observations, verify=True)
+                self.update_blocks_in_grid(all_observations)
+                print("DialogueManager::verify_plan returned with status:", execute_status)
+
                 ds.execute_status = execute_status    
                 self.goto_default_loc()  
             
@@ -461,57 +455,73 @@ class DialogueManager:
                     global N_SHAPES
                     N_SHAPES += 1
 
-                    self.description_attempts = 0
+                    self.attempts["description"] = 0
                     self.append_to_history(ds, all_observations)
                     self.successfully_parsed_inputs.append(text)
                     self.next_state = State.REQUEST_VERIFICATION
 
                 # plan execution failed
                 else:
-                    self.undo_executed_plan(successfully_executed, last_pitch, last_yaw)
+                    self.undo_executed_plan(last_pitch, last_yaw)
                     self.system_text = random.choice(["Sorry, can we try again?", "I think something went wrong. Let's try again.", "Something went wrong in the middle. Can we try again?"])
+                    self.next_state = State.PARSE_DESCRIPTION
+                    self.check_for_failure(ds)
+                    self.send_chat()
                     ds.output = (ds.output+"\n"+self.system_text).strip()
                     self.append_to_history(ds, all_observations)
-                    self.next_state = State.PARSE_DESCRIPTION
                     return
 
             elif response.responseFlag == 'MISSING':
                 # TODO: IMPLEMENT ME! also remember to update successfully_parsed_inputs (and final goal) to reflect additional information added ths way
+                self.attempts["description"] = 0
                 self.append_to_history(ds, all_observations)
                 self.next_state = State.REQUEST_CLARIFICATION
 
             else:
                 self.last_planner_response = None
                 self.system_text = random.choice(["Sorry, I'm not able to do that. Could we try again?", "Sorry, I'm not able to build that. Could you reword that?", "Sorry, something went wrong. Could you explain it differently?"])
+                self.next_state = State.PARSE_DESCRIPTION
+                self.check_for_failure(ds)
+                self.send_chat()
                 ds.output = (ds.output+"\n"+self.system_text).strip()
                 self.append_to_history(ds, all_observations)
-                self.next_state = State.PARSE_DESCRIPTION
+                return
 
         # State: request verification from the user
         if self.next_state == State.REQUEST_VERIFICATION:
             self.system_text = random.choice(["How's that?", "Like this?", "Is this right?"])
             self.send_chat()
-            self.append_to_history(DialogueState(State.REQUEST_VERIFICATION, output=self.system_text, blocks_in_grid=blocks_in_grid), all_observations)
+            self.append_to_history(DialogueState(State.REQUEST_VERIFICATION, output=self.system_text, blocks_in_grid=self.blocks_in_grid), all_observations)
             self.next_state = State.PARSE_VERIFICATION
             return
 
         # State: parse verification from the user
         if self.next_state == State.PARSE_VERIFICATION:
-            ds = DialogueState(State.PARSE_VERIFICATION, input=text, blocks_in_grid=blocks_in_grid)
+            self.attempts["verification"] += 1
+            ds = DialogueState(State.PARSE_VERIFICATION, input=text, blocks_in_grid=self.blocks_in_grid)
+
             if any(substring in text for substring in yes_responses):
                 self.append_to_history(ds, all_observations)
                 self.next_state = State.REQUEST_DESCRIPTION
-                self.parse(all_observations, "", blocks_in_grid, pitch, yaw)
+                self.parse(all_observations, "")
                 return
 
             elif any(substring in text for substring in no_responses):
                 # TODO: IMPLEMENT ME
                 self.next_state = State.REQUEST_DESCRIPTION
-                self.parse(all_observations, "", blocks_in_grid, pitch, yaw)
+                self.parse(all_observations, "")
                 return
 
+        # State: request clarification from the user
         if self.next_state == State.REQUEST_CLARIFICATION:
             # TODO: IMPLEMENT ME!
+            return
+
+        # State: system failure
+        if self.next_state == State.FAILURE:
+            self.system_text = "This session has failed unexpectedly. Please restart the mission and try again."
+            self.send_chat()
+            self.append_to_history(DialogueState(State.FAILURE, output=self.system_text, blocks_in_grid=self.blocks_in_grid), all_observations)
             return
 
     def goto_default_loc(self):
@@ -525,6 +535,13 @@ class DialogueManager:
         _, last_observation = all_observations.pop()
         all_observations.append((state.as_json(), last_observation))
         self.print_state(state)
+
+    def check_for_failure(self, ds):
+        """ Checks if the dialogue system has exceeded the number of attempts from the user; if so, puts the system in an endless failure state. """
+        if self.attempts["description"] >= ATTEMPT_LIMIT or self.attempts["clarification"] >= ATTEMPT_LIMIT or self.attempts["verification"] >= ATTEMPT_LIMIT:
+            self.system_text = "Sorry, attempt limit exceeded. I'm giving up!"
+            ds.state = State.FAILURE
+            self.next_state = State.FAILURE
 
     def print_state(self, state):
         print("\nDialogueManager::\n"+str(state)+"\n")
@@ -782,8 +799,8 @@ def cwc_run_mission(args):
                             utterances += utterance.replace("<Architect>", "")+" "
 
                     if len(utterances) > 0:
-                        blocks_in_grid = reformat_builder_grid(blocks_in_grid)
-                        dm.parse(all_observations, utterances, blocks_in_grid, pitch, yaw)
+                        dm.blocks_in_grid = reformat_builder_grid(blocks_in_grid)
+                        dm.parse(all_observations, utterances, pitch, yaw)
 
     time_elapsed = time.time() - start_time
 
@@ -852,10 +869,12 @@ def reformat_builder_grid(blocks_in_grid):
 def undo_reformat(blocks_in_grid):
     """ Reformats nested dictionary of blocks in grid back to list format. """
     blocks_list = []
-    for x in blocks_in_grid:
-        for z in blocks_in_grid[x]:
-            for y in blocks_in_grid[x][z]:
-                blocks_list.append((x,y,z,blocks_in_grid[x][z][y]))
+
+    if blocks_in_grid is not None:
+        for x in blocks_in_grid:
+            for z in blocks_in_grid[x]:
+                for y in blocks_in_grid[x][z]:
+                    blocks_list.append((x,y,z,blocks_in_grid[x][z][y]))
 
     return blocks_list
 
@@ -983,6 +1002,7 @@ def get_executed_plan_result(blocks_in_grid, plan):
 
     plan_result = []
     for (action, block_id, x, y, z, color) in plan:
+        color = 'purple' if color == 'violet' else color # FIXME! when it's fixed
         net_actions = executed_plan_grid[x][y][z]
         if net_actions[color] == -1 and blocks_in_grid.get(x, {}).get(z, {}).get(y) != color:
             continue
@@ -1028,7 +1048,7 @@ def performAction(ah, action):
     sendCommand(ah, action_type+' 1')
     time.sleep(0.1)
     sendCommand(ah, action_type+' 0')
-    time.sleep(0.1)
+    time.sleep(0.2)
 
 def sendCommand(ah, command):
     """ Use this method to send all commands to the agent. """
