@@ -86,6 +86,9 @@ class Response(object):
         return_str += "Other: "+str(self.other)+"\n"
         return return_str
 
+    def as_json(self):
+        return {"Flag": self.responseFlag, "Plan": self.plan, "Missing": self.missing}
+
 def convert_response(output):
     """ 
     Convert the planner response to Response class.
@@ -104,7 +107,7 @@ def convert_response(output):
 
     planner_output = output[-6:]
     contents = {"Missing": [], "Other": [], "Plan": [], "Constraints": []}
-    print("convert_response::", planner_output)
+    # print("convert_response::", planner_output)
 
     for line in planner_output:
         if len(line) == 0:
@@ -180,7 +183,7 @@ def getPlans(human_input="row(a) ^ width(a,5)"):
     result = jarWrapper(*args)
 
     response = convert_response(result)
-    print("getPlans::response received\n"+str(response))
+    # print("getPlans::response received\n"+str(response))
     return response
 
 
