@@ -138,7 +138,7 @@ def jarWrapper(*args):
     return ret
 
 
-def getPlans(human_input="row(a) ^ width(a,5)"):
+def getPlans(human_input="row(a) ^ width(a,5)", existing_blocks=None):
     """Fetch the plans for a given semantic representation.
 
     Args:
@@ -149,9 +149,12 @@ def getPlans(human_input="row(a) ^ width(a,5)"):
         till now nothing
 
     """
-    print("get plans")
+    # print("get plans")
     # args = ["planner/uct_44.jar"]
-    args = ["jshop2-master.jar", human_input]
+    if existing_blocks is not None:
+        args = ["jshop2-master.jar", human_input, existing_blocks]
+    else:
+        args = ["jshop2-master.jar", human_input]
     result = jarWrapper(*args)
     # print(result)
     response = convert_Response(result)
@@ -177,9 +180,7 @@ def getPlans(human_input="row(a) ^ width(a,5)"):
     for item in instruction_list:
         print("current item ", item)
         splitted_item = item.strip().split(" ")
-        if "unstack" in item:
-            action, block_id, reference_block_id, color = splitted_item
-        elif "stack" in item:
+        if "stack" in item:
             action, block_id, reference_block_id, x, y, z, color = splitted_item
         else:
             action, block_id, x, y, z, color = splitted_item
@@ -219,3 +220,9 @@ if __name__ == '__main__':
     print("***Building a cuboid***")
     getPlans(
         human_input="cuboid(a) ^ width(a,1) ^ length(a,4) ^ height(a,2) ^ color(a,green)")
+
+    print("checking incremental plan")
+
+    getPlans(
+        human_input="tower(a)^height(a,4)^rectangle(b)^width(b,3)^length(b,5)^right(b,a)^block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^lower_left_near(a,d)^spatial-rel(top,0,w1,w2)",
+        existing_blocks="(b5,0,0,0,purple)^(b1,0,1,0,orange)^(b2,0,2,0,orange)^(b3,0,3,0,orange)^(b4,0,4,0,orange)^(b1000,1,0,1,green)")
