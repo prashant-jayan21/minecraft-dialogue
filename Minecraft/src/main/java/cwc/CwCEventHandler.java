@@ -308,6 +308,7 @@ public class CwCEventHandler {
     @SubscribeEvent
     public void onPlayerUpdate(LivingEvent.LivingUpdateEvent event) {
         EntityPlayer updatedPlayer = (EntityPlayer) event.getEntity();
+        updatedPlayer.noClip = true;
 
         // prevent noclip through floor
         if (updatedPlayer.posY < 0) {
@@ -323,6 +324,7 @@ public class CwCEventHandler {
         if (updatedPlayer.getEntityWorld().isRemote) {
             Minecraft mc = Minecraft.getMinecraft();
             EntityPlayer player = mc.player;
+            player.noClip = true;
 
             // Architect sneaking to break mob-view
             if (playerNameMatches(player, CwCMod.ARCHITECT) && sneaking) {
