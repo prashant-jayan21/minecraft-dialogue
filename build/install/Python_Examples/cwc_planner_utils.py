@@ -3,6 +3,7 @@ from subprocess import *
 from enum import Enum
 from cwc_mission_utils import x_min_build, x_max_build, y_min_build, y_max_build, z_min_build, z_max_build
 
+
 class Response(object):
     """Response classs.
 
@@ -33,7 +34,7 @@ class Response(object):
             missing_list = list()
 
             for item in missing:
-                missing_item = item.replace("(","").replace(")","")
+                missing_item = item.replace("(", "").replace(")", "")
                 missing_list.append(missing_item.strip().split())
 
             self.missing = missing_list
@@ -46,7 +47,10 @@ class Response(object):
 
             for item in plan:
                 instruction = item.replace("[", "").replace("]", "")
-                instruction = instruction.replace(",", "").replace("(", "").replace(")", "")
+                instruction = instruction.replace(
+                    ",", "").replace(
+                    "(", "").replace(
+                    ")", "")
                 action = "putdown"
 
                 if "stack" in instruction.strip():
@@ -54,7 +58,16 @@ class Response(object):
                 else:
                     action, block_id, x, y, z, color = instruction.strip().split()
 
-                instruction = [action, block_id, float(x)+x_min_build, float(y)+y_min_build, float(z)+z_min_build, color]
+                instruction = [
+                    action,
+                    block_id,
+                    float(x) +
+                    x_min_build,
+                    float(y) +
+                    y_min_build,
+                    float(z) +
+                    z_min_build,
+                    color]
                 instruction_list.append(instruction)
 
             self.plan = instruction_list
@@ -79,18 +92,20 @@ class Response(object):
 
     def __str__(self):
         return_str = ""
-        return_str += "Response flag: "+self.responseFlag+"\n"
-        return_str += "Plan: "+str(self.plan)+"\n"
-        return_str += "Constraints: "+str(self.constraints)+"\n"
-        return_str += "Missing: "+str(self.missing)+"\n"
-        return_str += "Other: "+str(self.other)+"\n"
+        return_str += "Response flag: " + self.responseFlag + "\n"
+        return_str += "Plan: " + str(self.plan) + "\n"
+        return_str += "Constraints: " + str(self.constraints) + "\n"
+        return_str += "Missing: " + str(self.missing) + "\n"
+        return_str += "Other: " + str(self.other) + "\n"
         return return_str
 
     def as_json(self):
-        return {"Flag": self.responseFlag, "Plan": self.plan, "Missing": self.missing}
+        return {"Flag": self.responseFlag,
+                "Plan": self.plan, "Missing": self.missing}
+
 
 def convert_response(output):
-    """ 
+    """
     Convert the planner response to Response class.
 
     Args:
@@ -112,10 +127,11 @@ def convert_response(output):
     for line in planner_output:
         if len(line) == 0:
             continue
-        
+
         splitted_line = line.strip().split(": ")
         if "[" in splitted_line[1]:
-            splitted_line[1] = splitted_line[1].replace("[", "").replace("]", "")
+            splitted_line[1] = splitted_line[
+                1].replace("[", "").replace("]", "")
 
         res = splitted_line[1].split(",") if len(splitted_line[1]) > 0 else []
         key = splitted_line[0].strip()
@@ -129,13 +145,19 @@ def convert_response(output):
 
     # print("##parsed outputs##")
     # print(flag, missing, other, plan, constraints)
-    response = Response(flag, contents["Missing"], contents["Other"], contents["Plan"], contents["Constraints"])
+    response = Response(
+        flag,
+        contents["Missing"],
+        contents["Other"],
+        contents["Plan"],
+        contents["Constraints"])
     # print(response)
     # print(response.responseFlag)
     # response.add_constraints('hellow')
     # print(response)
     # print("##end of parsed outputs##")
     return response
+
 
 def jarWrapper(*args):
     """A wrapper fuction that bridges python with Java based planner.
@@ -149,22 +171,22 @@ def jarWrapper(*args):
 
     """
     process = Popen(['java', '-jar'] + list(args), stdout=PIPE, stderr=PIPE)
-    
+
     ret = []
     while process.poll() is None:
         line = str(process.stdout.readline())
         if line != '' and line.endswith('\n'):
             ret.append(line[:-1])
-    
+
     stdout, stderr = process.communicate()
     ret += str(stdout).split('\n')
-    
+
     if stderr != '':
         ret += (str(stderr)).split('\n')
-    
+
     if '' in ret:
         ret.remove('')
-    
+
     return ret
 
 
@@ -186,7 +208,7 @@ def getPlans(human_input="row(a) ^ width(a,5)", existing_blocks=None):
     else:
         args = ["jshop2-master.jar", human_input]
     result = jarWrapper(*args)
-    
+
     # print(result)
     response = convert_Response(result)
     print(response.responseFlag)
@@ -254,4 +276,10 @@ if __name__ == '__main__':
 
     getPlans(
         human_input="tower(a)^height(a,4)^rectangle(b)^width(b,3)^length(b,5)^right(b,a)^block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^lower_left_near(a,d)^spatial-rel(top,0,w1,w2)",
+        existing_blocks="(b5,0,0,0,purple)^(b1,0,1,0,orange)^(b2,0,2,0,orange)^(b3,0,3,0,orange)^(b4,0,4,0,orange)^(b1000,1,0,1,green)")
+
+    print("checking new logical form right_behind")
+
+    getPlans(
+        human_input="tower(a)^height(a,2)^rectangle(b)^width(b,3)^length(b,4)^right(b,a)^block(c)^location(w1)^block-location(c,w1)^right_behind(b,c)^block(d)^location(w2)^block-location(d,w2)^bottom_end(a,d)^spatial-rel(top,0,w1,w2)",
         existing_blocks="(b5,0,0,0,purple)^(b1,0,1,0,orange)^(b2,0,2,0,orange)^(b3,0,3,0,orange)^(b4,0,4,0,orange)^(b1000,1,0,1,green)")
