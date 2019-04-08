@@ -162,7 +162,7 @@ class DialogueState:
     def __init__(self, state, input=None, output=None, parse=None, response=None, execute_status=None, blocks_in_grid={}):
         self.state = state
         self.input = input
-        self.output = output if output is not None and len(output) > 0 else None
+        self.output = output
         self.parse = parse
         self.planner_response = response
         self.execute_status = execute_status
@@ -241,12 +241,12 @@ class DialogueManager:
                 print("execute_plan::Error: 'putdown' action for non-empty location")
                 return "FAILURE", last_pitch, last_yaw
 
-            # trying to pickup a block from an empty location
-            if not verify and action == "pickup" and location_is_empty(self.blocks_in_grid, x,y,z):
-                print("execute_plan::Error: 'pickup' action for empty location")
+            # trying to remove a block from an empty location
+            if not verify and action == "remove" and location_is_empty(self.blocks_in_grid, x,y,z):
+                print("execute_plan::Error: 'remove' action for empty location")
                 return "FAILURE", last_pitch, last_yaw
 
-            if not verify or (action == 'putdown' and location_is_empty(self.blocks_in_grid, x, y, z)) or (action == 'pickup' and not location_is_empty(self.blocks_in_grid, x, y, z)):
+            if not verify or (action == 'putdown' and location_is_empty(self.blocks_in_grid, x, y, z)) or (action == 'remove' and not location_is_empty(self.blocks_in_grid, x, y, z)):
                 # find an unoccupied location, pitch, yaw to teleport the agent to
                 tx, ty, tz, t_pitch, t_yaw = find_teleport_location(self.blocks_in_grid, x, y, z, action)
                 
@@ -256,9 +256,18 @@ class DialogueManager:
                     # TODO: what to do here?
                     return "FAILURE", last_pitch, last_yaw
 
-                self.execute_action(action=action, tx=tx, ty=ty, tz=tz, t_pitch=t_pitch if t_pitch != last_pitch else None, t_yaw=t_yaw if t_yaw != last_yaw else None, color=color)
-                pitch_new, yaw_new = self.update_blocks_in_grid(all_observations)
-                last_pitch, last_yaw = pitch_new, yaw_new
+                updated = False
+                num_attempts = 0
+                last_valid_pitch, last_valid_yaw = None, None
+
+                while not updated and num_attempts < ATTEMPT_LIMIT:
+                    self.execute_action(action=action, tx=tx, ty=ty, tz=tz, t_pitch=t_pitch if t_pitch != last_pitch else None, t_yaw=t_yaw if t_yaw != last_yaw else None, color=color)
+                    pitch_new, yaw_new, updated = self.update_blocks_in_grid(all_observations)
+                    last_valid_pitch = pitch_new if pitch_new is not None else last_valid_pitch
+                    last_valid_yaw = yaw_new if yaw_new is not None else last_valid_yaw
+                    num_attempts += 1
+
+                last_pitch, last_yaw = last_valid_pitch, last_valid_yaw
                 self.update_block_ids(action, block_id, x, y, z)
 
         return "SUCCESS", last_pitch, last_yaw
@@ -305,12 +314,14 @@ class DialogueManager:
             num_attempts += 1
 
         # update blocks in grid
+        updated = False
         if blocks_in_grid_new is not None:
             self.blocks_in_grid = reformat_builder_grid(blocks_in_grid_new)
             if verbose:
                 print("execute_plan::updated blocks_in_grid after polling for", num_attempts, "attempts:", self.blocks_in_grid)
+            updated = True
 
-        return pitch_new, yaw_new
+        return pitch_new, yaw_new, updated
 
     def undo_executed_plan(self, pitch, yaw):
         # FIXME: IMPLEMENT ME SOMEHOW!
@@ -346,9 +357,9 @@ class DialogueManager:
                 for y in self.blocks_in_grid[x][z]:
                     color = self.blocks_in_grid[x][z][y]
                     block_id = self.get_block_id(x,y,z)
-                    blocks_in_grid_repr += block_id+","+str(x-x_min_build)+","+str(y-y_min_build)+","+str(z-z_min_build)+","+color+"\n"
+                    blocks_in_grid_repr += "("+block_id+","+str(x-x_min_build)+","+str(y-y_min_build)+","+str(z-z_min_build)+","+color+")^"
 
-        return blocks_in_grid_repr
+        return blocks_in_grid_repr[:-1] if len(blocks_in_grid_repr) > 0 else None
 
     def parse(self, all_observations, text, pitch=0, yaw=0):
         """ Calls the dialogue manager to parse an input Architect utterance and handle it appropriately according to the dialogue manager's current dialogue state. """
@@ -402,11 +413,11 @@ class DialogueManager:
             existing_blocks = self.get_blocks_in_grid_repr()
 
             print("DialogueManager::semantic parse to planner:", self.last_parse)
-            print("DialogueManager::blocks_in_grid to planner:"+(" (empty)" if len(existing_blocks) < 1 else "\n'"+existing_blocks+"'"))
+            print("DialogueManager::blocks_in_grid to planner:", existing_blocks)
 
             # produce a plan
             try:
-                response =  planner_utils.getPlans(self.last_parse)
+                response =  planner_utils.getPlans(human_input=self.last_parse, existing_blocks=existing_blocks)
             except Exception:
                 print("DialogueManager::planner exception occurred")
                 traceback.print_exc(file=sys.stdout)
@@ -438,7 +449,7 @@ class DialogueManager:
 
                 # execute the plan and return to the default starting location
                 execute_status, last_pitch, last_yaw = self.execute_plan(pitch, yaw, all_observations)
-                updated_pitch, updated_yaw = self.update_blocks_in_grid(all_observations)
+                updated_pitch, updated_yaw, _ = self.update_blocks_in_grid(all_observations)
                 last_pitch = updated_pitch if updated_pitch is not None else last_pitch
                 last_yaw = updated_yaw if updated_yaw is not None else last_yaw
                 print("DialogueManager::execute_plan returned with status:", execute_status)
@@ -701,7 +712,8 @@ def initialize_agents(args):
     return agent_hosts, client_pool
 
 def init_parser():
-    return DummyParser()
+    return RuleBasedParser()
+    # return DummyParser()
 
 def cwc_run_mission(args):
     print("Calling cwc_run_builder_demo with args:", args, "\n")
@@ -905,7 +917,7 @@ def find_teleport_location(blocks_in_grid, x, y, z, action):
         yaw = yaw_dirs.get(direction, 0)
 
         # return the default pitch/yaw values if the the block can be placed feasibly with the default view
-        if action == 'pickup' or (direction == "bottom" and not location_is_empty(blocks_in_grid, x, y+1, z)) or ("_" not in direction and not location_is_empty(blocks_in_grid, x, y-1, z)):
+        if action == 'remove' or (direction == "bottom" and not location_is_empty(blocks_in_grid, x, y+1, z)) or ("_" not in direction and not location_is_empty(blocks_in_grid, x, y-1, z)):
             if verbose: 
                 print("find_teleport_location::", px, py, pz, direction, "with default view is eligible!")
             return px+0.5, py, pz+0.5, pitch, yaw
@@ -1008,7 +1020,7 @@ def get_executed_plan_result(blocks_in_grid, plan):
             continue
 
         if net_actions[color] != 0:
-            plan_result.append(("putdown" if net_actions[color] == 1 else "pickup", block_id, x, y, z, color))
+            plan_result.append(("putdown" if net_actions[color] == 1 else "remove", block_id, x, y, z, color))
 
     return plan_result
 

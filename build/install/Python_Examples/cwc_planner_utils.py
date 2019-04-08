@@ -55,7 +55,11 @@ class Response(object):
                 else:
                     action, block_id, x, y, z, color = instruction.strip().split()
 
-                instruction = [action, block_id, float(x)+x_min_build, float(y)+y_min_build, float(z)+z_min_build, color]
+                x, y, z = float(x)+x_min_build, float(y)+y_min_build, float(z)+z_min_build
+                if x > x_max_build or x < x_min_build or y > y_max_build or y < y_min_build or z > z_max_build or z < z_min_build:
+                    self.responseFlag = "FAILURE"
+                    
+                instruction = [action, block_id, x, y, z, color]
                 instruction_list.append(instruction)
 
             self.plan = instruction_list
@@ -209,9 +213,7 @@ if __name__ == '__main__':
     getPlans(human_input="rectangle(a) ^ height(a, 2) ^ length(a,4)")
 
     print("3D Planning problem")
-    getPlans(human_input="tower(a)^height(a,4)^square(b)^size(b,2)^right(b,a)"
-             + "^ block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)"
-             + " ^location(w2)^block-location(d,w2)^bottom_left_front(a,d)^spatial-rel(top,0,w1,w2)")
+    getPlans(human_input="tower(a)^height(a,4)^square(b)^size(b,2)^right(b,a)^block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^bottom_left_front(a,d)^spatial-rel(top,0,w1,w2)")
 
     print("3D Planning problem missing multiple dimensions")
     getPlans(human_input="tower(a)^square(b)^right(b,a)^ block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^bottom_left_front(a,d)^spatial-rel(top,0,w1,w2)")
@@ -226,7 +228,7 @@ if __name__ == '__main__':
     print("checking incremental plan")
 
     getPlans(
-        human_input="tower(a)^height(a,4)^rectangle(b)^width(b,3)^length(b,5)^right(b,a)^block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^bottom_left_front(a,d)^spatial-rel(top,0,w1,w2)",
+        human_input="tower(a)^height(a,4)^color(a,orange)^rectangle(b)^width(b,3)^length(b,5)^color(b,purple)^right(b,a)^block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^bottom_left_front(a,d)^spatial-rel(top,0,w1,w2)",
         existing_blocks="(b5,0,0,0,purple)^(b1,0,1,0,orange)^(b2,0,2,0,orange)^(b3,0,3,0,orange)^(b4,0,4,0,orange)^(b1000,1,0,1,green)")
 
     print("checking new logical form right_behind")
