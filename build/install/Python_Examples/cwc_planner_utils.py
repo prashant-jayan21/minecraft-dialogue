@@ -107,6 +107,7 @@ def convert_response(output):
         return None
 
     planner_output = output[-6:]
+    flag = "FAILURE"
     contents = {"Missing": [], "Other": [], "Plan": [], "Constraints": []}
     print("convert_response::", planner_output)
 
