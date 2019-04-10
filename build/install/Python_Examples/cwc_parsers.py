@@ -1,6 +1,6 @@
 from __future__ import print_function
 import re, string
-
+# UPDATE ME
 ordinal_map = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6, "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10}
 primitives_map = {"shape": ["row", "column", "tower", "square", "it"],                         # FIXME: is just "it" dangerous for regex split?
                            "color": ["red", "blue", "green", "purple", "orange", "yellow"],
