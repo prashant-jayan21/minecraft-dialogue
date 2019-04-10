@@ -18,7 +18,7 @@ SHOW_COMMANDS = False
 N_SHAPES = 0
 ATTEMPT_LIMIT = 3
 write_logfiles = False
-verbose = True
+verbose = False
 
 # map of colors to corresponding hotbar IDs
 color_map = {
@@ -165,7 +165,8 @@ class State(Enum):
     FAILURE = 12                     # failure
 
 retry_responses = {State.PARSE_DESCRIPTION: ["Sorry, I had trouble understanding that. Could you explain it differently?", "Sorry, I don't understand. Can you try again?", "Sorry, I'm having trouble understanding. Could you reword that?"],
-                   State.PLAN: ["Sorry, I'm not able to do that. Could we try again?", "Sorry, I'm not able to build that. Could you reword that?", "Sorry, something went wrong. Could you explain it differently?"]}
+                   State.PLAN: ["Sorry, I'm not able to do that. Could we try again?", "Sorry, I'm not able to build that. Could you reword that?", "Sorry, something went wrong. Could you explain it differently?"],
+                   State.PARSE_CLARIFICATION: ["Sorry, I had trouble understanding that.", "Sorry, I don't understand.", "Sorry, I'm having trouble understanding."]}
 
 class DialogueState:
     def __init__(self, state, input=None, output=None, parse=None, response=None, execute_status=None, blocks_in_grid={}):
@@ -205,6 +206,7 @@ class DialogueManager:
         self.parser = self.init_parser()
         self.last_input = None
         self.last_parse = None                # last (successful) semantic parse
+        self.last_parse_by_parts = None
         self.current_shapes = []
         self.built_shapes = []
         self.successfully_parsed_inputs = []  # list of successfully parsed inputs; a join of all elements should be fed to parser for every call for incremental parsing
@@ -212,7 +214,6 @@ class DialogueManager:
         # planner
         self.plans = []                    # list of outputs produced by planner
         self.last_planner_response = None  # last (successful) plan
-        self.incremental_goal = []         # ? tbd, probably used in tandem with successfully_parsed_inputs
         self.block_id_map = {}             # dict of blocks in grid to their unique ID identifiers
         self.newest_block_id = 1000        # counter for new block IDs that might need to be assigned
         self.blocks_in_grid = None         # dict of existing blocks in grid
@@ -248,7 +249,9 @@ class DialogueManager:
 
         plan_list = self.last_planner_response.plan if not verify else get_executed_plan_result(self.blocks_in_grid, self.last_planner_response.plan)
         last_pitch, last_yaw = pitch, yaw
-        print("\nexecute_plan::"+("executing" if not verify else "verifying"), "the plan:", self.last_planner_response.plan)
+
+        if verbose:
+            print("\nexecute_plan::"+("executing" if not verify else "verifying"), "the plan:", self.last_planner_response.plan)
 
         # execute the plan
         for (action, block_id, x, y, z, color) in plan_list:
@@ -402,7 +405,7 @@ class DialogueManager:
 
         # State: parse a provided description
         if self.next_state == State.PARSE_DESCRIPTION:
-            parse, current_shapes = self.parser.parse(text)
+            parse, current_shapes, parse_by_parts = self.parser.parse(text)
             ds = DialogueState(State.PARSE_DESCRIPTION, input=text, parse=parse, blocks_in_grid=self.blocks_in_grid)
             self.attempts["description"] += 1
             self.attempts["verification"] = 0
@@ -416,6 +419,7 @@ class DialogueManager:
 
             self.last_input = text
             self.last_parse = parse
+            self.last_parse_by_parts = parse_by_parts
             self.current_shapes = current_shapes
             self.append_to_history(ds, all_observations)
             self.next_state = State.PLAN
@@ -482,7 +486,6 @@ class DialogueManager:
 
                     self.attempts["description"] = 0
                     self.append_to_history(ds, all_observations)
-                    self.successfully_parsed_inputs.append(text)
                     self.built_shapes.extend(self.current_shapes)
                     self.successfully_parsed_inputs.append(self.last_input)
                     self.current_shapes = []
@@ -552,29 +555,33 @@ class DialogueManager:
         if self.next_state == State.PARSE_CLARIFICATION:
             ds = DialogueState(State.PARSE_CLARIFICATION, input=text, blocks_in_grid=self.blocks_in_grid)
             missing_queries, _ = self.clarification_questions[0]
-            self.next_state = State.REQUEST_CLARIFICATION
             
             augmentation, unhandled_queries = get_augmentation(text, missing_queries)
-            print("DialogueManager::generated augmentation:", augmentation)
-            augmented_text = augment_text(text, missing_queries, augmentation)
+            print("\nDialogueManager::generated augmentation:", augmentation)
+            augmented_text = augment_text(self.last_input, missing_queries, augmentation, self.last_parse_by_parts)
+            print("DialogueManager::final augmented input:", augmented_text)
 
             if augmented_text is not None:
                 self.clarification_questions.pop(0)
                 self.attempts["clarification"] = 0
-                self.append_to_history(ds)
+                self.append_to_history(ds, all_observations)
 
-                if len(unhandled_queries) > 0:
-                    remaining_questions = generate_clarification_questions(unhandled_queries, self.current_shapes, self.built_shapes)
-                    self.clarification_questions = remaining_questions.extend(self.clarification_questions)
+                # if len(unhandled_queries) > 0:
+                #     remaining_questions = generate_clarification_questions(unhandled_queries, self.current_shapes, self.built_shapes)
+                #     self.clarification_questions = remaining_questions.extend(self.clarification_questions)
 
-                if len(self.clarification_questions) < 1:
-                    self.next_state = State.PARSE_DESCRIPTION
-                    self.parse(all_observations, augmented_text, pitch, yaw)
-                    return
-
-                self.parse(all_observations, "", pitch, yaw)
+                # if len(self.clarification_questions) < 1:
+                self.next_state = State.PARSE_DESCRIPTION
+                self.parse(all_observations, augmented_text, pitch, yaw)
                 return
+
+                # self.parse(all_observations, "", pitch, yaw)
+                # return
             
+            self.check_for_failure(ds)
+            self.append_to_history(ds, all_observations)
+            self.next_state = State.REQUEST_CLARIFICATION
+            self.send_chat()
             return
 
         # State: system failure
@@ -1090,7 +1097,7 @@ def get_ordinal(shape, var, current_shapes):
         if shape == existing_shape:
             total += 1
         if existing_shape_var == var:
-            ordinal = total
+            ordinal = total-1
     return "" if total == 1 else random.choice(ordinal_strs[ordinal])+" "
 
 def get_previous_referent(var, current_shapes):
@@ -1122,21 +1129,24 @@ def is_number(token):
 
 def get_dim_labels(response, queries, dim_values):
     if len(queries) == 1 and len(dim_values) == 1:
-        return {dim: dim_values[0]}
+        return {queries[0][3]: dim_values[0]}
 
     dim_labels = {}
     value_idx = 0
     unassigned_values, unassigned_labels = [], []
 
     # "%x x %y x %z" and "%x by %y by %z" means width = %x, length = %y, height = %z
+    i = 0
     tokens = response.lower().split()
-    for i in range(len(tokens)):
+    while i < len(tokens):
         if i < len(dim_values)-1 and is_number(tokens[i]) and any(tokens[i+1] == substr for substr in ['x', 'by']) and value_idx < len(dim_values):
+            increment_idx = 0
             if dim_labels.get('width') is not None:
                 print("get_dim_labels::Warning: duplicate width values")
 
             dim_labels['width'] = dim_values[value_idx]
             value_idx += 1
+            increment_idx += 1
 
             if value_idx < len(dim_values):
                 if dim_labels.get('length') is not None:
@@ -1144,12 +1154,16 @@ def get_dim_labels(response, queries, dim_values):
 
                 dim_labels['length'] = dim_values[value_idx]
                 value_idx += 1
+                increment_idx += 2
 
             if i < len(tokens)-4 and value_idx < len(dim_values):
                 if is_number(tokens[i+2]) and any(tokens[i+3] == substr for substr in ['x', 'by']):
                     if dim_labels.get('height') is not None:
                         print("get_dim_labels::Warning: duplicate height values")
                     dim_labels['height'] = dim_values[value_idx]
+                    increment_idx += 2
+
+            i += increment_idx
 
         elif is_number(tokens[i]):
             if len(unassigned_labels) > 0:
@@ -1170,11 +1184,13 @@ def get_dim_labels(response, queries, dim_values):
                     else:
                         unassigned_labels.append(key)
 
+        i += 1
+
     for key in ['width', 'length', 'height']:
         if key not in dim_labels and len(unassigned_values) > 0:
             dim_labels[key] = unassigned_values.pop(0)
 
-    print(dim_labels)
+    print("get_dim_labels::parsed the following dimensions:", dim_labels)
     return dim_labels
 
 def get_dim_value_map(response, queries):
@@ -1195,12 +1211,13 @@ def generate_clarification_questions(missing, current_shapes, built_shapes):
             missing_shape_dims[(var, shape)].append(missing_query)
 
         else:
-            prefix = random.choice(["Can you describe ", "Could you tell me ", "Can you explain "])
+            prefix = random.choice(["can you describe ", "could you tell me ", "can you tell me "])
             _, shape, var = missing_query
             shape_ordinal = get_ordinal(shape, var, current_shapes) 
             referent_shape, referent_var = get_previous_referent(var, current_shapes)
-            suffix = " that you just built?" if shape_is_built(built_shapes, referent_var) else " that you are building?"
-            missing_rel_questions.append(([missing_query], str(prefix+"how any one block in the "+shape_ordinal+shape+" aligns with blocks in the "+referent_shape+suffix)))
+            suffix = " that you just built" if shape_is_built(built_shapes, referent_var) else " that you are building"
+            optional_suffix = "other " if shape == referent_shape else ""
+            missing_rel_questions.append(([missing_query], str("In more detail, "+prefix+"where the "+shape_ordinal+shape+" is placed with respect to the "+optional_suffix+referent_shape+suffix+", and how their blocks align?")))
 
     for key, missing_queries in missing_shape_dims.items():
         var, shape = key
@@ -1209,17 +1226,19 @@ def generate_clarification_questions(missing, current_shapes, built_shapes):
 
         if (shape == 'rectangle' and len(missing_queries) == 2) or (shape == 'cuboid' and len(missing_queries) == 3):
             if prefix.startswith("What"):
-                prefix = prefix.replace("is", "are").replace("'s", "'re")
+                prefix = prefix.replace("is", "are").replace("'s", " are")
             clarification_questions.append((missing_queries, str(prefix+"the dimensions of the "+shape_ordinal+shape+"?")))
         else:
             for missing_query in missing_queries:
-                clarification_questions.append([missing_query], str(prefix+"the "+dim+" of the "+shape_ordinal+shape+"?"))
+                clarification_questions.append(([missing_query], str(prefix+"the "+dim+" of the "+shape_ordinal+shape+"?")))
 
     clarification_questions.extend(missing_rel_questions)
     return clarification_questions
 
 def get_augmentation(text, queries):
     if 'Not-Connected' in queries[0]:
+        if text.strip().endswith('.'):
+            text = text.strip()[:-1]
         return text, []
 
     _, shape, var, _ = queries[0]
@@ -1236,7 +1255,7 @@ def get_augmentation(text, queries):
         if (dim_value_map.get('width') is None and dim_value_map.get('length') is None) or dim_value_map['width'] != dim_value_map['length']:
             print("get_augmentation::Error: cannot parse square dimensions from text:", text)
             return None, []
-        return "of size "+str(dim_value_map.get('width', dim_value_map['length']))
+        return "of size "+str(dim_value_map.get('width', dim_value_map['length'])), []
 
     # other shape parameter descriptions
     missing_str = ""
@@ -1255,16 +1274,35 @@ def get_augmentation(text, queries):
 
     return "of "+missing_str[:-5], unhandled_queries
 
-def augment_text(text, queries, augmentation):
+def augment_text(text, queries, augmentation, parse_by_parts):
+    augmentation = augmentation.strip()
+    print("augment_text::augmenting:", text, "with augmentation:", augmentation)
+
     if augmentation is None:
         return None
 
-    if 'Not-Connected' in queries[0]:
-        _, shape, var = query
-    else:
-        _, shape, var, dim = query
+    split_text = [instr.strip() for instr in re.split(r'(\.| such that)', text.lower())]
+    modified_input = ""
+    parse_idx = 0
 
-    split_text = [instr.strip() for instr in re.split(r'(\.| such that)', text.lower()) if len(instr.strip()) > 0]
+    if 'Not-Connected' in queries[0]:
+        if text.strip().endswith('.'):
+            text = text.strip()[:-1].strip()
+
+        modified_input = text+" such that "+augmentation+"."
+    else:
+        _, shape, var, dim = queries[0]
+
+        for fragment in split_text:
+            modified_input += (' ' if fragment != '.' else '')+fragment
+
+            if fragment == 'such that' or fragment == '.':
+                parse_idx += 1
+
+            if parse_idx < len(parse_by_parts) and shape+'('+var+')' in parse_by_parts[parse_idx]:
+                modified_input += " "+augmentation
+
+    return modified_input
 
 def teleportMovement(ah, teleport_x=None, teleport_y=None, teleport_z=None):
     """ Teleports the agent to a specific (x,y,z) location in the map. """

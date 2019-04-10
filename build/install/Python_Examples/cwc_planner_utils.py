@@ -110,10 +110,11 @@ def convert_response(output):
     if len(output) < 5:
         print("convert_response::Error: not enough information from the planner")
         return None
+    
     planner_output = output[-6:]
     flag = "FAILURE"
     contents = {"Missing": [], "Other": [], "Plan": [], "Constraints": []}
-    print("convert_response::", planner_output)
+    print("\nconvert_response::planner output received:", planner_output)
 
     for line in planner_output:
         if len(line) == 0:

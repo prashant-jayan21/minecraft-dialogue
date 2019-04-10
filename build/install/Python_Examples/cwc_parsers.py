@@ -9,7 +9,7 @@ primitives_map = {"shape": ["row", "column", "tower", "square", "it"],          
 dims = {"row": "width", "tower": "height", "column": "length", "square": "size"}
 ordinals = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth",
             "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th"]
-location_predicates = ["top-left-corner", "top-right-corner", "bottom-left-corner", "bottom-right-corner"]
+location_predicates = ["top-left-corner", "top-right-corner", "bottom-left-corner", "bottom-right-corner", "top-right-behind", "top-right-front", "top-left-behind", "top-left-front", "bottom-right-behind", "bottom-right-front", "bottom-left-behind", "bottom-left-front"]
 
 class DummyParser:
     """ Dummy parser that provides a hard-coded logical form as output parse, or passes through the input text directly to the planner.  """
@@ -38,7 +38,7 @@ class RuleBasedParser:
         """ Parses an utterance by splitting it into chunks separated by periods or the "such as" tokens and processing them linearly. """
         # allow for manually entering logical forms
         if '^' in instruction or '(' in instruction:  # FIXME: disable for demo?
-            return instruction, find_shapes(instruction)
+            return instruction, find_shapes(instruction), instruction
 
         self.reset()
 
@@ -47,7 +47,7 @@ class RuleBasedParser:
         print("parse::parsing instructions:", instructions, "\n")
 
         # parse the utterances
-        logical_form = ""
+        logical_form = []
         for instr in instructions:
             to_add = None
 
@@ -68,13 +68,13 @@ class RuleBasedParser:
             # exit if errors occur
             if to_add is None:
                 print("parse::Parsing error occurred!")
-                return None, None
+                return None, None, None
 
-            logical_form += to_add+"^"
+            logical_form.append(to_add)
             print("parse::current_shapes:", self.current_shapes, "\n")
 
-        print("\nparse::parse result:", logical_form[:-1])
-        return logical_form[:-1], self.current_shapes
+        print("\nparse::parse result:", "^".join(logical_form))
+        return "^".join(logical_form), self.current_shapes, logical_form
 
     def parse_isolated_shape(self, instruction): 
         """ Parses an instruction that defines a shape in isolation. """
