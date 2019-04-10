@@ -5,7 +5,7 @@ from cwc_mission_utils import x_min_build, x_max_build, y_min_build, y_max_build
 
 
 class Response(object):
-    """Response classs.
+    """Response class.
 
     Args:
         responseFlag: the Flag names. Currently we are using following flags:
@@ -21,9 +21,7 @@ class Response(object):
 
     """
 
-    def __init__(self, responseFlag, missing=None, other=None,
-                 plan=None, constraints=None):
-
+    def __init__(self, responseFlag, missing=None, other=None, plan=None, constraints=None):
         self.responseFlag = responseFlag
         self.missing = list()
         self.other = list()
@@ -48,27 +46,21 @@ class Response(object):
 
             for item in plan:
                 instruction = item.replace("[", "").replace("]", "")
-                instruction = instruction.replace(
-                    ",", "").replace(
-                    "(", "").replace(
-                    ")", "")
+                instruction = instruction.replace(",", "").replace("(", "").replace(")", "")
                 action = "putdown"
 
-                if "stack" in instruction.strip():
+                if any(substring in instruction.strip() for substring in ["stack", "unstack"]): 
                     _, block_id, reference_block_id, x, y, z, color = instruction.strip().split()
+                    if "unstack" in instruction.strip():
+                        action = "remove"
                 else:
                     action, block_id, x, y, z, color = instruction.strip().split()
 
-                instruction = [
-                    action,
-                    block_id,
-                    float(x) +
-                    x_min_build,
-                    float(y) +
-                    y_min_build,
-                    float(z) +
-                    z_min_build,
-                    color]
+                x, y, z = float(x)+x_min_build, float(y)+y_min_build, float(z)+z_min_build
+                if x > x_max_build or x < x_min_build or y > y_max_build or y < y_min_build or z > z_max_build or z < z_min_build:
+                    self.responseFlag = "FAILURE"
+                    
+                instruction = [action, block_id, x, y, z, color]
                 instruction_list.append(instruction)
 
             self.plan = instruction_list
@@ -101,9 +93,7 @@ class Response(object):
         return return_str
 
     def as_json(self):
-        return {"Flag": self.responseFlag,
-                "Plan": self.plan, "Missing": self.missing}
-
+        return {"Flag": self.responseFlag, "Plan": self.plan, "Missing": self.missing}
 
 def convert_response(output):
     """
@@ -121,17 +111,21 @@ def convert_response(output):
         print("convert_response::Error: not enough information from the planner")
         return None
     planner_output = output[-6:]
+    flag = "FAILURE"
     contents = {"Missing": [], "Other": [], "Plan": [], "Constraints": []}
-    # print("convert_response::", planner_output)
+    print("convert_response::", planner_output)
 
     for line in planner_output:
         if len(line) == 0:
             continue
 
         splitted_line = line.strip().split(": ")
+        if len(splitted_line) < 2:
+            print("convert_response::Error: unexpected planner output", line)
+            continue
+
         if "[" in splitted_line[1]:
-            splitted_line[1] = splitted_line[
-                1].replace("[", "").replace("]", "")
+            splitted_line[1] = splitted_line[1].replace("[", "").replace("]", "")
 
         res = splitted_line[1].split(",") if len(splitted_line[1]) > 0 else []
         key = splitted_line[0].strip()
@@ -145,12 +139,7 @@ def convert_response(output):
 
     # print("##parsed outputs##")
     # print(flag, missing, other, plan, constraints)
-    response = Response(
-        flag,
-        contents["Missing"],
-        contents["Other"],
-        contents["Plan"],
-        contents["Constraints"])
+    response = Response(flag, contents["Missing"], contents["Other"], contents["Plan"], contents["Constraints"])
     # print(response)
     # print(response.responseFlag)
     # response.add_constraints('hellow')
@@ -201,49 +190,15 @@ def getPlans(human_input="row(a) ^ width(a,5)", existing_blocks=None):
         till now nothing
 
     """
-    # print("get plans")
-    # args = ["planner/uct_44.jar"]
+
+    args = ["jshop2-master.jar", human_input]
     if existing_blocks is not None:
-        args = ["jshop2-master.jar", human_input, existing_blocks]
-    else:
-        args = ["jshop2-master.jar", human_input]
+        args.append(existing_blocks)
     result = jarWrapper(*args)
 
     # print(result)
     response = convert_response(result)
-    print(response.responseFlag)
-    # TODO:
-    if "COMPLETED" not in response.responseFlag:
-        return
-    instruction_list = list()
-    print(response.plan)
-    for item in response.plan:
-        if len(item) == 0:
-            continue
-        # instruction = item.replace("[", "").replace("]", "")
-        # instruction = instruction.replace(
-            # ",", "").replace("(", "").replace(")", "")
-        instruction_list.append(item)
-    # print(instruction_list)
-    # n_instr = len(instruction_list)
-    command_list = list()
-    x_l = list()
-    y_l = list()
-    z_l = list()
-    for item in instruction_list:
-        print("current item ", item)
-        # splitted_item = item.split(" ")
-        if "stack" in item:
-            action, block_id, reference_block_id, x, y, z, color = item
-        else:
-            action, block_id, x, y, z, color = item
-        x_l.append(int(float(x)))
-        y_l.append(int(float(y)))
-        # todo: Rakib when Mayukh is done with the 3D planner.
-        z_l.append(int(float(z)))
-
-    response = convert_response(result)
-    # print("getPlans::response received\n"+str(response))
+    print("getPlans::response received\n"+str(response))
     return response
 
 
@@ -258,9 +213,8 @@ if __name__ == '__main__':
     getPlans(human_input="rectangle(a) ^ height(a, 2) ^ length(a,4)")
 
     print("3D Planning problem")
-    getPlans(human_input="tower(a)^height(a,4)^square(b)^size(b,2)^right(b,a)"
-             + "^ block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)"
-             + " ^location(w2)^block-location(d,w2)^front_bottom_left(a,d)^spatial-rel(top,0,w1,w2)")
+    
+    getPlans(human_input="tower(a)^height(a,4)^square(b)^size(b,2)^right(b,a)^block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^front_bottom_left(a,d)^spatial-rel(top,0,w1,w2)")
 
     print("3D Planning problem missing multiple dimensions")
     getPlans(human_input="tower(a)^square(b)^right(b,a)^ block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^front_bottom_left(a,d)^spatial-rel(top,0,w1,w2)")
