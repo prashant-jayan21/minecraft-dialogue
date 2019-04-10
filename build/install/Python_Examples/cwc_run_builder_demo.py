@@ -17,7 +17,7 @@ import cwc_planner_utils as planner_utils
 SHOW_COMMANDS = False
 N_SHAPES = 0
 ATTEMPT_LIMIT = 3
-write_logfiles = False
+write_logfiles = True
 verbose = False
 
 # map of colors to corresponding hotbar IDs
@@ -167,6 +167,8 @@ class State(Enum):
 retry_responses = {State.PARSE_DESCRIPTION: ["Sorry, I had trouble understanding that. Could you explain it differently?", "Sorry, I don't understand. Can you try again?", "Sorry, I'm having trouble understanding. Could you reword that?"],
                    State.PLAN: ["Sorry, I'm not able to do that. Could we try again?", "Sorry, I'm not able to build that. Could you reword that?", "Sorry, something went wrong. Could you explain it differently?"],
                    State.PARSE_CLARIFICATION: ["Sorry, I had trouble understanding that.", "Sorry, I don't understand.", "Sorry, I'm having trouble understanding."]}
+
+failure_responses = ["Sorry about that. I can't recover from these types of failures yet.", "Sorry. I can't recover from this yet.", "I can't fix this right now. I hope to be able to in the future."]
 
 class DialogueState:
     def __init__(self, state, input=None, output=None, parse=None, response=None, execute_status=None, blocks_in_grid={}):
@@ -405,6 +407,11 @@ class DialogueManager:
 
         # State: parse a provided description
         if self.next_state == State.PARSE_DESCRIPTION:
+            if len(self.successfully_parsed_inputs) > 0:
+                if not self.successfully_parsed_inputs[-1].strip().endswith('.'):
+                    self.successfully_parsed_inputs[-1] = self.successfully_parsed_inputs[-1].strip()+'.'
+                text = self.successfully_parsed_inputs[-1]+" "+text
+
             parse, current_shapes, parse_by_parts = self.parser.parse(text)
             ds = DialogueState(State.PARSE_DESCRIPTION, input=text, parse=parse, blocks_in_grid=self.blocks_in_grid)
             self.attempts["description"] += 1
@@ -537,8 +544,9 @@ class DialogueManager:
                 return
 
             elif any(substring in text for substring in no_responses):
-                # TODO: IMPLEMENT ME: UNDOING THE PLAN
-                self.next_state = State.REQUEST_DESCRIPTION
+                self.attempts["description"] = 999
+                self.check_for_failure(ds)
+                self.append_to_history(ds, all_observations)
                 self.parse(all_observations, "", pitch, yaw)
                 return
 
@@ -555,40 +563,55 @@ class DialogueManager:
         if self.next_state == State.PARSE_CLARIFICATION:
             ds = DialogueState(State.PARSE_CLARIFICATION, input=text, blocks_in_grid=self.blocks_in_grid)
             missing_queries, _ = self.clarification_questions[0]
+            self.next_state = State.REQUEST_CLARIFICATION
             
             augmentation, unhandled_queries = get_augmentation(text, missing_queries)
             print("\nDialogueManager::generated augmentation:", augmentation)
             augmented_text = augment_text(self.last_input, missing_queries, augmentation, self.last_parse_by_parts)
             print("DialogueManager::final augmented input:", augmented_text)
 
+            # FIXME: when multiple missing information are populated, or parse fails, don't throw away what is being augmented...
             if augmented_text is not None:
-                self.clarification_questions.pop(0)
+                parse, current_shapes, parse_by_parts = self.parser.parse(augmented_text)
+                ds.parse = parse
+
+                if parse is None or len(parse) < 1:
+                    self.check_for_failure(ds)
+                    self.append_to_history(ds, all_observations)
+                    self.send_chat()
+                    return
+
                 self.attempts["clarification"] = 0
+                self.clarification_questions.pop(0)
+                self.last_input = augmented_text
+                self.last_parse = parse
+                self.last_parse_by_parts = parse_by_parts
+                self.current_shapes = current_shapes
                 self.append_to_history(ds, all_observations)
 
-                # if len(unhandled_queries) > 0:
-                #     remaining_questions = generate_clarification_questions(unhandled_queries, self.current_shapes, self.built_shapes)
-                #     self.clarification_questions = remaining_questions.extend(self.clarification_questions)
+                if len(unhandled_queries) > 0:
+                    remaining_questions = generate_clarification_questions(unhandled_queries, self.current_shapes, self.built_shapes)
+                    self.clarification_questions = remaining_questions.extend(self.clarification_questions)
 
-                # if len(self.clarification_questions) < 1:
-                self.next_state = State.PARSE_DESCRIPTION
-                self.parse(all_observations, augmented_text, pitch, yaw)
-                return
-
-                # self.parse(all_observations, "", pitch, yaw)
-                # return
+                if len(self.clarification_questions) < 1:
+                    self.next_state = State.PLAN
+                    self.parse(all_observations, "", pitch, yaw)
+                    return 
             
-            self.check_for_failure(ds)
+            if augmented_text is None:
+                self.check_for_failure(ds)
+
             self.append_to_history(ds, all_observations)
-            self.next_state = State.REQUEST_CLARIFICATION
             self.send_chat()
+            self.parse(all_observations, "", pitch, yaw)
             return
 
         # State: system failure
         if self.next_state == State.FAILURE:
-            self.system_text = "This session has failed unexpectedly. Please restart the mission and try again."
-            self.send_chat()
-            self.append_to_history(DialogueState(State.FAILURE, output=self.system_text, blocks_in_grid=self.blocks_in_grid), all_observations)
+            if self.dialogue_history[-1] != State.FAILURE:
+                self.system_text = "This session has failed unexpectedly. Please restart the mission and try again."
+                self.append_to_history(DialogueState(State.FAILURE, output=self.system_text, blocks_in_grid=self.blocks_in_grid), all_observations)
+                self.send_chat()
             return
 
     def goto_default_loc(self):
@@ -605,11 +628,16 @@ class DialogueManager:
 
     def check_for_failure(self, ds, append_text=False):
         """ Checks if the dialogue system has exceeded the number of attempts from the user; if so, puts the system in an endless failure state. """
-        self.system_text = random.choice(retry_responses[ds.state])
-        if self.attempts["description"] >= ATTEMPT_LIMIT or self.attempts["clarification"] >= ATTEMPT_LIMIT or self.attempts["verification"] >= ATTEMPT_LIMIT:
-            self.system_text = "Sorry, attempt limit exceeded. I'm giving up!"
-            ds.state = State.FAILURE
+        # critical failure
+        if any(self.attempts[key] >= 999 for key in self.attempts):
+            self.system_text = random.choice(failure_responses)
             self.next_state = State.FAILURE
+        else:
+            self.system_text = random.choice(retry_responses[ds.state])
+            if self.attempts["description"] >= ATTEMPT_LIMIT or self.attempts["clarification"] >= ATTEMPT_LIMIT or self.attempts["verification"] >= ATTEMPT_LIMIT:
+                self.system_text = "Sorry, attempt limit exceeded. I'm giving up!"
+                self.next_state = State.FAILURE
+
         ds.output = (ds.output+"\n"+self.system_text).strip() if append_text else self.system_text
 
     def print_state(self, state):

@@ -9,7 +9,7 @@ primitives_map = {"shape": ["row", "column", "tower", "square", "it"],          
 dims = {"row": "width", "tower": "height", "column": "length", "square": "size"}
 ordinals = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth",
             "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th"]
-location_predicates = ["top-left-corner", "top-right-corner", "bottom-left-corner", "bottom-right-corner", "top-right-behind", "top-right-front", "top-left-behind", "top-left-front", "bottom-right-behind", "bottom-right-front", "bottom-left-behind", "bottom-left-front"]
+location_predicates = ['top-behind-left', 'top-left-behind', 'behind-top-left', 'behind-left-top', 'left-behind-top', 'left-top-behind', 'top-behind-right', 'top-right-behind', 'behind-top-right', 'behind-right-top', 'right-behind-top', 'right-top-behind', 'top-front-left', 'top-left-front', 'front-top-left', 'front-left-top', 'left-front-top', 'left-top-front', 'top-front-right', 'top-right-front', 'front-top-right', 'front-right-top', 'right-front-top', 'right-top-front', 'bottom-behind-left', 'bottom-left-behind', 'behind-bottom-left', 'behind-left-bottom', 'left-behind-bottom', 'left-bottom-behind', 'bottom-behind-right', 'bottom-right-behind', 'behind-bottom-right', 'behind-right-bottom', 'right-behind-bottom', 'right-bottom-behind', 'bottom-front-left', 'bottom-left-front', 'front-bottom-left', 'front-left-bottom', 'left-front-bottom', 'left-bottom-front', 'bottom-front-right', 'bottom-right-front', 'front-bottom-right', 'front-right-bottom', 'right-front-bottom', 'right-bottom-front','behind-left', 'left-behind', 'behind-right', 'right-behind', 'front-left', 'left-front', 'front-right', 'right-front','left-end','right-end','front-end','behind-end','top-end','bottom-end']
 
 class DummyParser:
     """ Dummy parser that provides a hard-coded logical form as output parse, or passes through the input text directly to the planner.  """
@@ -170,12 +170,17 @@ class RuleBasedParser:
             block_locations.append((ordinals_split[1], shapes_split[1]))
 
         # find referent variables for the two mentioned shapes
-        referent_vars = [self.current_shapes[-1][1], self.current_shapes[-1][1]]
+        if len(self.current_shapes) < 2:
+            return None
+
+        referent_vars = [self.current_shapes[-1][1], self.current_shapes[-2][1]]
         for i in range(len(referent_vars)):
             ordinal, shape = block_locations[i]
-            for reference_shape, var in self.current_shapes:
+            for reference_shape, var in reversed(self.current_shapes):
                 if reference_shape == shape:
                     referent_vars[i] = var
+                    if i == 1 and var == referent_vars[0]:
+                        continue
                     break
 
         if referent_vars[0] == referent_vars[1]:
@@ -187,7 +192,7 @@ class RuleBasedParser:
         b2, id2 = self.allocate_block_var(ordinal=block_locations[1][0], var=referent_vars[1])
 
         # append the general spatial relation and return
-        logical_form = b1+"^"+b2+"^spatial-rel("+spatial_rel_primitive+",0,w"+str(id1)+",w"+str(id2)+")"
+        logical_form = b1+"^"+b2+"^spatial-rel("+spatial_rel_primitive+",0,w"+str(id2)+",w"+str(id1)+")"
         print("parse_fine_grained_spatial_rel::parsed instruction:", instruction, "->", logical_form)
         return logical_form
 
@@ -283,7 +288,7 @@ def find_shapes(instruction):
 if __name__ == '__main__':
     parser = RuleBasedParser()
     argparser = argparse.ArgumentParser()
-    argparser.add_argument('text', default="Build a red square of size 4 . Build a blue square of size 4 on top of it such that the top-right-corner block of the square is on top of the top-right-corner block of it")
+    argparser.add_argument('--text', default="build a row of width 3. build a tower of height 2 on top of it such that the bottom-end block of the tower is on top of the left-end block of the row")
     args = argparser.parse_args()
     lf = parser.parse(args.text)
     print(lf)
