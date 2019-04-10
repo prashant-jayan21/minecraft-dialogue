@@ -38,7 +38,8 @@ class Response(object):
             self.missing = missing_list
 
         if other is not None:
-            self.other = other
+            if len(other) > 0 and "," in other:
+                self.other = other.split(",")
 
         if plan is not None:
             instruction_list = list()
@@ -109,7 +110,6 @@ def convert_response(output):
     if len(output) < 5:
         print("convert_response::Error: not enough information from the planner")
         return None
-
     planner_output = output[-6:]
     flag = "FAILURE"
     contents = {"Missing": [], "Other": [], "Plan": [], "Constraints": []}
@@ -213,13 +213,14 @@ if __name__ == '__main__':
     getPlans(human_input="rectangle(a) ^ height(a, 2) ^ length(a,4)")
 
     print("3D Planning problem")
-    getPlans(human_input="tower(a)^height(a,4)^square(b)^size(b,2)^right(b,a)^block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^bottom_left_front(a,d)^spatial-rel(top,0,w1,w2)")
+    
+    getPlans(human_input="tower(a)^height(a,4)^square(b)^size(b,2)^right(b,a)^block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^front_bottom_left(a,d)^spatial-rel(top,0,w1,w2)")
 
     print("3D Planning problem missing multiple dimensions")
-    getPlans(human_input="tower(a)^square(b)^right(b,a)^ block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^bottom_left_front(a,d)^spatial-rel(top,0,w1,w2)")
+    getPlans(human_input="tower(a)^square(b)^right(b,a)^ block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^front_bottom_left(a,d)^spatial-rel(top,0,w1,w2)")
 
     print("***Building a tower***")
-    getPlans(human_input="tower(a)^height(a,4)^color(a,purple)^square(b)^size(b,2)^color(b,blue)^right(b,a)^block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^bottom_left_front(a,d)^spatial-rel(top,0,w1,w2)")
+    getPlans(human_input="tower(a)^height(a,4)^color(a,purple)^square(b)^size(b,2)^color(b,blue)^right(b,a)^block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^front_bottom_left(a,d)^spatial-rel(top,0,w1,w2)")
 
     print("***Building a cuboid***")
     getPlans(
@@ -228,7 +229,7 @@ if __name__ == '__main__':
     print("checking incremental plan")
 
     getPlans(
-        human_input="tower(a)^height(a,4)^color(a,orange)^rectangle(b)^width(b,3)^length(b,5)^color(b,purple)^right(b,a)^block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^bottom_left_front(a,d)^spatial-rel(top,0,w1,w2)",
+        human_input="tower(a)^height(a,4)^rectangle(b)^width(b,3)^length(b,5)^right(b,a)^block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^front_bottom_left(a,d)^spatial-rel(top,0,w1,w2)",
         existing_blocks="(b5,0,0,0,purple)^(b1,0,1,0,orange)^(b2,0,2,0,orange)^(b3,0,3,0,orange)^(b4,0,4,0,orange)^(b1000,1,0,1,green)")
 
     print("checking new logical form right_behind")
