@@ -12,13 +12,14 @@ put-on-table
 stack-on-block
 same
 empty
-11
+12
 assert-goals
 find-nomove
 add-new-goals
 assign-clear
 find-movable
 move-block
+sanity-check
 achieve-goals
 check
 check2
