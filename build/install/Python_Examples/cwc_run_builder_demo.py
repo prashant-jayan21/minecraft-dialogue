@@ -4,10 +4,10 @@
 
 from __future__ import print_function
 from enum import Enum
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from cwc_mission_utils import x_min_build, x_max_build, y_min_build, y_max_build, z_min_build, z_max_build
 from cwc_parsers import DummyParser, RuleBasedParser
-import os, sys, time, json, datetime, copy, random, traceback, MalmoPython, numpy as np
+import os, sys, time, json, string, re, datetime, copy, random, traceback, MalmoPython, numpy as np
 import cwc_mission_utils as mission_utils
 import cwc_debug_utils as debug_utils
 import cwc_io_utils as io_utils
@@ -17,8 +17,8 @@ import cwc_planner_utils as planner_utils
 SHOW_COMMANDS = False
 N_SHAPES = 0
 ATTEMPT_LIMIT = 3
-write_logfiles = False
-verbose = True
+write_logfiles = True
+verbose = False
 
 # map of colors to corresponding hotbar IDs
 color_map = {
@@ -143,6 +143,12 @@ view_deltas = {
 yes_responses = ["yes", "yeah", "good", "ok", "great"]
 no_responses = ["no", "nope", "sorry", "wrong", "incorrect"]
 
+ordinal_strs = {0: ['1st', 'first'], 1: ['2nd', 'second'], 2: ['3rd', 'third'], 3: ['4th', 'fourth'], 4: ['5th', 'fifth'], 5: ['6th', 'sixth'], 
+                6: ['7th', 'seventh'], 7: ['8th', 'eighth'], 8: ['9th', 'ninth'], 9: ['10th', 'tenth']}
+
+number_strs = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten']
+dim_label_map = {'width': ['width', 'wide'], 'length': ['length', 'long'], 'height': ['height', 'high', 'tall']}
+
 class State(Enum):
     START = 0                        # start state
     REQUEST_DESCRIPTION = 1          # request a description
@@ -157,6 +163,12 @@ class State(Enum):
     ADD_NEW_SHAPE_PARAMETER = 10     # add parameter to new shape definition
     FINISHED = 11                    # finished
     FAILURE = 12                     # failure
+
+retry_responses = {State.PARSE_DESCRIPTION: ["Sorry, I had trouble understanding that. Could you explain it differently?", "Sorry, I don't understand. Can you try again?", "Sorry, I'm having trouble understanding. Could you reword that?"],
+                   State.PLAN: ["Sorry, I'm not able to do that. Could we try again?", "Sorry, I'm not able to build that. Could you reword that?", "Sorry, something went wrong. Could you explain it differently?"],
+                   State.PARSE_CLARIFICATION: ["Sorry, I had trouble understanding that.", "Sorry, I don't understand.", "Sorry, I'm having trouble understanding."]}
+
+failure_responses = ["Sorry about that. I can't recover from these types of failures yet.", "Sorry. I can't recover from this yet.", "I can't fix this right now. I hope to be able to in the future."]
 
 class DialogueState:
     def __init__(self, state, input=None, output=None, parse=None, response=None, execute_status=None, blocks_in_grid={}):
@@ -193,26 +205,33 @@ class DialogueManager:
         self.agent_host = ah
 
         # semantic parser
-        self.parser = init_parser()
+        self.parser = self.init_parser()
+        self.last_input = None
         self.last_parse = None                # last (successful) semantic parse
+        self.last_parse_by_parts = None
+        self.current_shapes = []
+        self.built_shapes = []
         self.successfully_parsed_inputs = []  # list of successfully parsed inputs; a join of all elements should be fed to parser for every call for incremental parsing
 
         # planner
         self.plans = []                    # list of outputs produced by planner
         self.last_planner_response = None  # last (successful) plan
-        self.incremental_goal = []         # ? tbd, probably used in tandem with successfully_parsed_inputs
-        self.blocks_in_grid = None         # dict of existing blocks in grid
         self.block_id_map = {}             # dict of blocks in grid to their unique ID identifiers
         self.newest_block_id = 1000        # counter for new block IDs that might need to be assigned
+        self.blocks_in_grid = None         # dict of existing blocks in grid
 
         # dialogue manager
         self.next_state = State.START                                               # next dialogue state
         self.dialogue_history = [DialogueState(State.START)]                        # history of dialogue states
         self.attempts = {"description": 0, "verification": 0, "clarification": 0}   # counter of attempt types
         self.system_text = ""                                                       # system text to be pushed to chat
+        self.clarification_questions = []
 
         # begin a dialogue
         self.parse(all_observations, "")
+
+    def init_parser(self):
+        return RuleBasedParser()
 
     def send_chat(self):
         """ Pushes the system text to the Minecraft chat interface. """
@@ -232,7 +251,9 @@ class DialogueManager:
 
         plan_list = self.last_planner_response.plan if not verify else get_executed_plan_result(self.blocks_in_grid, self.last_planner_response.plan)
         last_pitch, last_yaw = pitch, yaw
-        print("\nexecute_plan::"+("executing" if not verify else "verifying"), "the plan:", self.last_planner_response.plan)
+
+        if verbose:
+            print("\nexecute_plan::"+("executing" if not verify else "verifying"), "the plan:", self.last_planner_response.plan)
 
         # execute the plan
         for (action, block_id, x, y, z, color) in plan_list:
@@ -370,6 +391,8 @@ class DialogueManager:
             self.system_text = random.choice(["Okay, what's next?", "Okay, now what?", "What are we doing next?"])
             self.append_to_history(DialogueState(State.REQUEST_DESCRIPTION, output=self.system_text, blocks_in_grid=self.blocks_in_grid), all_observations)
             self.next_state = State.PARSE_DESCRIPTION
+            self.last_input = None
+            self.last_parse = None
             self.send_chat()
             return
 
@@ -378,38 +401,40 @@ class DialogueManager:
             self.system_text = random.choice(["Hi Architect, what are we building today?", "I'm ready! What are we building?", "Hello! What are we building?", "Hello Architect, I'm ready!"])
             self.append_to_history(DialogueState(State.START, output=self.system_text, blocks_in_grid=self.blocks_in_grid), all_observations)
             self.next_state = State.PARSE_DESCRIPTION
-            self.send_chat()
             self.goto_default_loc()
+            self.send_chat()
             return
 
         # State: parse a provided description
         if self.next_state == State.PARSE_DESCRIPTION:
-            parse = self.parser.parse(text)
+            if len(self.successfully_parsed_inputs) > 0:
+                if not self.successfully_parsed_inputs[-1].strip().endswith('.'):
+                    self.successfully_parsed_inputs[-1] = self.successfully_parsed_inputs[-1].strip()+'.'
+                text = self.successfully_parsed_inputs[-1]+" "+text
+
+            parse, current_shapes, parse_by_parts = self.parser.parse(text)
             ds = DialogueState(State.PARSE_DESCRIPTION, input=text, parse=parse, blocks_in_grid=self.blocks_in_grid)
             self.attempts["description"] += 1
             self.attempts["verification"] = 0
 
-            # TODO: verify well-formedness of semantic parse
+            # TODO: verify well-formedness of semantic parse ?
             if parse is None or len(parse) < 1:
-                self.system_text = random.choice(["Sorry, I had trouble understanding that. Could you explain it differently?", "Sorry, I don't understand. Can you try again?", "Sorry, I'm having trouble understanding. Could you reword that?"])
                 self.check_for_failure(ds)
-                self.send_chat()
-                ds.output = self.system_text
                 self.append_to_history(ds, all_observations)
+                self.send_chat()
                 return
 
+            self.last_input = text
             self.last_parse = parse
+            self.last_parse_by_parts = parse_by_parts
+            self.current_shapes = current_shapes
             self.append_to_history(ds, all_observations)
             self.next_state = State.PLAN
 
         # State: produce and execute a plan
         if self.next_state == State.PLAN:
             self.system_text = random.choice(["Okay.", "", "Let me try."])
-            if len(self.system_text) > 0:
-                self.send_chat()
-
-            ds = DialogueState(State.PLAN, output=self.system_text, blocks_in_grid=self.blocks_in_grid)
-
+            ds = DialogueState(State.PLAN, blocks_in_grid=self.blocks_in_grid)
             existing_blocks = self.get_blocks_in_grid_repr()
 
             print("DialogueManager::semantic parse to planner:", self.last_parse)
@@ -422,12 +447,10 @@ class DialogueManager:
                 print("DialogueManager::planner exception occurred")
                 traceback.print_exc(file=sys.stdout)
                 self.last_planner_response = None
-                self.next_state = State.PARSE_DESCRIPTION
-                self.system_text = random.choice(["Sorry, I'm not able to do that. Could we try again?", "Sorry, I'm not able to build that. Could you reword that?", "Sorry, something went wrong. Could you explain it differently?"])
                 self.check_for_failure(ds)
-                self.send_chat()
-                ds.output = (ds.output+"\n"+self.system_text).strip()
                 self.append_to_history(ds, all_observations)
+                self.next_state = State.PARSE_DESCRIPTION
+                self.send_chat()
                 return
 
             ds.planner_response = response
@@ -436,16 +459,18 @@ class DialogueManager:
             if response.responseFlag == 'COMPLETED':
                 if len(response.plan) == 0:
                     print("DialogueManager::empty complete plan received from planner")
-                    self.system_text = random.choice(["Sorry, I'm not able to do that. Could we try again?", "Sorry, I'm not able to build that. Could you reword that?", "Sorry, something went wrong. Could you explain it differently?"])
-                    self.next_state = State.PARSE_DESCRIPTION
                     self.check_for_failure(ds)
-                    self.send_chat()
-                    ds.output = (ds.output+"\n"+self.system_text).strip()
                     self.append_to_history(ds, all_observations)
+                    self.next_state = State.PARSE_DESCRIPTION
+                    self.send_chat()
                     return
 
                 self.last_planner_response = response
                 self.plans.append(self.last_planner_response)
+                ds.output = self.system_text
+
+                if len(self.system_text) > 0:
+                    self.send_chat()
 
                 # execute the plan and return to the default starting location
                 execute_status, last_pitch, last_yaw = self.execute_plan(pitch, yaw, all_observations)
@@ -468,34 +493,35 @@ class DialogueManager:
 
                     self.attempts["description"] = 0
                     self.append_to_history(ds, all_observations)
-                    self.successfully_parsed_inputs.append(text)
+                    self.built_shapes.extend(self.current_shapes)
+                    self.successfully_parsed_inputs.append(self.last_input)
+                    self.current_shapes = []
                     self.next_state = State.REQUEST_VERIFICATION
 
                 # plan execution failed
                 else:
                     self.undo_executed_plan(last_pitch, last_yaw)
-                    self.system_text = random.choice(["Sorry, can we try again?", "I think something went wrong. Let's try again.", "Something went wrong in the middle. Can we try again?"])
-                    self.next_state = State.PARSE_DESCRIPTION
-                    self.check_for_failure(ds)
-                    self.send_chat()
-                    ds.output = (ds.output+"\n"+self.system_text).strip()
+                    self.check_for_failure(ds, append_text=True)
                     self.append_to_history(ds, all_observations)
+                    self.next_state = State.PARSE_DESCRIPTION
+                    self.send_chat()
                     return
 
-            elif response.responseFlag == 'MISSING':
+            elif response.responseFlag == 'MISSING' and len(response.missing) > 0:
                 # TODO: IMPLEMENT ME! also remember to update successfully_parsed_inputs (and final goal) to reflect additional information added ths way
                 self.attempts["description"] = 0
+                self.attempts["clarification"] = 0
+                self.last_planner_response = response
                 self.append_to_history(ds, all_observations)
+                self.clarification_questions = generate_clarification_questions(self.last_planner_response.missing, self.current_shapes, self.built_shapes)
                 self.next_state = State.REQUEST_CLARIFICATION
 
             else:
                 self.last_planner_response = None
-                self.system_text = random.choice(["Sorry, I'm not able to do that. Could we try again?", "Sorry, I'm not able to build that. Could you reword that?", "Sorry, something went wrong. Could you explain it differently?"])
-                self.next_state = State.PARSE_DESCRIPTION
                 self.check_for_failure(ds)
-                self.send_chat()
-                ds.output = (ds.output+"\n"+self.system_text).strip()
                 self.append_to_history(ds, all_observations)
+                self.next_state = State.PARSE_DESCRIPTION
+                self.send_chat()
                 return
 
         # State: request verification from the user
@@ -514,25 +540,78 @@ class DialogueManager:
             if any(substring in text for substring in yes_responses):
                 self.append_to_history(ds, all_observations)
                 self.next_state = State.REQUEST_DESCRIPTION
-                self.parse(all_observations, "")
+                self.parse(all_observations, "", pitch, yaw)
                 return
 
             elif any(substring in text for substring in no_responses):
-                # TODO: IMPLEMENT ME
-                self.next_state = State.REQUEST_DESCRIPTION
-                self.parse(all_observations, "")
+                self.attempts["description"] = 999
+                self.check_for_failure(ds)
+                self.append_to_history(ds, all_observations)
+                self.parse(all_observations, "", pitch, yaw)
                 return
 
         # State: request clarification from the user
         if self.next_state == State.REQUEST_CLARIFICATION:
-            # TODO: IMPLEMENT ME!
+            self.attempts["clarification"] += 1
+            _, clarification_question = self.clarification_questions[0]
+            self.system_text = clarification_question
+            self.append_to_history(DialogueState(State.REQUEST_CLARIFICATION, output=self.system_text, blocks_in_grid=self.blocks_in_grid), all_observations)
+            self.next_state = State.PARSE_CLARIFICATION
+            self.send_chat()
+            return
+
+        if self.next_state == State.PARSE_CLARIFICATION:
+            ds = DialogueState(State.PARSE_CLARIFICATION, input=text, blocks_in_grid=self.blocks_in_grid)
+            missing_queries, _ = self.clarification_questions[0]
+            self.next_state = State.REQUEST_CLARIFICATION
+            
+            augmentation, unhandled_queries = get_augmentation(text, missing_queries)
+            print("\nDialogueManager::generated augmentation:", augmentation)
+            augmented_text = augment_text(self.last_input, missing_queries, augmentation, self.last_parse_by_parts)
+            print("DialogueManager::final augmented input:", augmented_text)
+
+            # FIXME: when multiple missing information are populated, or parse fails, don't throw away what is being augmented...
+            if augmented_text is not None:
+                parse, current_shapes, parse_by_parts = self.parser.parse(augmented_text)
+                ds.parse = parse
+
+                if parse is None or len(parse) < 1:
+                    self.check_for_failure(ds)
+                    self.append_to_history(ds, all_observations)
+                    self.send_chat()
+                    return
+
+                self.attempts["clarification"] = 0
+                self.clarification_questions.pop(0)
+                self.last_input = augmented_text
+                self.last_parse = parse
+                self.last_parse_by_parts = parse_by_parts
+                self.current_shapes = current_shapes
+                self.append_to_history(ds, all_observations)
+
+                if len(unhandled_queries) > 0:
+                    remaining_questions = generate_clarification_questions(unhandled_queries, self.current_shapes, self.built_shapes)
+                    self.clarification_questions = remaining_questions.extend(self.clarification_questions)
+
+                if len(self.clarification_questions) < 1:
+                    self.next_state = State.PLAN
+                    self.parse(all_observations, "", pitch, yaw)
+                    return 
+            
+            if augmented_text is None:
+                self.check_for_failure(ds)
+
+            self.append_to_history(ds, all_observations)
+            self.send_chat()
+            self.parse(all_observations, "", pitch, yaw)
             return
 
         # State: system failure
         if self.next_state == State.FAILURE:
-            self.system_text = "This session has failed unexpectedly. Please restart the mission and try again."
-            self.send_chat()
-            self.append_to_history(DialogueState(State.FAILURE, output=self.system_text, blocks_in_grid=self.blocks_in_grid), all_observations)
+            if self.dialogue_history[-1] != State.FAILURE:
+                self.system_text = "This session has failed unexpectedly. Please restart the mission and try again."
+                self.append_to_history(DialogueState(State.FAILURE, output=self.system_text, blocks_in_grid=self.blocks_in_grid), all_observations)
+                self.send_chat()
             return
 
     def goto_default_loc(self):
@@ -547,12 +626,19 @@ class DialogueManager:
         all_observations.append((state.as_json(), last_observation))
         self.print_state(state)
 
-    def check_for_failure(self, ds):
+    def check_for_failure(self, ds, append_text=False):
         """ Checks if the dialogue system has exceeded the number of attempts from the user; if so, puts the system in an endless failure state. """
-        if self.attempts["description"] >= ATTEMPT_LIMIT or self.attempts["clarification"] >= ATTEMPT_LIMIT or self.attempts["verification"] >= ATTEMPT_LIMIT:
-            self.system_text = "Sorry, attempt limit exceeded. I'm giving up!"
-            ds.state = State.FAILURE
+        # critical failure
+        if any(self.attempts[key] >= 999 for key in self.attempts):
+            self.system_text = random.choice(failure_responses)
             self.next_state = State.FAILURE
+        else:
+            self.system_text = random.choice(retry_responses[ds.state])
+            if self.attempts["description"] >= ATTEMPT_LIMIT or self.attempts["clarification"] >= ATTEMPT_LIMIT or self.attempts["verification"] >= ATTEMPT_LIMIT:
+                self.system_text = "Sorry, attempt limit exceeded. I'm giving up!"
+                self.next_state = State.FAILURE
+
+        ds.output = (ds.output+"\n"+self.system_text).strip() if append_text else self.system_text
 
     def print_state(self, state):
         print("\nDialogueManager::\n"+str(state)+"\n")
@@ -710,10 +796,6 @@ def initialize_agents(args):
             client_pool.add(MalmoPython.ClientInfo(fixed_viewer_ip, fixed_viewer_port+i))
 
     return agent_hosts, client_pool
-
-def init_parser():
-    return RuleBasedParser()
-    # return DummyParser()
 
 def cwc_run_mission(args):
     print("Calling cwc_run_builder_demo with args:", args, "\n")
@@ -1024,14 +1106,231 @@ def get_executed_plan_result(blocks_in_grid, plan):
 
     return plan_result
 
-def validate_semantic_representation(sem_rep):
-    """validate the semantic representaiton"""
-    # check for missing arguments
+def shape_is_built(built_shapes, var):
+    for _, built_var in built_shapes:
+        if var == built_var:
+            return True
+    return False
 
-    # check for unknown shapes
+def get_missing_queries(missing):
+    missing_dict = {'dims': [], 'rels': []}
+    for query in missing:
+        key = 'rels' if 'Not-Connected' in query else 'dims'
+        missing_dict[key].append(query)
+    return missing_dict['dims']+([missing_dict['rels'][-1]] if len(missing_dict['rels']) > 0 else [])
 
-    # check for context but how?
-    return
+def get_ordinal(shape, var, current_shapes):
+    ordinal, total = -1, 0
+    for existing_shape, existing_shape_var in current_shapes:
+        if shape == existing_shape:
+            total += 1
+        if existing_shape_var == var:
+            ordinal = total-1
+    return "" if total == 1 else random.choice(ordinal_strs[ordinal])+" "
+
+def get_previous_referent(var, current_shapes):
+    referent = current_shapes[-1]
+    for i in range(1, len(current_shapes)):
+        _, existing_var = current_shapes[i]
+        if var == existing_var:
+            return current_shapes[i-1]
+
+    print("get_previous_referent::Error: could not find referent shape in current_shapes:", current_shapes, "given var:", var)
+    return None
+
+def get_dim_values(response):
+    response = "".join((char for char in response if char not in string.punctuation))
+
+    # find %dx%d values and separate
+    matches = re.findall('[0-9]+x[0-9]+', response)  
+    response = separate(response, matches, 'x')
+
+    return [s for s in response.split() if is_number(s)], response
+
+def separate(response, substring_list, separator):
+    for substring in substring_list:
+        response = response.replace(substring, substring.split(separator)[0]+' '+separator+' '+substring.split(separator)[1])
+    return response
+
+def is_number(token):
+    return token.isdigit() or token in number_strs
+
+def get_dim_labels(response, queries, dim_values):
+    if len(queries) == 1 and len(dim_values) == 1:
+        return {queries[0][3]: dim_values[0]}
+
+    dim_labels = {}
+    value_idx = 0
+    unassigned_values, unassigned_labels = [], []
+
+    # "%x x %y x %z" and "%x by %y by %z" means width = %x, length = %y, height = %z
+    i = 0
+    tokens = response.lower().split()
+    while i < len(tokens):
+        if i < len(dim_values)-1 and is_number(tokens[i]) and any(tokens[i+1] == substr for substr in ['x', 'by']) and value_idx < len(dim_values):
+            increment_idx = 0
+            if dim_labels.get('width') is not None:
+                print("get_dim_labels::Warning: duplicate width values")
+
+            dim_labels['width'] = dim_values[value_idx]
+            value_idx += 1
+            increment_idx += 1
+
+            if value_idx < len(dim_values):
+                if dim_labels.get('length') is not None:
+                    print("get_dim_labels::Warning: duplicate length values")
+
+                dim_labels['length'] = dim_values[value_idx]
+                value_idx += 1
+                increment_idx += 2
+
+            if i < len(tokens)-4 and value_idx < len(dim_values):
+                if is_number(tokens[i+2]) and any(tokens[i+3] == substr for substr in ['x', 'by']):
+                    if dim_labels.get('height') is not None:
+                        print("get_dim_labels::Warning: duplicate height values")
+                    dim_labels['height'] = dim_values[value_idx]
+                    increment_idx += 2
+
+            i += increment_idx
+
+        elif is_number(tokens[i]):
+            if len(unassigned_labels) > 0:
+                if dim_labels.get(unassigned_labels[-1]) is not None:
+                    print("get_dim_labels::Warning: duplicate", unassigned_labels[-1], "values")
+                dim_labels[unassigned_labels.pop()] = tokens[i]
+            else:
+                unassigned_values.append(tokens[i])
+
+        else:
+            for key in dim_label_map:
+                if tokens[i] in dim_label_map[key]:
+                    if len(unassigned_values) > 0:
+                        if dim_labels.get(key) is not None:
+                            print("get_dim_labels::Warning: duplicate", key, "values")
+
+                        dim_labels[key] = unassigned_values.pop()
+                    else:
+                        unassigned_labels.append(key)
+
+        i += 1
+
+    for key in ['width', 'length', 'height']:
+        if key not in dim_labels and len(unassigned_values) > 0:
+            dim_labels[key] = unassigned_values.pop(0)
+
+    print("get_dim_labels::parsed the following dimensions:", dim_labels)
+    return dim_labels
+
+def get_dim_value_map(response, queries):
+    dim_values, response = get_dim_values(response)
+    return get_dim_labels(response, queries, dim_values)
+
+def generate_clarification_questions(missing, current_shapes, built_shapes):
+    missing_queries = get_missing_queries(missing)
+    clarification_questions = []
+    missing_rel_questions = []
+
+    missing_shape_dims = OrderedDict()
+    for missing_query in missing_queries:
+        if 'dim' in missing_query:
+            _, shape, var, dim = missing_query
+            if (var, shape) not in missing_shape_dims.keys():
+                missing_shape_dims[(var, shape)] = []
+            missing_shape_dims[(var, shape)].append(missing_query)
+
+        else:
+            prefix = random.choice(["can you describe ", "could you tell me ", "can you tell me "])
+            _, shape, var = missing_query
+            shape_ordinal = get_ordinal(shape, var, current_shapes) 
+            referent_shape, referent_var = get_previous_referent(var, current_shapes)
+            suffix = " that you just built" if shape_is_built(built_shapes, referent_var) else " that you are building"
+            optional_suffix = "other " if shape == referent_shape else ""
+            missing_rel_questions.append(([missing_query], str("In more detail, "+prefix+"where the "+shape_ordinal+shape+" is placed with respect to the "+optional_suffix+referent_shape+suffix+", and how their blocks align?")))
+
+    for key, missing_queries in missing_shape_dims.items():
+        var, shape = key
+        prefix = random.choice(["What is ", "What's ", "Can you describe ", "Could you tell me "])
+        shape_ordinal = get_ordinal(shape, var, current_shapes)
+
+        if (shape == 'rectangle' and len(missing_queries) == 2) or (shape == 'cuboid' and len(missing_queries) == 3):
+            if prefix.startswith("What"):
+                prefix = prefix.replace("is", "are").replace("'s", " are")
+            clarification_questions.append((missing_queries, str(prefix+"the dimensions of the "+shape_ordinal+shape+"?")))
+        else:
+            for missing_query in missing_queries:
+                clarification_questions.append(([missing_query], str(prefix+"the "+dim+" of the "+shape_ordinal+shape+"?")))
+
+    clarification_questions.extend(missing_rel_questions)
+    return clarification_questions
+
+def get_augmentation(text, queries):
+    if 'Not-Connected' in queries[0]:
+        if text.strip().endswith('.'):
+            text = text.strip()[:-1]
+        return text, []
+
+    _, shape, var, _ = queries[0]
+    dim_value_map = get_dim_value_map(text, queries)
+
+    if len(dim_value_map) < 1:
+        print("get_augmentation::Error: could not parse any dimensions from text:", text)
+        return None, []
+
+    # square parameter descriptions
+    if shape == 'square':
+        if dim_value_map.get('size') is not None:
+            return "of size "+str(dim_value_map['size']), []
+        if (dim_value_map.get('width') is None and dim_value_map.get('length') is None) or dim_value_map['width'] != dim_value_map['length']:
+            print("get_augmentation::Error: cannot parse square dimensions from text:", text)
+            return None, []
+        return "of size "+str(dim_value_map.get('width', dim_value_map['length'])), []
+
+    # other shape parameter descriptions
+    missing_str = ""
+    unhandled_queries = []
+
+    for missing_query in queries:
+        dim = missing_query[3]
+        if dim_value_map.get(dim) is None:
+            print("get_augmentation::Warning: cannot identify dim", dim, "for shape", shape, "from text:", text)
+            unhandled_queries.append(missing_query)
+        else:
+            missing_str += dim+" "+str(dim_value_map[dim])+" and "
+
+    if len(missing_str) < 1:
+        return None, []
+
+    return "of "+missing_str[:-5], unhandled_queries
+
+def augment_text(text, queries, augmentation, parse_by_parts):
+    augmentation = augmentation.strip()
+    print("augment_text::augmenting:", text, "with augmentation:", augmentation)
+
+    if augmentation is None:
+        return None
+
+    split_text = [instr.strip() for instr in re.split(r'(\.| such that)', text.lower())]
+    modified_input = ""
+    parse_idx = 0
+
+    if 'Not-Connected' in queries[0]:
+        if text.strip().endswith('.'):
+            text = text.strip()[:-1].strip()
+
+        modified_input = text+" such that "+augmentation+"."
+    else:
+        _, shape, var, dim = queries[0]
+
+        for fragment in split_text:
+            modified_input += (' ' if fragment != '.' else '')+fragment
+
+            if fragment == 'such that' or fragment == '.':
+                parse_idx += 1
+
+            if parse_idx < len(parse_by_parts) and shape+'('+var+')' in parse_by_parts[parse_idx]:
+                modified_input += " "+augmentation
+
+    return modified_input
 
 def teleportMovement(ah, teleport_x=None, teleport_y=None, teleport_z=None):
     """ Teleports the agent to a specific (x,y,z) location in the map. """
