@@ -1,5 +1,5 @@
 from __future__ import print_function
-import re, string
+import re, string, argparse
 
 ordinal_map = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6, "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10}
 primitives_map = {"shape": ["row", "column", "tower", "square", "it"],                         # FIXME: is just "it" dangerous for regex split?
@@ -17,7 +17,7 @@ class DummyParser:
         pass
 
     def parse(self, text):
-        return text
+        return text, find_shapes(text)
 
     def reset(self):
         pass
@@ -37,8 +37,8 @@ class RuleBasedParser:
     def parse(self, instruction):
         """ Parses an utterance by splitting it into chunks separated by periods or the "such as" tokens and processing them linearly. """
         # allow for manually entering logical forms
-        if '^' in instruction:
-            return instruction
+        if '^' in instruction or '(' in instruction:  # FIXME: disable for demo?
+            return instruction, find_shapes(instruction)
 
         self.reset()
 
@@ -68,13 +68,13 @@ class RuleBasedParser:
             # exit if errors occur
             if to_add is None:
                 print("parse::Parsing error occurred!")
-                return None
+                return None, None
 
             logical_form += to_add+"^"
             print("parse::current_shapes:", self.current_shapes, "\n")
 
         print("\nparse::parse result:", logical_form[:-1])
-        return logical_form[:-1]
+        return logical_form[:-1], self.current_shapes
 
     def parse_isolated_shape(self, instruction): 
         """ Parses an instruction that defines a shape in isolation. """
@@ -100,6 +100,10 @@ class RuleBasedParser:
                 logical_form.append(lf)
             elif primitive_type != 'color':
                 print('parse_isolated_shape::Warning: missing type', primitive_type)
+
+        if primitive_values.get("shape") is None:
+            print("parse_isolated_shape::Error: no shape found in instruction:", instruction)
+            return None
 
         # add this shape to list of processed shapes
         self.current_shapes.append([primitive_values["shape"], self.get_var()])
@@ -266,6 +270,20 @@ def define_block(block_id_counter, ordinal, var):
     
     return lf
 
+def find_shapes(instruction):
+    current_shapes = []
+    for predicate in [x.strip() for x in instruction.split('^')]:
+        if any(predicate.startswith(shape) for shape in ['square', 'rectangle', 'cube', 'cuboid', 'row', 'tower', 'column']):
+            shape, var = predicate.split('(')
+            var = var.replace(')','')
+            current_shapes.append([shape, var])
+
+    return current_shapes
+
 if __name__ == '__main__':
     parser = RuleBasedParser()
-    lf = parser.parse("Build a red square of size 4 . Build a blue square of size 4 on top of it such that the top-right-corner block of the square is on top of the top-right-corner block of it")
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('text', default="Build a red square of size 4 . Build a blue square of size 4 on top of it such that the top-right-corner block of the square is on top of the top-right-corner block of it")
+    args = argparser.parse_args()
+    lf = parser.parse(args.text)
+    print(lf)
