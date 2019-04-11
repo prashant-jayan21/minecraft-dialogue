@@ -267,7 +267,7 @@ class DialogueManager:
         if self.next_state == State.PARSE_DESCRIPTION:
             if any(substr in text.lower() for substr in ["done", "finished", "complete"]):
                 self.system_text = random.choice(["Awesome!", "Perfect!", "Great!", "Thanks!"])
-                self.append_to_history(DialogueState(State.REQUEST_DESCRIPTION, output=self.system_text, blocks_in_grid=self.blocks_in_grid), all_observations)
+                self.append_to_history(DialogueState(State.REQUEST_DESCRIPTION, input=text, output=self.system_text, blocks_in_grid=self.blocks_in_grid), all_observations)
                 self.next_state = State.FINISHED
                 self.send_chat()
                 self.parse(all_observations, "", pitch, yaw)
@@ -393,7 +393,7 @@ class DialogueManager:
                 self.attempts["description"] = 0
                 self.attempts["clarification"] = 0
                 self.last_planner_response = response
-                self.append_to_history(ds, all_observations)
+                # self.append_to_history(ds, all_observations)
                 self.clarification_questions = generate_clarification_questions(self.last_planner_response.missing, self.current_shapes, self.built_shapes)
                 self.next_state = State.REQUEST_CLARIFICATION
 

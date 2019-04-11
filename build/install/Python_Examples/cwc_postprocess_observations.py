@@ -64,6 +64,9 @@ def reformatObservation(observation):
         reformatted["BuilderGridAbsolute"] = observation.get(u'BuilderGridAbsolute')
         reformatted["BuilderGridRelative"] = observation.get(u'BuilderGridRelative')
 
+    if observation.get(u'DialogueManager') is not None:
+        reformatted["DialogueStates"] = observation.get(u'DialogueManager')
+
     return reformatted
 
 def mergeObservations(observations):
@@ -84,10 +87,18 @@ def mergeObservation(observations, next_observation):
         next_observation_keys = set(next_observation.keys())
         next_observation_keys.remove("Timestamp")
 
+        with_dialogue = "DialogueStates" in next_observation_keys
+        if with_dialogue:
+            next_observation_keys.remove("DialogueStates")
+
         if len(last_observation_keys.intersection(next_observation_keys)) > 0:
             observations.append(next_observation)
         else:
+            if with_dialogue:
+                extended_dialogue = last_observation.get("DialogueStates", [])+next_observation.get("DialogueStates", [])
             observations[-1] = dict(next_observation, **last_observation)
+            if with_dialogue:
+                observations[-1]["DialogueStates"] = extended_dialogue
 
     return observations
 
