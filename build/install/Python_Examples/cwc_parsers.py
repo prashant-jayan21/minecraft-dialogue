@@ -39,7 +39,7 @@ class RuleBasedParser:
         self.reset_var()
         self.current_shapes = []
 
-    def parse(self, instruction):
+    def parse(self, instruction, switch_left_right=False):
         """ Parses an utterance by splitting it into chunks separated by periods or the "such as" tokens and processing them linearly. """
         # allow for manually entering logical forms
         if '^' in instruction or '(' in instruction:  # FIXME: disable for demo?
@@ -48,7 +48,7 @@ class RuleBasedParser:
         self.reset()
 
         print("parse::received instructions:", instruction)
-        instruction = preprocess(instruction)
+        instruction = preprocess(instruction, switch_left_right=switch_left_right)
 
         # split the utterance by delimiters '.' and 'such that'
         instructions = [instr.strip() for instr in re.split(r'\.| such that', instruction) if len(instr.strip()) > 0]
@@ -305,7 +305,7 @@ def find_shapes(instruction):
 
     return current_shapes
 
-def preprocess(text):
+def preprocess(text, switch_left_right=False):
     text = text.lower()
 
     for lp in location_predicates:
@@ -323,6 +323,23 @@ def preprocess(text):
                 modified_text += token+" "
 
         text = modified_text.strip()           
+
+    if switch_left_right:
+        modified_text = ""
+        for token in text.split():
+            if token == 'west':
+                modified_text += 'east'
+            elif token == 'east':
+                modified_text += 'west'
+            elif 'left' in token:
+                modified_text += token.replace('left', 'right')
+            elif 'right' in token:
+                modified_text += token.replace('right', 'left')
+            else:
+                modified_text += token
+            modified_text += ' '
+
+        text = modified_text.strip()
 
     return text
 

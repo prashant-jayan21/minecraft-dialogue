@@ -19,6 +19,7 @@ N_SHAPES = 0
 ATTEMPT_LIMIT = 3
 write_logfiles = True
 verbose = False
+switch_left_right = True
 
 # map of colors to corresponding hotbar IDs
 color_map = {
@@ -140,7 +141,7 @@ view_deltas = {
     "bottom": (15, 0)
 }
 
-yes_responses = ["yes", "yeah", "good", "ok", "great", "y"]
+yes_responses = ["yes", "yeah", "good", "ok", "great", "y", "cool"]
 no_responses = ["no", "nope", "sorry", "wrong", "incorrect", "bad"]
 
 ordinal_strs = {0: ['1st', 'first'], 1: ['2nd', 'second'], 2: ['3rd', 'third'], 3: ['4th', 'fourth'], 4: ['5th', 'fifth'], 5: ['6th', 'sixth'], 
@@ -264,12 +265,20 @@ class DialogueManager:
 
         # State: parse a provided description
         if self.next_state == State.PARSE_DESCRIPTION:
+            if any(substr in text.lower() for substr in ["done", "finished", "complete"]):
+                self.system_text = random.choice(["Awesome!", "Perfect!", "Great!", "Thanks!"])
+                self.append_to_history(DialogueState(State.REQUEST_DESCRIPTION, output=self.system_text, blocks_in_grid=self.blocks_in_grid), all_observations)
+                self.next_state = State.FINISHED
+                self.send_chat()
+                self.parse(all_observations, "", pitch, yaw)
+                return 
+
             if len(self.successfully_parsed_inputs) > 0:
                 if not self.successfully_parsed_inputs[-1].strip().endswith('.'):
                     self.successfully_parsed_inputs[-1] = self.successfully_parsed_inputs[-1].strip()+'.'
                 text = self.successfully_parsed_inputs[-1]+" "+text
 
-            parse, current_shapes, parse_by_parts = self.parser.parse(text)
+            parse, current_shapes, parse_by_parts = self.parser.parse(text, switch_left_right=switch_left_right)
             ds = DialogueState(State.PARSE_DESCRIPTION, input=text, parse=parse, blocks_in_grid=self.blocks_in_grid)
 
             self.attempts["description"] += 1
@@ -458,7 +467,7 @@ class DialogueManager:
 
             # FIXME: when multiple missing information are populated, or parse fails, don't throw away what is being augmented...
             if augmented_text is not None:
-                parse, current_shapes, parse_by_parts = self.parser.parse(augmented_text)
+                parse, current_shapes, parse_by_parts = self.parser.parse(augmented_text, switch_left_right=switch_left_right)
                 ds.parse = parse
 
                 if parse is None or len(parse) < 1:
@@ -499,8 +508,18 @@ class DialogueManager:
         if self.next_state == State.FAILURE:
             if self.dialogue_history[-1].state != State.FAILURE:
                 self.system_text = "This session has failed unexpectedly. Please restart the mission and try again."
-                self.append_to_history(DialogueState(State.FAILURE, output=self.system_text, blocks_in_grid=self.blocks_in_grid), all_observations)
+                self.append_to_history(DialogueState(State.FAILURE, input=text, output=self.system_text, blocks_in_grid=self.blocks_in_grid), all_observations)
                 self.send_chat()
+            return
+
+        # State: game finished
+        if self.next_state == State.FINISHED:
+            ds = DialogueState(State.FINISHED, input=text, blocks_in_grid=self.blocks_in_grid)
+            if self.dialogue_history[-1].state == State.FINISHED:
+                self.system_text = "This session is complete! Please start a new mission to continue playing."
+                ds.output = self.system_text
+                self.send_chat()
+            self.append_to_history(ds, all_observations)
             return
 
     def goto_default_loc(self):

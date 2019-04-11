@@ -3,6 +3,9 @@ from subprocess import *
 from enum import Enum
 from cwc_mission_utils import x_min_build, x_max_build, y_min_build, y_max_build, z_min_build, z_max_build
 
+temp_x_delta = 5
+temp_z_delta = 5
+
 
 class Response(object):
     """Response class.
@@ -58,7 +61,7 @@ class Response(object):
                     if "attach" in instruction.strip():
                         action = "putdown"
 
-                x, y, z = float(x)+x_min_build, float(y)+y_min_build, float(z)+z_min_build
+                x, y, z = float(x)+x_min_build+temp_x_delta, float(y)+y_min_build, float(z)+z_min_build+temp_z_delta
                 if x > x_max_build or x < x_min_build or y > y_max_build or y < y_min_build or z > z_max_build or z < z_min_build:
                     self.responseFlag = "FAILURE"
                     
