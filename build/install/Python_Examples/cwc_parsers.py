@@ -4,8 +4,10 @@ import re, string, argparse
 ordinal_map = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6, "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10,"1st":1, "2nd":2, "3rd":3, "4th":4, "5th":5, "6th":6, "7th":7, "8th":8, "9th":9, "10th":10}
 primitives_map = {"shape": ["row", "column", "tower", "square", "rectangle","cube","cuboid", "it"],                         # FIXME: is just "it" dangerous for regex split?
                            "color": ["red", "blue", "green", "purple", "orange", "yellow"],
-                           "number": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],      # FIXME: handle sizes of "x by y", "x x y", etc
+                           "number": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+                                      "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"],      # FIXME: handle sizes of "x by y", "x x y", etc
                            "spatial_rel": ["north", "south", "east", "west", "top", "bottom"]} # FIXME: "the bottom block of the tower" is troublesome
+numbers_map = {"one": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10"}
 dirs_map = {"north": ["back", "behind"], "south": ["front"], "east": ["right"], "west": ["left"], "top": ["above"], "bottom": ["below", "under", "underneath"]}
 general_dirs_map = {"north": "behind", "south": "front", "east": "right", "west": "left", "top": "top", "bottom": "bottom"}
 dims = {"row": ["width"], "tower": ["height"], "column": ["length"], "square": ["size"],"cube": ["side"] ,"rectangle":["length","width"],"cuboid":["length","width","height"]}
@@ -268,12 +270,12 @@ def format_lf(primitive_type, primitive_values, var):
 
     # for dimensions
     if primitive_type == 'number':
-        print(primitive_values)
+        # print(primitive_values)
         dim = None if primitive_values.get("shape") is None else dims.get(primitive_values["shape"][0])
         s=""
-        print(dim)
+        # print(dim)
         for i in range(len(dim)):
-            s+=dim[i]+'('+var+','+value[i]+')^'
+            s+=dim[i]+'('+var+','+numbers_map.get(value[i], value[i])+')^'
         
         return s[:-1]
 
