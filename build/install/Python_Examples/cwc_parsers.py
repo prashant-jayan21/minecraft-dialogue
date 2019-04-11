@@ -2,11 +2,11 @@ from __future__ import print_function
 import re, string, argparse
 
 ordinal_map = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6, "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10}
-primitives_map = {"shape": ["row", "column", "tower", "square", "it"],                         # FIXME: is just "it" dangerous for regex split?
+primitives_map = {"shape": ["row", "column", "tower", "square", "rectangle","cube","cuboid", "it"],                         # FIXME: is just "it" dangerous for regex split?
                            "color": ["red", "blue", "green", "purple", "orange", "yellow"],
                            "number": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],      # FIXME: handle sizes of "x by y", "x x y", etc
                            "spatial_rel": ["top", "bottom", "front", "back", "left", "right"]} # FIXME: "the bottom block of the tower" is troublesome
-dims = {"row": "width", "tower": "height", "column": "length", "square": "size"}
+dims = {"row": ["width"], "tower": ["height"], "column": ["length"], "square": ["side"],"cube": ["side"] ,"rectangle":["length","width"],"cuboid":["length","height","width"]}
 ordinals = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth",
             "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th"]
 location_predicates = ['top-behind-left', 'top-left-behind', 'behind-top-left', 'behind-left-top', 'left-behind-top', 'left-top-behind', 'top-behind-right', 'top-right-behind', 'behind-top-right', 'behind-right-top', 'right-behind-top', 'right-top-behind', 'top-front-left', 'top-left-front', 'front-top-left', 'front-left-top', 'left-front-top', 'left-top-front', 'top-front-right', 'top-right-front', 'front-top-right', 'front-right-top', 'right-front-top', 'right-top-front', 'bottom-behind-left', 'bottom-left-behind', 'behind-bottom-left', 'behind-left-bottom', 'left-behind-bottom', 'left-bottom-behind', 'bottom-behind-right', 'bottom-right-behind', 'behind-bottom-right', 'behind-right-bottom', 'right-behind-bottom', 'right-bottom-behind', 'bottom-front-left', 'bottom-left-front', 'front-bottom-left', 'front-left-bottom', 'left-front-bottom', 'left-bottom-front', 'bottom-front-right', 'bottom-right-front', 'front-bottom-right', 'front-right-bottom', 'right-front-bottom', 'right-bottom-front','behind-left', 'left-behind', 'behind-right', 'right-behind', 'front-left', 'left-front', 'front-right', 'right-front','left-end','right-end','front-end','behind-end','top-end','bottom-end']
@@ -88,8 +88,10 @@ class RuleBasedParser:
             for primitive_type in primitives_map:
                 if token in primitives_map[primitive_type]:
                     if primitive_type in primitive_values:
-                        print("parse_isolated_shape::Warning: type", primitive_type, "("+primitive_values[primitive_type]+") already processed for instruction", instruction)
-                    primitive_values[primitive_type] = token
+                        print("parse_isolated_shape::Warning: type", primitive_type, "("+primitive_values[primitive_type][0]+") already processed for instruction", instruction)
+                    elif primitive_type not in primitive_values:
+                        primitive_values[primitive_type]=[]
+                    primitive_values[primitive_type].append(token)
 
         # missing information?
         if not set(primitive_values.keys()).issuperset(set(['shape', 'number'])):
@@ -109,7 +111,7 @@ class RuleBasedParser:
             return None
 
         # add this shape to list of processed shapes
-        self.current_shapes.append([primitive_values["shape"], self.get_var()])
+        self.current_shapes.append([primitive_values["shape"][0], self.get_var()])
 
         # join and return full logical form
         print("parse_isolated_shape::parsed instruction:", instruction, "->", "^".join(logical_form))
@@ -252,16 +254,22 @@ def format_lf(primitive_type, primitive_values, var):
 
     # for shapes
     if primitive_type == 'shape':
-        return value+'('+var+')'
+        return value[0]+'('+var+')'
 
     # for colors
     if primitive_type == 'color':
-        return 'color('+var+','+value+')'
+        return 'color('+var+','+value[0]+')'
 
     # for dimensions
     if primitive_type == 'number':
-        dim = None if primitive_values.get("shape") is None else dims.get(primitive_values["shape"])
-        return dim+'('+var+','+value+')'
+        print(primitive_values)
+        dim = None if primitive_values.get("shape") is None else dims.get(primitive_values["shape"][0])
+        s=""
+        print(dim)
+        for i in range(len(dim)):
+            s+=dim[i]+'('+var+','+value[i]+')^'
+        
+        return s[:-1]
 
     print("format_lf::Error: no format found for type:", primitive_type)
     return None
@@ -292,7 +300,7 @@ def find_shapes(instruction):
 if __name__ == '__main__':
     parser = RuleBasedParser()
     argparser = argparse.ArgumentParser()
-    argparser.add_argument('--text', default="build a row of width 3. build a tower of height 2 on top of it such that the first block of the tower is on top of the left-end block of the row")
+    argparser.add_argument('--text', default="Build a red cuboid of size 4 by 3 by 5. Build a second blue square of size 4 on top of the cuboid such that the left-end of the square is on top of the right-behind corner block of the cuboid")
     args = argparser.parse_args()
     lf = parser.parse(args.text)
     print(lf)
