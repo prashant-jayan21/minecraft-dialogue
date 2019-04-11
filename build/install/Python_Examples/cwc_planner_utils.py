@@ -55,6 +55,8 @@ class Response(object):
                         action = "remove"
                 else:
                     action, block_id, x, y, z, color = instruction.strip().split()
+                    if "attach" in instruction.strip():
+                        action = "putdown"
 
                 x, y, z = float(x)+x_min_build, float(y)+y_min_build, float(z)+z_min_build
                 if x > x_max_build or x < x_min_build or y > y_max_build or y < y_min_build or z > z_max_build or z < z_min_build:
