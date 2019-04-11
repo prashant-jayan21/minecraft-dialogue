@@ -1,12 +1,12 @@
 from __future__ import print_function
 import re, string, argparse
 
-ordinal_map = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6, "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10}
+ordinal_map = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6, "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10,"1st":1, "2nd":2, "3rd":3, "4th":4, "5th":5, "6th":6, "7th":7, "8th":8, "9th":9, "10th":10}
 primitives_map = {"shape": ["row", "column", "tower", "square", "rectangle","cube","cuboid", "it"],                         # FIXME: is just "it" dangerous for regex split?
                            "color": ["red", "blue", "green", "purple", "orange", "yellow"],
                            "number": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],      # FIXME: handle sizes of "x by y", "x x y", etc
                            "spatial_rel": ["top", "bottom", "front", "back", "left", "right"]} # FIXME: "the bottom block of the tower" is troublesome
-dims = {"row": ["width"], "tower": ["height"], "column": ["length"], "square": ["side"],"cube": ["side"] ,"rectangle":["length","width"],"cuboid":["length","width","height"]}
+dims = {"row": ["width"], "tower": ["height"], "column": ["length"], "square": ["side"],"cube": ["side"] ,"rectangle":["length","width"],"cuboid":["length","height","width"]}
 ordinals = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth",
             "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th"]
 location_predicates = ['top-behind-left', 'top-left-behind', 'behind-top-left', 'behind-left-top', 'left-behind-top', 'left-top-behind', 'top-behind-right', 'top-right-behind', 'behind-top-right', 'behind-right-top', 'right-behind-top', 'right-top-behind', 'top-front-left', 'top-left-front', 'front-top-left', 'front-left-top', 'left-front-top', 'left-top-front', 'top-front-right', 'top-right-front', 'front-top-right', 'front-right-top', 'right-front-top', 'right-top-front', 'bottom-behind-left', 'bottom-left-behind', 'behind-bottom-left', 'behind-left-bottom', 'left-behind-bottom', 'left-bottom-behind', 'bottom-behind-right', 'bottom-right-behind', 'behind-bottom-right', 'behind-right-bottom', 'right-behind-bottom', 'right-bottom-behind', 'bottom-front-left', 'bottom-left-front', 'front-bottom-left', 'front-left-bottom', 'left-front-bottom', 'left-bottom-front', 'bottom-front-right', 'bottom-right-front', 'front-bottom-right', 'front-right-bottom', 'right-front-bottom', 'right-bottom-front','behind-left', 'left-behind', 'behind-right', 'right-behind', 'front-left', 'left-front', 'front-right', 'right-front','left-end','right-end','front-end','behind-end','top-end','bottom-end']
@@ -37,7 +37,7 @@ class RuleBasedParser:
         self.current_shapes = []
 
     def cleanup(self,text):
-        text=text.replace("back","behind") 
+        text=text.replace("back","behind").replace("above","top")
         for lp in location_predicates:
             l=lp.replace("-"," ")
             text=text.replace(l,lp)
@@ -61,7 +61,9 @@ class RuleBasedParser:
             to_add = None
 
             # fine-grained spatial relation
-            if "block" in instr and any_exist(primitives_map["spatial_rel"], instr) and any_exist(primitives_map["shape"], instr):
+            if any_exist(['corner','block','-end'],instr) and  any_exist(primitives_map["spatial_rel"], instr) and any_exist(primitives_map["shape"], instr) and (any_exist(ordinals,instr) or any_exist(location_predicates, instr)):
+
+            #if "block" in instr and any_exist(primitives_map["spatial_rel"], instr) and any_exist(primitives_map["shape"], instr):
                 to_add = self.parse_fine_grained_spatial_rel(instr)
                 self.increment_var()
 
@@ -306,7 +308,7 @@ def find_shapes(instruction):
 if __name__ == '__main__':
     parser = RuleBasedParser()
     argparser = argparse.ArgumentParser()
-    argparser.add_argument('--text', default="Build a red cuboid of size 4 by 3 by 5. Build a second blue square of size 4 on top of the cuboid such that the left end of the square is on top of the right back corner block of the cuboid")
+    argparser.add_argument('--text', default="Build a red cuboid of size 4 by 3 by 5. Build a second blue square of size 4 above the cuboid such that the 4th block of the square is above the right back corner block of the cuboid")
     args = argparser.parse_args()
     lf = parser.parse(parser.cleanup(args.text))
     print(lf)
