@@ -22,8 +22,7 @@ class DummyParser:
     def reset(self):
         pass
 
-    def cleanup(self,text):
-        text.replace("back","behind") 
+    
 
 class RuleBasedParser:
     def __init__(self):
@@ -36,6 +35,13 @@ class RuleBasedParser:
     def reset(self):
         self.reset_var()
         self.current_shapes = []
+
+    def cleanup(self,text):
+        text=text.replace("back","behind") 
+        for lp in location_predicates:
+            l=lp.replace("-"," ")
+            text=text.replace(l,lp)
+        return text
 
     def parse(self, instruction):
         """ Parses an utterance by splitting it into chunks separated by periods or the "such as" tokens and processing them linearly. """
@@ -300,7 +306,7 @@ def find_shapes(instruction):
 if __name__ == '__main__':
     parser = RuleBasedParser()
     argparser = argparse.ArgumentParser()
-    argparser.add_argument('--text', default="Build a red cuboid of size 4 by 3 by 5. Build a second blue square of size 4 on top of the cuboid such that the left-end of the square is on top of the right-behind corner block of the cuboid")
+    argparser.add_argument('--text', default="Build a red cuboid of size 4 by 3 by 5. Build a second blue square of size 4 on top of the cuboid such that the left end of the square is on top of the right back corner block of the cuboid")
     args = argparser.parse_args()
-    lf = parser.parse(args.text)
+    lf = parser.parse(parser.cleanup(args.text))
     print(lf)
