@@ -22,6 +22,9 @@ class DummyParser:
     def reset(self):
         pass
 
+    def cleanup(self,text):
+        text.replace("back","behind") 
+
 class RuleBasedParser:
     def __init__(self):
         self.vars = list(string.ascii_lowercase)
@@ -167,7 +170,7 @@ class RuleBasedParser:
             if shapes_split is None or ordinals_split is None:
                 return None
 
-            block_locations.append((ordinals_split[1], shapes_split[1]))
+            block_locations.append((ordinals_split[1].replace(" block",""), shapes_split[1]))
 
         # find referent variables for the two mentioned shapes
         if len(self.current_shapes) < 2:
@@ -221,7 +224,8 @@ def any_exist(substrings, string):
 def get_regex(primitive_type):
     regex_list = primitives_map.get(primitive_type, [])
     if primitive_type == 'ordinals':
-        regex_list = ordinals
+        regex_list = [o+" block" for o in ordinals]
+        print(regex_list)
     if primitive_type == 'location_predicates':
         regex_list = location_predicates
     if primitive_type == 'spatial_rel':     # FIXME: temporary fix for general spatial relations (top, bottom) to not trigger on fine-grained ones (bottom-right-etc)
@@ -288,7 +292,7 @@ def find_shapes(instruction):
 if __name__ == '__main__':
     parser = RuleBasedParser()
     argparser = argparse.ArgumentParser()
-    argparser.add_argument('--text', default="build a row of width 3. build a tower of height 2 on top of it such that the bottom-end block of the tower is on top of the left-end block of the row")
+    argparser.add_argument('--text', default="build a row of width 3. build a tower of height 2 on top of it such that the first block of the tower is on top of the left-end block of the row")
     args = argparser.parse_args()
     lf = parser.parse(args.text)
     print(lf)
