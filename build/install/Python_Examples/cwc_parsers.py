@@ -305,8 +305,17 @@ def find_shapes(instruction):
 
     return current_shapes
 
+def separate(response, substring_list, separator):
+    for substring in substring_list:
+        response = response.replace(substring, substring.split(separator)[0]+' '+separator+' '+substring.split(separator)[1])
+    return response
+
 def preprocess(text, switch_left_right=False):
     text = text.lower()
+
+    # find %dx%d values and separate
+    matches = re.findall('[0-9]+x[0-9]+', text)  
+    text = separate(text, matches, 'x')
 
     for lp in location_predicates:
         l = lp.replace("-"," ")

@@ -369,10 +369,11 @@ class DialogueManager:
                     global N_SHAPES
                     N_SHAPES += 1
 
+                    self.built_shapes = self.current_shapes
                     self.current_shapes = []
                     self.attempts["description"] = 0
                     self.append_to_history(ds, all_observations)
-                    self.built_shapes.extend(self.current_shapes)
+                    print(self.built_shapes)
                     self.successfully_parsed_inputs.append(self.last_successful_input)
                     self.next_state = State.REQUEST_VERIFICATION
 
@@ -465,7 +466,6 @@ class DialogueManager:
             augmented_text = augment_text(self.last_successful_input, missing_queries, augmentation, self.last_successful_parse_by_parts)
             print("DialogueManager::final augmented input:", augmented_text)
 
-            # FIXME: when multiple missing information are populated, or parse fails, don't throw away what is being augmented...
             if augmented_text is not None:
                 parse, current_shapes, parse_by_parts = self.parser.parse(augmented_text, switch_left_right=switch_left_right)
                 ds.parse = parse
@@ -1327,11 +1327,11 @@ def get_augmentation(text, queries):
     # square parameter descriptions
     if shape == 'square':
         if dim_value_map.get('size') is not None:
-            return "of size "+str(dim_value_map['size']), []
+            return " size "+str(dim_value_map['size']), []
         if (dim_value_map.get('width') is None and dim_value_map.get('length') is None) or dim_value_map['width'] != dim_value_map['length']:
             print("get_augmentation::Error: cannot parse square dimensions from text:", text)
             return None, []
-        return "of size "+str(dim_value_map.get('width', dim_value_map['length'])), []
+        return " size "+str(dim_value_map.get('width', dim_value_map['length'])), []
 
     # other shape parameter descriptions
     missing_str = ""
@@ -1348,7 +1348,7 @@ def get_augmentation(text, queries):
     if len(missing_str) < 1:
         return None, []
 
-    return "of "+missing_str[:-5], unhandled_queries
+    return missing_str[:-5], unhandled_queries
 
 def augment_text(text, queries, augmentation, parse_by_parts):
     if augmentation is None:
@@ -1370,15 +1370,18 @@ def augment_text(text, queries, augmentation, parse_by_parts):
         _, shape, var, dim = queries[0]
 
         for fragment in split_text:
-            modified_input += (' ' if fragment != '.' else '')+fragment
-
             if fragment == 'such that' or fragment == '.':
                 parse_idx += 1
 
-            if parse_idx < len(parse_by_parts) and shape+'('+var+')' in parse_by_parts[parse_idx]:
-                modified_input += " "+augmentation
+            elif parse_idx < len(parse_by_parts) and shape+'('+var+')' in parse_by_parts[parse_idx]:
+                modified_input += augmentation+' '
 
-    return modified_input
+            if fragment == '.':
+                modified_input = modified_input.strip()
+
+            modified_input += fragment+' '
+
+    return modified_input.strip()
 
 def teleportMovement(ah, teleport_x=None, teleport_y=None, teleport_z=None):
     """ Teleports the agent to a specific (x,y,z) location in the map. """

@@ -3,8 +3,8 @@ from subprocess import *
 from enum import Enum
 from cwc_mission_utils import x_min_build, x_max_build, y_min_build, y_max_build, z_min_build, z_max_build
 
-temp_x_delta = 5
-temp_z_delta = 5
+temp_x_delta = 0
+temp_z_delta = 0
 
 
 class Response(object):
