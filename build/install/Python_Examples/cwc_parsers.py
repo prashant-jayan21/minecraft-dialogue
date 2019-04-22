@@ -39,7 +39,7 @@ class RuleBasedParser:
         self.reset_var()
         self.current_shapes = []
 
-    def parse(self, instruction, switch_left_right=False):
+    def parse(self, instruction):
         """ Parses an utterance by splitting it into chunks separated by periods or the "such as" tokens and processing them linearly. """
         # allow for manually entering logical forms
         if '^' in instruction or '(' in instruction:  # FIXME: disable for demo?
@@ -48,7 +48,7 @@ class RuleBasedParser:
         self.reset()
 
         print("parse::received instructions:", instruction)
-        instruction = preprocess(instruction, switch_left_right=switch_left_right)
+        instruction = preprocess(instruction)
 
         # split the utterance by delimiters '.' and 'such that'
         instructions = [instr.strip() for instr in re.split(r'\.| such that', instruction) if len(instr.strip()) > 0]
@@ -310,7 +310,7 @@ def separate(response, substring_list, separator):
         response = response.replace(substring, substring.split(separator)[0]+' '+separator+' '+substring.split(separator)[1])
     return response
 
-def preprocess(text, switch_left_right=False):
+def preprocess(text):
     text = text.lower()
 
     # find %dx%d values and separate
@@ -331,23 +331,6 @@ def preprocess(text, switch_left_right=False):
                 modified_text += key+" "
             else:
                 modified_text += token+" "
-
-        text = modified_text.strip()           
-
-    if switch_left_right:
-        modified_text = ""
-        for token in text.split():
-            if token == 'west':
-                modified_text += 'east'
-            elif token == 'east':
-                modified_text += 'west'
-            elif 'left' in token:
-                modified_text += token.replace('left', 'right')
-            elif 'right' in token:
-                modified_text += token.replace('right', 'left')
-            else:
-                modified_text += token
-            modified_text += ' '
 
         text = modified_text.strip()
 

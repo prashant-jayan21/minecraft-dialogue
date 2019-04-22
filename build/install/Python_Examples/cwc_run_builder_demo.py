@@ -19,7 +19,6 @@ N_SHAPES = 0
 ATTEMPT_LIMIT = 3
 write_logfiles = True
 verbose = False
-switch_left_right = True
 
 # map of colors to corresponding hotbar IDs
 color_map = {
@@ -36,7 +35,7 @@ color_map = {
 default_loc = {
     "x": 0,
     "y": 1,
-    "z": -6
+    "z": 7
 }
 
 # default pitch values by direction
@@ -59,65 +58,65 @@ pitch_dirs = {
 
 # default yaw values by direction
 yaw_dirs = {
-    "north": 180,
-    "east": 270,
-    "south": 0,
-    "west": 90,
-    "bottom_north": 180,
-    "bottom_east": 270,
-    "bottom_south": 0,
-    "bottom_west": 90,
-    "top_north": 180,
-    "top_east": 270,
-    "top_south": 0,
-    "top_west": 90,
+    "north": 0,
+    "east": 90,
+    "south": 180,
+    "west": 270,
+    "bottom_north": 0,
+    "bottom_east": 90,
+    "bottom_south": 180,
+    "bottom_west": 270,
+    "top_north": 0,
+    "top_east": 90,
+    "top_south": 180,
+    "top_west": 270,
 }
 
 # map of relative to cardinal directions
 relative_to_cardinal = {
-    "ahead": "south",
-    "left": "east",
-    "right": "west", 
-    "behind": "north"
+    "ahead": "north",
+    "left": "west",
+    "right": "east", 
+    "behind": "south"
 }
 
 # delta values by which coordinates should be added to access blocks in specific directions
 coord_deltas = {
     "ahead": {
-        "north": (0, 0, -1),
-        "south": (0, 0, 1),
-        "east": (1, 0, 0),
-        "west": (-1, 0, 0),
+        "north": (0, 0, 1),
+        "south": (0, 0, -1),
+        "east": (-1, 0, 0),
+        "west": (1, 0, 0),
         "top": (0, 0, 1),
         "bottom": (0, 0, 1),
-        "bottom_north": (0, 0, -1),
-        "bottom_south": (0, 0, 1),
-        "bottom_east": (1, 0, 0),
-        "bottom_west": (-1, 0, 0),
-        "top_north": (0, 0, -1),
-        "top_south": (0, 0, 1),
-        "top_east": (1, 0, 0),
-        "top_west": (-1, 0, 0)
+        "bottom_north": (0, 0, 1),
+        "bottom_south": (0, 0, -1),
+        "bottom_east": (-1, 0, 0),
+        "bottom_west": (1, 0, 0),
+        "top_north": (0, 0, 1),
+        "top_south": (0, 0, -1),
+        "top_east": (-1, 0, 0),
+        "top_west": (1, 0, 0)
     },
     "left": {
-        "north": (-1, 0, 0),
-        "south": (1, 0, 0),
-        "east": (0, 0, -1),
-        "west": (0, 0, 1),
-        "top": (1, 0, 0),
-        "bottom": (1, 0, 0)  
-    },
-    "right": {
         "north": (1, 0, 0),
         "south": (-1, 0, 0),
         "east": (0, 0, 1),
         "west": (0, 0, -1),
+        "top": (1, 0, 0),
+        "bottom": (1, 0, 0)  
+    },
+    "right": {
+        "north": (-1, 0, 0),
+        "south": (1, 0, 0),
+        "east": (0, 0, -1),
+        "west": (0, 0, 1),
         "top": (-1, 0, 0),
         "bottom": (-1, 0, 0)
     },
     "behind": {
-        "top": (0, 0, -1),
-        "bottom": (0, 0, -1)    
+        "top": (0, 0, 1),
+        "bottom": (0, 0, 1)    
     },
     "above": {
         "bottom_north": (0, 1, 0),
@@ -131,7 +130,7 @@ coord_deltas = {
 view_deltas = {
     "ahead": (-30, 0),
     "left": (-15, -35),
-    "right": (-15, 30),
+    "right": (-15, 35),
     "behind": (0, 0),
     "above_bottom": (30, 0),
     "ahead_bottom": (60, 0),
@@ -277,7 +276,7 @@ class DialogueManager:
                     self.successfully_parsed_inputs[-1] = self.successfully_parsed_inputs[-1].strip()+'.'
                 text = self.successfully_parsed_inputs[-1]+" "+text
 
-            parse, current_shapes, parse_by_parts = self.parser.parse(text, switch_left_right=switch_left_right)
+            parse, current_shapes, parse_by_parts = self.parser.parse(text)
             ds = DialogueState(State.PARSE_DESCRIPTION, input=text, parse=parse, blocks_in_grid=self.blocks_in_grid)
 
             self.attempts["description"] += 1
@@ -466,7 +465,7 @@ class DialogueManager:
             print("DialogueManager::final augmented input:", augmented_text)
 
             if augmented_text is not None:
-                parse, current_shapes, parse_by_parts = self.parser.parse(augmented_text, switch_left_right=switch_left_right)
+                parse, current_shapes, parse_by_parts = self.parser.parse(augmented_text)
                 ds.parse = parse
 
                 if parse is None or len(parse) < 1:
@@ -524,7 +523,7 @@ class DialogueManager:
     def goto_default_loc(self):
         """ Teleports the agent to the default starting location. Should be used after executing every Architect instruction. """
         teleportMovement(self.agent_host, teleport_x=default_loc["x"], teleport_y=default_loc["y"], teleport_z=default_loc["z"])
-        setPitchYaw(self.agent_host, pitch=0.0, yaw=0.0)
+        setPitchYaw(self.agent_host, pitch=0.0, yaw=180.0)
 
     def append_to_history(self, state, all_observations):
         """ Appends a dialogue state to the history of dialogue states. """
@@ -559,6 +558,7 @@ class DialogueManager:
             return "FAILURE", None, None
 
         plan_list = self.last_planner_response.plan if not verify else get_executed_plan_result(self.blocks_in_grid, self.last_planner_response.plan)
+        plan_list = [('putdown', 'b1', -4, 2, -4, 'yellow')]
         last_pitch, last_yaw = pitch, yaw
 
         if verbose:
@@ -762,7 +762,7 @@ def generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_v
                   <AgentSection mode="Spectator">
                     <Name>Architect</Name>
                     <AgentStart>
-                      <Placement x = "0" y = "6" z = "-7" pitch="45"/>
+                      <Placement x = "0" y = "6" z = "8" yaw = "180" pitch = "45"/>
                     </AgentStart>
                     <AgentHandlers/>
                   </AgentSection>
@@ -1025,9 +1025,12 @@ def find_teleport_location(blocks_in_grid, x, y, z, action):
         print("\nfind_teleport_location::finding feasible location for block:", x, y, z, "where blocks_in_grid:", blocks_in_grid)
 
     # check for unoccupied locations that the agent can teleport to: south/east/north/west of location; above/below location; below and to the south/east/north/west of location
-    for px, py, pz, direction in [(x, y, z-1, "south"), (x-1, y, z, "east"), (x, y, z+1, "north"), (x+1, y, z, "west"), (x, y+1, z, "top"), (x, y-2, z, "bottom"), \
-                                  (x, y+1, z-1, "top_south"), (x-1, y+1, z, "top_east"), (x, y+1, z+1, "top_north"), (x+1, y+1, z, "top_west"), \
-                                  (x, y-1, z-1, "bottom_south"), (x-1, y-1, z, "bottom_east"), (x, y-1, z+1, "bottom_north"), (x+1, y-1, z, "bottom_west")]:
+    for px, py, pz, direction in [(x, y, z+1, "south"),  (x-1, y, z, "west"), (x, y, z-1, "north"), (x+1, y, z, "east"), (x, y+1, z, "top"), (x, y-2, z, "bottom"), \
+                                  (x, y+1, z+1, "top_south"), (x-1, y+1, z, "top_west"), (x, y+1, z-1, "top_north"), (x+1, y+1, z, "top_east"), \
+                                  (x, y-1, z+1, "bottom_south"), (x-1, y-1, z, "bottom_west"), (x, y-1, z-1, "bottom_north"), (x+1, y-1, z, "bottom_east")]:
+
+        if verbose:
+            print("find_teleport_location::checking location", px, py, pz, direction)
         
         # location is too low
         if py < 1:

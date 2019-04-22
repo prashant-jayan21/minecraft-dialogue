@@ -35,6 +35,7 @@ public class CwCMod {
 	public static String[] FIXED_VIEWERS;
 
 	public static boolean demoMode = true;
+	public static boolean flipStartingPosition = true;
 	public static boolean disableScreenshots = true;
 
 	public static boolean enableAIToggle = false;		// whether or not the original Malmo AI/Human toggle option is enabled
