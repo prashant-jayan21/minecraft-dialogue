@@ -8,9 +8,9 @@ primitives_map = {"shape": ["row", "column", "tower", "square", "rectangle","cub
                                       "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"],      # FIXME: handle sizes of "x by y", "x x y", etc
                            "spatial_rel": ["north", "south", "east", "west", "top", "bottom"]} # FIXME: "the bottom block of the tower" is troublesome
 numbers_map = {"one": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10"}
-dirs_map = {"north": ["back", "behind"], "south": ["front"], "east": ["right"], "west": ["left"], "top": ["above"], "bottom": ["below", "under", "underneath"]}
+dirs_map = {"north": ["back", "behind"], "south": ["front"], "east": ["right"], "west": ["left"], "top": ["above"], "bottom": ["below", "under", "underneath", "beneath"]}
 general_dirs_map = {"north": "behind", "south": "front", "east": "right", "west": "left", "top": "top", "bottom": "bottom"}
-dims = {"row": ["width"], "tower": ["height"], "column": ["length"], "square": ["size"],"cube": ["side"] ,"rectangle":["length","width"],"cuboid":["length","width","height"]}
+dims = {"row": ["width"], "tower": ["height"], "column": ["length"], "square": ["size"],"cube": ["size"] ,"rectangle":["length","width"],"cuboid":["length","width","height"]}
 ordinals = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth",
             "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th"]
 location_predicates = ['top-behind-left', 'top-left-behind', 'behind-top-left', 'behind-left-top', 'left-behind-top', 'left-top-behind', 'top-behind-right', 'top-right-behind', 'behind-top-right', 'behind-right-top', 'right-behind-top', 'right-top-behind', 'top-front-left', 'top-left-front', 'front-top-left', 'front-left-top', 'left-front-top', 'left-top-front', 'top-front-right', 'top-right-front', 'front-top-right', 'front-right-top', 'right-front-top', 'right-top-front', 'bottom-behind-left', 'bottom-left-behind', 'behind-bottom-left', 'behind-left-bottom', 'left-behind-bottom', 'left-bottom-behind', 'bottom-behind-right', 'bottom-right-behind', 'behind-bottom-right', 'behind-right-bottom', 'right-behind-bottom', 'right-bottom-behind', 'bottom-front-left', 'bottom-left-front', 'front-bottom-left', 'front-left-bottom', 'left-front-bottom', 'left-bottom-front', 'bottom-front-right', 'bottom-right-front', 'front-bottom-right', 'front-right-bottom', 'right-front-bottom', 'right-bottom-front','behind-left', 'left-behind', 'behind-right', 'right-behind', 'front-left', 'left-front', 'front-right', 'right-front','left-end','right-end','front-end','behind-end','top-end','bottom-end']
@@ -314,8 +314,9 @@ def preprocess(text, switch_left_right=False):
     text = text.lower()
 
     # find %dx%d values and separate
-    matches = re.findall('[0-9]+x[0-9]+', text)  
-    text = separate(text, matches, 'x')
+    for i in range(2):
+        matches = re.findall('[0-9]+x[0-9]+', text)  
+        text = separate(text, matches, 'x')
 
     for lp in location_predicates:
         l = lp.replace("-"," ")

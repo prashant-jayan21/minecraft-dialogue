@@ -31,9 +31,6 @@ public class CwCUtils {
         if (!screenshotDir.exists()) screenshotDir.mkdir();
     }
 
-    private static boolean disableScreenshots = false;
-
-
     public static boolean playerNameMatches(Minecraft mc, String name) {
         return (mc == null ? false : playerNameMatches(mc.player, name));
     }
@@ -94,7 +91,7 @@ public class CwCUtils {
                 (summary == null || !summary.equals(MalmoMod.instance.getClient().getStateMachine().currentMissionInit().getMission().getAbout().getSummary()))) {
             summary = MalmoMod.instance.getClient().getStateMachine().currentMissionInit().getMission().getAbout().getSummary();
 
-            if (!disableScreenshots) {
+            if (!CwCMod.disableScreenshots) {
                 File dir = new File(screenshotDir, summary);
                 if (!dir.exists()) dir.mkdir();
             }
@@ -111,7 +108,7 @@ public class CwCUtils {
         String suffix = type.name().toLowerCase();
 
         // take the screenshot
-        if (!disableScreenshots)
+        if (!CwCMod.disableScreenshots)
             ScreenShotHelper.saveScreenshot(CwCUtils.loggingDir, prefix+timestamp+"-"+mc.player.getName()+"-"+suffix+".png", mc.displayWidth, mc.displayHeight, mc.getFramebuffer());
 
         // save screenshot filename to list

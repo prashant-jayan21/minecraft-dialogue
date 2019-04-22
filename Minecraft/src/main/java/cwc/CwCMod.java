@@ -34,7 +34,10 @@ public class CwCMod {
 	public static final String ORACLE = "Oracle";
 	public static String[] FIXED_VIEWERS;
 
-	public static boolean enableAIToggle = true;		// whether or not the original Malmo AI/Human toggle option is enabled
+	public static boolean demoMode = true;
+	public static boolean disableScreenshots = true;
+
+	public static boolean enableAIToggle = false;		// whether or not the original Malmo AI/Human toggle option is enabled
 	public static final int DEFAULT_STACK_SIZE = 20;	// stack size of blocks in Builder's inventory
 	protected static int NUM_FIXED_VIEWERS = 4;
 
@@ -42,6 +45,7 @@ public class CwCMod {
 		FIXED_VIEWERS = new String[NUM_FIXED_VIEWERS];
 		for (int i = 0; i < NUM_FIXED_VIEWERS; i++)
 			FIXED_VIEWERS[i] = "FixedViewer"+(i+1);
+		if (demoMode) enableAIToggle = true;
 	}
 
 	public static ArrayList<String> screenshots = new ArrayList<String>();  // list of absolute paths of screenshots taken by the client

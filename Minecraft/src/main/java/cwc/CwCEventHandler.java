@@ -308,7 +308,7 @@ public class CwCEventHandler {
     @SubscribeEvent
     public void onPlayerUpdate(LivingEvent.LivingUpdateEvent event) {
         EntityPlayer updatedPlayer = (EntityPlayer) event.getEntity();
-        updatedPlayer.noClip = true;
+        if (CwCMod.demoMode) updatedPlayer.noClip = true;
 
         // prevent noclip through floor
         if (updatedPlayer.posY < 0) {
@@ -324,7 +324,7 @@ public class CwCEventHandler {
         if (updatedPlayer.getEntityWorld().isRemote) {
             Minecraft mc = Minecraft.getMinecraft();
             EntityPlayer player = mc.player;
-            player.noClip = true;
+            if (CwCMod.demoMode) player.noClip = true;
 
             // Architect sneaking to break mob-view
             if (playerNameMatches(player, CwCMod.ARCHITECT) && sneaking) {
@@ -333,7 +333,7 @@ public class CwCEventHandler {
                 // once the Architect's y-coordinate position differs from the Builder's, teleport him to a neutral position
                 if (player.posY < builderCurrentY - 0.1) {
                     KeyBinding.unPressAllKeys();
-                    CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 6, -7, 0, 45, true, true, true, true, true));
+                    CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, (CwCMod.demoMode ? 6 : 5), (CwCMod.demoMode ? -7 : -5), 0, 45, true, true, true, true, true));
                     resetArchitectFollowFields();
                 }
             }

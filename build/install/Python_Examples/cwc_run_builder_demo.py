@@ -29,8 +29,7 @@ color_map = {
     'green': 4,
     'blue': 5,
     'purple': 6,
-    'white': 1,
-    'violet': 6  # FIXME when this is fixed in the planner
+    'white': 1
 }
 
 # agent default location
@@ -141,7 +140,7 @@ view_deltas = {
     "bottom": (15, 0)
 }
 
-yes_responses = ["yes", "yeah", "good", "ok", "great", "y", "cool"]
+yes_responses = ["yes", "yeah", "good", "ok", "great", "y", "cool", "perfect"]
 no_responses = ["no", "nope", "sorry", "wrong", "incorrect", "bad"]
 
 ordinal_strs = {0: ['1st', 'first'], 1: ['2nd', 'second'], 2: ['3rd', 'third'], 3: ['4th', 'fourth'], 4: ['5th', 'fifth'], 5: ['6th', 'sixth'], 
@@ -474,8 +473,8 @@ class DialogueManager:
                     self.check_for_failure(ds)
                     self.append_to_history(ds, all_observations)
                     self.send_chat()
-                    if self.next_state == State.FAILURE:
-                        self.parse(all_observations, "", pitch, yaw)
+                    self.next_state = State.REQUEST_CLARIFICATION
+                    self.parse(all_observations, "", pitch, yaw)
                     return
 
                 self.attempts["clarification"] = 0
@@ -1125,8 +1124,8 @@ def get_executed_plan_result(blocks_in_grid, plan):
     executed_plan_grid = {}
 
     for (action, block_id, x, y, z, color) in plan:
-        if color == 'violet': #FIXME when planner fixes this
-            color = 'purple'
+        # if color == 'violet': #FIXME when planner fixes this
+        #     color = 'purple'
 
         if x not in executed_plan_grid:
             executed_plan_grid[x] = {}
@@ -1144,7 +1143,7 @@ def get_executed_plan_result(blocks_in_grid, plan):
 
     plan_result = []
     for (action, block_id, x, y, z, color) in plan:
-        color = 'purple' if color == 'violet' else color # FIXME! when it's fixed
+        # color = 'purple' if color == 'violet' else color # FIXME! when it's fixed
         net_actions = executed_plan_grid[x][y][z]
         if net_actions[color] == -1 and blocks_in_grid.get(x, {}).get(z, {}).get(y) != color:
             continue
@@ -1190,8 +1189,9 @@ def get_dim_values(response):
     response = "".join((char for char in response if char not in string.punctuation))
 
     # find %dx%d values and separate
-    matches = re.findall('[0-9]+x[0-9]+', response)  
-    response = separate(response, matches, 'x')
+    for i in range(2):
+        matches = re.findall('[0-9]+x[0-9]+', response)  
+        response = separate(response, matches, 'x')
 
     return [s for s in response.split() if is_number(s)], response
 
