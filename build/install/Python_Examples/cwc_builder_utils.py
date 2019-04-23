@@ -116,6 +116,10 @@ view_deltas = {
     "bottom": (15, 0)
 }
 
+def sendChat(ah, text):
+	""" Sends a chat message to the interface. """
+	sendCommand(ah, 'chat '+str(text))
+
 def teleportMovement(ah, teleport_x=None, teleport_y=None, teleport_z=None):
     """ Teleports the agent to a specific (x,y,z) location in the map. """
     sendCommand(ah, "tp " + str(teleport_x) + " " + str(teleport_y) + " " + str(teleport_z))

@@ -123,7 +123,7 @@ class DialogueManager:
 
     def send_chat(self):
         """ Pushes the system text to the Minecraft chat interface. """
-        sendCommand(self.agent_host, 'chat '+self.system_text)
+        sendChat(self.agent_host, self.system_text)
 
     def parse(self, all_observations, text, pitch=0, yaw=0):
         """ Calls the dialogue manager to parse an input Architect utterance and handle it appropriately according to the dialogue manager's current dialogue state. """
