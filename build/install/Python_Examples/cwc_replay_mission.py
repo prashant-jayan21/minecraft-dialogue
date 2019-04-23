@@ -284,11 +284,12 @@ def cwc_run_mission(args):
 		time.sleep(5)
 		# todo?: also initialize builder inventory?
 
+		error_encountered = False
 		last_chat_history, last_blocks_in_grid = None, None
 		for s in range(prev_idx, sample_id):
 			logged_observation = reference_json["WorldStates"][s]
 			current_blocks_in_grid = get_built_config(logged_observation)
-			prettyPrintObservation(logged_observation)	        
+			# prettyPrintObservation(logged_observation)	        
 
 			if last_chat_history is not None:
 				screenshot_path = logged_observation["ScreenshotPath"]
@@ -309,17 +310,20 @@ def cwc_run_mission(args):
 						time.sleep(1)
 
 				blocks_delta = diff(gold_config=current_blocks_in_grid, built_config=last_blocks_in_grid)
-				print("Computed diff:", blocks_delta)
+				# print("Computed diff:", blocks_delta)
 
 				if sum(len(lst) for lst in blocks_delta.values()) > 1:
-					print("WARNING: multiple actions detected in diff. Quitting this sample.")
+					print("WARNING: multiple actions detected in diff. Quitting this sample.") # FIXME: what do we do about these potential problematic examples?
+					error_encountered = True
 					break
 					
 				if sum(len(lst) for lst in blocks_delta.values()) > 0:
 					auto_find_location = False
 					if observation_type == 'chat':
-						print("WARNING: diff contained actions, but the observation type was 'chat'. Using automated location finder to teleport Builder.")
+						print("WARNING: diff contained actions, but the observation type was 'chat'. Quitting this sample.") # FIXME: what do we do about these potential problematic examples?
 						auto_find_location = True
+						error_encountered = True
+						break
 
 					action, block = None, None
 					if len(blocks_delta["gold_minus_built"]) > 0:
@@ -330,7 +334,7 @@ def cwc_run_mission(args):
 						block = blocks_delta["built_minus_gold"][0]
 
 					x, y, z, color = block['x'], block['y'], block['z'], block['type']
-					# todo: find_teleport_location...
+					# todo: if auto_find_location: find_teleport_location...
 					execute_action(agent_hosts[1], action=action, color=color, teleport=False)
 
 					# if auto_find_location: TODO
@@ -341,17 +345,19 @@ def cwc_run_mission(args):
 			last_blocks_in_grid = current_blocks_in_grid
 
 		time.sleep(1)
-		ground_truth_utterance = sample["ground_truth_utterance"]
-		generated_utterance = sample["generated_utterance"][0]
 
-		print("Ground truth utterance:", ground_truth_utterance)
-		print("Generated utterance:", generated_utterance)
+		if not error_encountered:
+			ground_truth_utterance = sample["ground_truth_utterance"] # FIXME: use ground_truth_utterance_raw
+			generated_utterance = sample["generated_utterance"][0]
 
-		utterance = generated_utterance
-		if use_gold_utterances:
-			utterance = ground_truth_utterance
+			print("Ground truth utterance:", ground_truth_utterance)
+			print("Generated utterance:", generated_utterance)
 
-		sendChat(agent_hosts[2], utterance)
+			utterance = generated_utterance
+			if use_gold_utterances:
+				utterance = ground_truth_utterance
+
+			sendChat(agent_hosts[2], utterance)
 
 		timed_out = False
 		while not timed_out:
@@ -378,4 +384,4 @@ def cwc_run_mission(args):
 		print("Mission ended")
 		# Mission has ended.
 
-		time.sleep(10)
+		time.sleep(2)
