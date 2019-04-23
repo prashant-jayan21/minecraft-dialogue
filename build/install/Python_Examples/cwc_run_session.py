@@ -11,6 +11,9 @@ if __name__ == "__main__":
     parser.add_argument("--draw_inventory_blocks", action="store_true", help="Starts the mission with inventory blocks on the ground")
     parser.add_argument("--existing_is_gold", action="store_true", help="Indicates existing configs are actually gold configs and need to be displaced")
     parser.add_argument("--mode", default="data_collection", help="Type of application to run: data_collection, architect_demo, builder_demo")
+    parser.add_argument("--generated_sentences_file", default=None, help="File of generated sentences to use in replay tool")
+    parser.add_argument("--shuffle", default=False, action='store_true', help='shuffle sentences to be evaluated')
+    parser.add_argument("--jsons_dir", default="/Users/Anjali/Documents/UIUC/research/CwC/BlocksWorld/Minecraft/cwc-minecraft-models/data/saved_cwc_datasets/lower-no_perspective_coords/")
     args = parser.parse_args()
 
     if args.mode == 'data_collection':
@@ -19,6 +22,8 @@ if __name__ == "__main__":
         pass # import me here
     elif args.mode == 'builder_demo':
         from cwc_run_builder_demo import cwc_run_mission
+    elif args.mode == 'replay':
+        from cwc_replay_mission import cwc_run_mission
 
     # Read user info from spreadsheet
     all_users = []
@@ -88,6 +93,11 @@ if __name__ == "__main__":
             "draw_inventory_blocks": args.draw_inventory_blocks,
             "existing_is_gold": args.existing_is_gold
         }
+
+        if args.mode == 'replay':
+            mission_args["generated_sentences_file"] = args.generated_sentences_file
+            mission_args["shuffle"] = args.shuffle
+            mission_args["jsons_dir"] = args.jsons_dir
 
         # submit mission jobs to process pool
         print "\nMISSIONS RUNNING..."

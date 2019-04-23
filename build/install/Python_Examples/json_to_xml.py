@@ -1,5 +1,24 @@
 import sys, os, json, argparse
 
+def blocks_to_xml(conf, displacement=0, postprocessed=True):
+	return_str = ''
+	for block in conf:
+		if postprocessed:
+			bt = str(block["Type"])
+			bx = str(block["AbsoluteCoordinates"]["X"]+displacement)
+			by = str(block["AbsoluteCoordinates"]["Y"])
+			bz = str(block["AbsoluteCoordinates"]["Z"]+displacement)
+
+		else:
+			bt = "cwc_minecraft_"+str(block["type"])+"_rn"
+			bx = str(block["x"]+displacement)
+			by = str(block["y"])
+			bz = str(block["z"]+displacement)
+
+		return_str += "<DrawBlock type=\"cwcmod:"+bt+"\" x=\""+bx+"\" y=\""+by+"\" z=\""+bz+"\"/>\n"
+
+	return return_str
+
 def main():
 	parser = argparse.ArgumentParser(description="Convert JSON to XML.")
 	parser.add_argument("json_file", help="File path of the observations JSON to be converted")
@@ -17,13 +36,8 @@ def main():
 	gf = "gold-configurations/"+ (gfn.replace(".json","") if args.config_name is None else args.config_name)+".xml"
 	gold = open(gf, 'w')
 
-	conf = log["WorldStates"][len(log["WorldStates"])-1]["BlocksInGrid"]
-	for block in conf:
-		bt = str(block["Type"])
-		bx = str(block["AbsoluteCoordinates"]["X"]+args.displacement)
-		by = str(block["AbsoluteCoordinates"]["Y"])
-		bz = str(block["AbsoluteCoordinates"]["Z"]+args.displacement)
-		gold.write("<DrawBlock type=\"cwcmod:"+bt+"\" x=\""+bx+"\" y=\""+by+"\" z=\""+bz+"\"/>\n")
+	conf = log["WorldStates"][-1]["BlocksInGrid"]
+	gold.write(blocks_to_xml(conf, displacement=args.displacement))
 
 	print "Wrote gold configuration to", gf
 	gold.close()
