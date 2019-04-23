@@ -3,16 +3,18 @@
 # Record all observations
 
 from __future__ import print_function
-import os, sys, time, json, datetime, copy, pickle, random
+import os, sys, time, json, datetime, copy, pickle, random, re
 import MalmoPython, numpy as np
 import cwc_mission_utils as mission_utils, cwc_debug_utils as debug_utils, cwc_io_utils as io_utils
 from json_to_xml import blocks_to_xml
 from cwc_builder_utils import *
+from cwc_debug_utils import *
 
 sys.path.append('./config_diff_tool')
 from diff import diff
 
 num_prev_states = 7
+color_regex = re.compile("red|orange|purple|blue|green|yellow")
 
 def addFixedViewers(n):
 	fvs = ''
@@ -199,12 +201,11 @@ def cwc_run_mission(args):
 	print("Calling cwc_run_builder_demo with args:", args, "\n")
 	start_time = time.time()
 
-	# initialize the agents
-	agent_hosts, client_pool = initialize_agents(args)
-
 	num_fixed_viewers = args["num_fixed_viewers"]
 	draw_inventory_blocks = args["draw_inventory_blocks"]
 	existing_is_gold = args["existing_is_gold"]
+	num_samples_to_replay = args["num_samples_to_replay"]
+	use_gold_utterances = args["replay_gold"]
 
 	if args["generated_sentences_file"] is None:
 		print("Error: please provide a generated sentences file for the replay tool.")
@@ -213,6 +214,7 @@ def cwc_run_mission(args):
 	generated_sentences = read_generated_sentences_json(args["generated_sentences_file"])
 	if args["shuffle"]:
 		random.shuffle(generated_sentences)
+	generated_sentences = generated_sentences[:num_samples_to_replay]
 
 	with open(args["jsons_dir"]+"/val-jsons-2.pkl", 'rb') as f:
 		reference_dataset = pickle.load(f)
@@ -222,6 +224,19 @@ def cwc_run_mission(args):
 		sample_id = sample["sample_id"]
 		reference_json = reference_dataset[json_id]
 
+		print("\nEvaluating sample", sample_id, "from json", str(json_id)+".")
+		response = raw_input("Replay this sample? [y: yes, n: skip this sample, q: end evaluation]  ")
+
+		if response == 'q':
+			print("Ending the evaluation.")
+			sys.exit(0)
+
+		if response == 's':
+			continue
+
+		print("Loading sample...")
+		# initialize the agents
+		agent_hosts, client_pool = initialize_agents(args)
 		experiment_prefix = "-".join(reference_json["logfile_path"].split("/")[-2].split("-")[:-1])
 		gold_config_xml_substring = blocks_to_xml(reference_json["gold_config_structure"], displacement=100, postprocessed=False)
 		prev_idx = max(sample_id-num_prev_states, 0)
@@ -255,25 +270,36 @@ def cwc_run_mission(args):
 
 		mission_utils.safeWaitForStart(agent_hosts)
 
-		print("\nEvaluating sample", sample_id, "from json", str(json_id)+".")
 		print("Replaying observations:", range(prev_idx, sample_id+1))
+		response = raw_input("Begin replay? [y: yes, s: skip this sample, q: end evaluation]  ")
+
+		if response == 'q':
+			print("Ending the evaluation.")
+			sys.exit(0)
+
+		if response == 's':
+			continue
+
+		print("Beginning the replay in 5 seconds...")
+		time.sleep(5)
 		# todo?: also initialize builder inventory?
 
 		last_chat_history, last_blocks_in_grid = None, None
 		for s in range(prev_idx, sample_id):
-			observation_type = "chat"
 			logged_observation = reference_json["WorldStates"][s]
 			current_blocks_in_grid = get_built_config(logged_observation)
-
-			screenshot_path = logged_observation["ScreenshotPath"]
-			if "chat" not in screenshot_path:
-				observation_type = "putdown" if "putdown" in screenshot_path else "pickup"
-
-			builder_position = logged_observation["BuilderPosition"]
-			teleportMovement(agent_hosts[1], teleport_x=builder_position["X"], teleport_y=builder_position["Y"], teleport_z=builder_position["Z"])
-			setPitchYaw(agent_hosts[1], pitch=builder_position["Pitch"], yaw=builder_position["Yaw"])	        
+			prettyPrintObservation(logged_observation)	        
 
 			if last_chat_history is not None:
+				screenshot_path = logged_observation["ScreenshotPath"]
+				observation_type = "chat"
+				if "chat" not in screenshot_path:
+					observation_type = "putdown" if "putdown" in screenshot_path else "pickup"
+
+				builder_position = logged_observation["BuilderPosition"]
+				teleportMovement(agent_hosts[1], teleport_x=builder_position["X"], teleport_y=builder_position["Y"], teleport_z=builder_position["Z"])
+				setPitchYaw(agent_hosts[1], pitch=builder_position["Pitch"], yaw=builder_position["Yaw"])
+
 				if len(last_chat_history) < len(logged_observation["ChatHistory"]):
 					for i in range(len(last_chat_history), len(logged_observation["ChatHistory"])):
 						chat_message = logged_observation["ChatHistory"][i]
@@ -282,137 +308,74 @@ def cwc_run_mission(args):
 						sendChat(ah, " ".join(chat_message.split()[1:]))
 						time.sleep(1)
 
-				# blocks_delta = diff(gold_config=current_blocks_in_grid, built_config=last_blocks_in_grid)
-				# print(blocks_delta)
+				blocks_delta = diff(gold_config=current_blocks_in_grid, built_config=last_blocks_in_grid)
+				print("Computed diff:", blocks_delta)
 
-				# if sum(len(lst) for lst in blocks_delta.values()) > 1:
-				# 	print("WARNING: multiple actions detected in diff. Quitting this sample.")
-				# 	break
+				if sum(len(lst) for lst in blocks_delta.values()) > 1:
+					print("WARNING: multiple actions detected in diff. Quitting this sample.")
+					break
 					
-				# if sum(len(lst) for lst in blocks_delta.values()) > 0:
-				# 	auto_find_location = False
-				# 	if observation_type == 'chat':
-				# 		print("WARNING: diff contained actions, but the observation type was 'chat'. Using automated location finder to teleport Builder.")
-				# 		auto_find_location = True
+				if sum(len(lst) for lst in blocks_delta.values()) > 0:
+					auto_find_location = False
+					if observation_type == 'chat':
+						print("WARNING: diff contained actions, but the observation type was 'chat'. Using automated location finder to teleport Builder.")
+						auto_find_location = True
 
-				# 	action = None
-				# 	if len(blocks_delta["gold_minus_built"]) > 0:
-				# 		action = 
+					action, block = None, None
+					if len(blocks_delta["gold_minus_built"]) > 0:
+						action = "putdown"
+						block = blocks_delta["gold_minus_built"][0]
+					else:
+						action = "pickup"
+						block = blocks_delta["built_minus_gold"][0]
 
-			# 	for to_putdown in blocks_delta["gold_minus_built"]:
-			# 		if auto_find_location:
+					x, y, z, color = block['x'], block['y'], block['z'], block['type']
+					# todo: find_teleport_location...
+					execute_action(agent_hosts[1], action=action, color=color, teleport=False)
 
-
-			# 					teleportMovement(agent_hosts[1], teleport_x=builder_position["X"], teleport_y=builder_position["Y"], teleport_z=builder_position["Z"])
-			# setPitchYaw(agent_hosts[1], pitch=builder_position["Pitch"], yaw=builder_position["Yaw"])
-
+					# if auto_find_location: TODO
+					# teleportMovement(agent_hosts[1], teleport_x=builder_position["X"], teleport_y=builder_position["Y"], teleport_z=builder_position["Z"])
+					# setPitchYaw(agent_hosts[1], pitch=builder_position["Pitch"], yaw=builder_position["Yaw"])
 
 			last_chat_history = logged_observation["ChatHistory"]
 			last_blocks_in_grid = current_blocks_in_grid
 
-		ground_truth_utterance = "ground truth: "+sample["ground_truth_utterance"]
-		generated_utterance = "generated: "+sample["generated_utterance"][0]
+		time.sleep(1)
+		ground_truth_utterance = sample["ground_truth_utterance"]
+		generated_utterance = sample["generated_utterance"][0]
 
-		sendChat(agent_hosts[2], ground_truth_utterance)
-		sendChat(agent_hosts[2], generated_utterance)
+		print("Ground truth utterance:", ground_truth_utterance)
+		print("Generated utterance:", generated_utterance)
 
-		sys.exit(0)
+		utterance = generated_utterance
+		if use_gold_utterances:
+			utterance = ground_truth_utterance
 
+		sendChat(agent_hosts[2], utterance)
 
-	  # read gold config from reference json.
-	  # go back num_steps before the sample id.
-	  # read in existing config and instantiate.
-	  # iterate.
+		timed_out = False
+		while not timed_out:
+			for i in range(3+num_fixed_viewers):
+				ah = agent_hosts[i]
+				world_state = ah.getWorldState()
 
+				if not world_state.is_mission_running:
+					timed_out = True
 
+		print("Quit signal received. Waiting for mission to end...")
+		# Mission should have ended already, but we want to wait until all the various agent hosts
+		# have had a chance to respond to their mission ended message.
+		hasEnded = False
+		while not hasEnded:
+		    hasEnded = True  # assume all good
+		    sys.stdout.write('.')
+		    time.sleep(0.1)
+		    for ah in agent_hosts[1:3]:
+		        world_state = ah.getWorldState()
+		        if world_state.is_mission_running:
+		            hasEnded = False  # all not good
 
-	# poll for observations
-	# timed_out = False
-	# all_observations = []
+		print("Mission ended")
+		# Mission has ended.
 
-	# while not timed_out:
-	#     for i in range(3+num_fixed_viewers):
-	#         ah = agent_hosts[i]
-	#         world_state = ah.getWorldState()
-
-	#         if not world_state.is_mission_running:
-	#             timed_out = True
-
-	#         elif i == 1 and world_state.number_of_observations_since_last_state > 0:
-	#             chat_instruction = None
-
-	#             # get the next chat instruction & corresponding world state
-	#             for observation in world_state.observations:
-	#                 all_observations.append(([], observation))
-	#                 if observation.text is not None:
-	#                     obsrv = json.loads(observation.text)
-	#                     print("Observation processed:")
-	#                     if verbose:
-	#                         print(json.dumps(obsrv, indent=4), '\n')
-
-	#                     chat_instruction = obsrv.get("Chat", chat_instruction) 
-	#                     blocks_in_grid = obsrv.get("BuilderGridAbsolute", blocks_in_grid)
-	#                     pitch = obsrv.get("Pitch", pitch) 
-	#                     yaw = obsrv.get("Yaw", yaw)
-
-	#                     if obsrv.get("Chat") is not None:
-	#                         print("Chat:", chat_instruction)
-
-	#                     if obsrv.get("BuilderGridAbsolute") is not None:
-	#                         print("BuilderGridAbsolute:", obsrv["BuilderGridAbsolute"])
-
-	#                     print()
-
-	#             # initialize the dialogue manager
-	#             if dm is None:
-	#                 dm = DialogueManager(all_observations, agent_hosts[1])
-
-	#             if chat_instruction is not None:
-	#                 utterances = ""
-	#                 for utterance in chat_instruction:
-	#                     if "<Architect>" in utterance:
-	#                         utterances += utterance.replace("<Architect>", "")+" "
-
-	#                 if len(utterances) > 0:
-	#                     dm.blocks_in_grid = reformat_builder_grid(blocks_in_grid)
-	#                     dm.parse(all_observations, utterances, pitch, yaw)
-
-	# time_elapsed = time.time() - start_time
-
-	# print("Mission has been quit. All world states:\n")
-
-	# all_world_states = []
-	# for dialogue_states, observation in all_observations:
-	#     world_state = json.loads(observation.text)
-	#     world_state["Timestamp"] = observation.timestamp.replace(microsecond=0).isoformat(' ')
-	#     world_state["DialogueManager"] = dialogue_states
-	#     debug_utils.prettyPrintObservation(world_state)
-	#     all_world_states.append(world_state)
-
-	# raw_observations = {
-	#     "WorldStates": all_world_states,
-	#     "TimeElapsed": time_elapsed,
-	#     "NumFixedViewers": num_fixed_viewers
-	# }
-
-	# m, s = divmod(time_elapsed, 60)
-	# h, m = divmod(m, 60)
-	# print("Done! Mission time elapsed: %d:%02d:%02d (%.2fs)\n" % (h, m, s, time_elapsed))
-
-	# print("Waiting for mission to end...")
-	# # Mission should have ended already, but we want to wait until all the various agent hosts
-	# # have had a chance to respond to their mission ended message.
-	# hasEnded = False
-	# while not hasEnded:
-	#     hasEnded = True  # assume all good
-	#     sys.stdout.write('.')
-	#     time.sleep(0.1)
-	#     for ah in agent_hosts[1:3]:
-	#         world_state = ah.getWorldState()
-	#         if world_state.is_mission_running:
-	#             hasEnded = False  # all not good
-
-	# print("Mission ended")
-	# # Mission has ended.
-
-	# time.sleep(2)
+		time.sleep(10)

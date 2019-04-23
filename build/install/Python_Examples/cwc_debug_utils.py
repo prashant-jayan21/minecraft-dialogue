@@ -4,7 +4,7 @@ import sys
 def prettyPrintObservation(observation):
     grouped_elements = "\t"
     for element in observation:
-        if element == 'BlocksOutside' or element == 'BlocksInside' or element == 'BuilderGridAbsolute' or element == 'BuilderGridRelative':
+        if element == 'BlocksOutside' or element == 'BlocksInside' or element == 'BuilderGridAbsolute' or element == 'BuilderGridRelative' or element == 'BlocksInGrid':
             sys.stdout.write("\t"+element+": ")
             print len(observation[element]), "values"
         elif element == 'BuilderInventory':
