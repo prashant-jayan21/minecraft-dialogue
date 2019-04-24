@@ -294,7 +294,7 @@ def cwc_run_mission(args):
 			if last_chat_history is not None:
 				screenshot_path = logged_observation["ScreenshotPath"]
 				observation_type = "chat"
-				if "chat" not in screenshot_path:
+				if screenshot_path is not None and "chat" not in screenshot_path:
 					observation_type = "putdown" if "putdown" in screenshot_path else "pickup"
 
 				builder_position = logged_observation["BuilderPosition"]
@@ -319,7 +319,7 @@ def cwc_run_mission(args):
 					
 				if sum(len(lst) for lst in blocks_delta.values()) > 0:
 					auto_find_location = False
-					if observation_type == 'chat':
+					if screenshot_path is not None and observation_type == 'chat':
 						print("WARNING: diff contained actions, but the observation type was 'chat'. Quitting this sample.") # FIXME: what do we do about these potential problematic examples?
 						auto_find_location = True
 						error_encountered = True
