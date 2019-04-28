@@ -84,7 +84,11 @@ def mergeObservation(observations, next_observation):
         next_observation_keys = set(next_observation.keys())
         next_observation_keys.remove("Timestamp")
 
-        if len(last_observation_keys.intersection(next_observation_keys)) > 0:
+        last_observation_type = last_observation.get("ScreenshotPath", "").split("-")[-1].replace(".png", "")
+        next_observation_type = next_observation.get("ScreenshotPath", "").split("-")[-1].replace(".png", "")
+        chat_conflict = (len(last_observation_type) > 0 and last_observation_type != 'chat' and 'ChatHistory' in next_observation_keys) or (len(next_observation_type) > 0 and next_observation_type != 'chat' and 'ChatHistory' in last_observation_keys)
+
+        if len(last_observation_keys.intersection(next_observation_keys)) > 0 or chat_conflict:
             observations.append(next_observation)
         else:
             observations[-1] = dict(next_observation, **last_observation)
