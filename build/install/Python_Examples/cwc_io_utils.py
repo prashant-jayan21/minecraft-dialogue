@@ -3,7 +3,7 @@ import os, json, csv
 def readXMLSubstringFromFile(xml_filename, displaced):
     config_xml_substring = ""
     if xml_filename is not None and len(xml_filename) > 0:
-        print("Reading XML file", xml_filename)
+        print(("Reading XML file", xml_filename))
         config_file = open(xml_filename, "r")
         config_xml_substring = config_file.read()
         config_file.close()
@@ -27,7 +27,7 @@ def makeLogDirectory(experiment_id):
 
 def writeJSONtoLog(experiment_id, filename, json_data):
     experiment_log = makeLogDirectory(experiment_id)
-    print("Writing", filename, "to", experiment_log, "...")
+    print(("Writing", filename, "to", experiment_log, "..."))
     with open(experiment_log+"/"+filename, "w") as log:
         json.dump(json_data, log)
 
@@ -51,7 +51,7 @@ def getLogfileNames(arglist, suffix):
 
     print("Retrieved the following logfiles:")
     for logfile in sorted_filenames:
-        print("\t",logfile)
+        print(("\t",logfile))
     print()
 
     return sorted_filenames
@@ -89,7 +89,7 @@ def write_curriculums(curriculums, people_specs):
             writer.writeheader()
             for config in curriculum:
                 writer.writerow({'gold file path': 'gold-configurations/' + config, 'existing file path': ''})
-            print("DONE WRITING " + 'curriculum_' + str(i) + '.csv' + " FOR PEOPLE PAIR " + str(people_pair_specs["person_1"]) + ", " + str(people_pair_specs["person_2"]))
+            print(("DONE WRITING " + 'curriculum_' + str(i) + '.csv' + " FOR PEOPLE PAIR " + str(people_pair_specs["person_1"]) + ", " + str(people_pair_specs["person_2"])))
 
 def read_curriculum(curriculum_file):
     all_configs = []
@@ -108,7 +108,7 @@ def write_configs_db(configs_db, configs_db_file):
         for config in configs_db:
             config["people"] = ' '.join(str(x) for x in config["people"])
             writer.writerow(config)
-        print("DONE WRITING " + configs_db_file)
+        print(("DONE WRITING " + configs_db_file))
 
 def read_config_metrics_db(metrics_db_file):
     all_configs = []
@@ -135,7 +135,7 @@ def write_config_metrics_db(metrics_db, metrics_db_file):
             config["num_utterances"] = ' '.join(str(x) for x in config["num_utterances"])
             config["utterances_per_turn"] = ' '.join(str(x) for x in config["utterances_per_turn"])
             writer.writerow(config)
-        print("DONE WRITING " + metrics_db_file)
+        print(("DONE WRITING " + metrics_db_file))
 
 def read_dialog_metrics_db(metrics_db_file):
     all_dialogs = []
@@ -157,4 +157,4 @@ def write_dialog_metrics_db(metrics_db, metrics_db_file):
         writer.writeheader()
         for dialog in metrics_db:
             writer.writerow(dialog)
-        print("DONE WRITING " + metrics_db_file)
+        print(("DONE WRITING " + metrics_db_file))

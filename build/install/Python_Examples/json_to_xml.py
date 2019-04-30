@@ -25,7 +25,7 @@ def main():
 		bz = str(block["AbsoluteCoordinates"]["Z"]+args.displacement)
 		gold.write("<DrawBlock type=\"cwcmod:"+bt+"\" x=\""+bx+"\" y=\""+by+"\" z=\""+bz+"\"/>\n")
 
-	print("Wrote gold configuration to", gf)
+	print(("Wrote gold configuration to", gf))
 	gold.close()
 
 if __name__ == '__main__':

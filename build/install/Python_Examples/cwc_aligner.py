@@ -81,14 +81,14 @@ def align(all_screenshot_filenames, num_fixed_viewers):
 
     all_aligned_filenames = [item for t in aligned_tuples for item in t]
     all_unaligned_filenames = set(all_screenshot_filenames) - set(all_aligned_filenames)
-    print("UNALIGNED SCREENSHOTS: " + str(all_unaligned_filenames) + "\n")
+    print(("UNALIGNED SCREENSHOTS: " + str(all_unaligned_filenames) + "\n"))
 
     return aligned_tuples
 
 def get_aligned_pairs(grouping, agent_name_1, agent_name_2):
     aligned_pairs = [] # list of all aligned pairs of screenshots
 
-    for action, all_filenames_for_action in grouping.items():
+    for action, all_filenames_for_action in list(grouping.items()):
         # split into builder and architect screenshots
         architect_filenames = [x for x in all_filenames_for_action if agent_name_1 in x]
         builder_filenames = [x for x in all_filenames_for_action if agent_name_2 in x]
