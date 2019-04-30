@@ -1,8 +1,9 @@
 import re, os, json, argparse
 from os.path import join, isdir, isfile
+from functools import reduce
 
 def postprocess_missions(logs_root_dir, screenshots_root_dir, overwrite):
-    all_log_dirs = filter(lambda x: isdir(join(logs_root_dir, x)), os.listdir(logs_root_dir))
+    all_log_dirs = [x for x in os.listdir(logs_root_dir) if isdir(join(logs_root_dir, x))]
 
     for log_dir in all_log_dirs:
         if overwrite == False and os.path.isfile(join(logs_root_dir, log_dir, "aligned-observations.json")):
@@ -11,7 +12,7 @@ def postprocess_missions(logs_root_dir, screenshots_root_dir, overwrite):
             postprocess_observations(join(logs_root_dir, log_dir), join(screenshots_root_dir, log_dir))
 
 def postprocess_observations(logs_dir, screenshots_dir):
-    all_filenames = filter(lambda x: x.endswith(".png"), os.listdir(screenshots_dir))
+    all_filenames = [x for x in os.listdir(screenshots_dir) if x.endswith(".png")]
 
     with open(join(logs_dir, "postprocessed-observations.json")) as observations:
 	       observations_dict = json.load(observations)
@@ -46,7 +47,7 @@ def add_other_screenshots(json, aligned_tuples, num_fixed_viewers):
 def get_other_screenshots(builder_screenshot, aligned_tuples):
     for t in aligned_tuples:
         if t[1] == builder_screenshot:
-            return filter(lambda x: x != t[1], t)
+            return [x for x in t if x != t[1]]
     return None
 
 def align(all_screenshot_filenames, num_fixed_viewers):
@@ -80,17 +81,17 @@ def align(all_screenshot_filenames, num_fixed_viewers):
 
     all_aligned_filenames = [item for t in aligned_tuples for item in t]
     all_unaligned_filenames = set(all_screenshot_filenames) - set(all_aligned_filenames)
-    print "UNALIGNED SCREENSHOTS: " + str(all_unaligned_filenames) + "\n"
+    print("UNALIGNED SCREENSHOTS: " + str(all_unaligned_filenames) + "\n")
 
     return aligned_tuples
 
 def get_aligned_pairs(grouping, agent_name_1, agent_name_2):
     aligned_pairs = [] # list of all aligned pairs of screenshots
 
-    for action, all_filenames_for_action in grouping.iteritems():
+    for action, all_filenames_for_action in grouping.items():
         # split into builder and architect screenshots
-        architect_filenames = filter(lambda x: agent_name_1 in x, all_filenames_for_action)
-        builder_filenames = filter(lambda x: agent_name_2 in x, all_filenames_for_action)
+        architect_filenames = [x for x in all_filenames_for_action if agent_name_1 in x]
+        builder_filenames = [x for x in all_filenames_for_action if agent_name_2 in x]
         # create a weighted complete bipartite graph
         # nodes in first set are architect screenshots and in second are builder ones
         # each weight is the time lag between screenshots
@@ -105,7 +106,7 @@ def get_aligned_pairs(grouping, agent_name_1, agent_name_2):
             a_min, b_min, w_min = min(graph, key = lambda x: x[2])
             aligned_pairs.append((a_min, b_min))
             # delete all edges with these as nodes
-            graph = filter(lambda x: x[0] != a_min and x[1] != b_min, graph)
+            graph = [x for x in graph if x[0] != a_min and x[1] != b_min]
 
     return aligned_pairs
 

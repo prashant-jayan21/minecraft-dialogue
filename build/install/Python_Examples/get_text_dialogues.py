@@ -13,8 +13,8 @@ def generateTxtFile(logfiles, output, screenshots_dir):
 	outfile_no_actions = open("dialogues/"+".".join(output.split(".")[:-1])+("-" if not output_is_empty else "")+"dialogue.txt", "w")
 	outfile_with_actions = open("dialogues/"+".".join(output.split(".")[:-1])+("-" if not output_is_empty else "")+"dialogue-with-actions.txt", "w")
 
-	print "Writing plain dialogues to", outfile_no_actions.name
-	print "Writing dialogues with actions to", outfile_with_actions.name
+	print("Writing plain dialogues to", outfile_no_actions.name)
+	print("Writing dialogues with actions to", outfile_with_actions.name)
 
 	for logfile in logfiles:
 		with open(logfile, 'r') as f:
@@ -109,7 +109,7 @@ def getMovedBlock(last_world_state, world_state, action):
 			break
 
 	if moved is None:
-		print "Something went wrong! Detected", action, "action but no moved block was found."
+		print("Something went wrong! Detected", action, "action but no moved block was found.")
 		return None
 
 	return moved

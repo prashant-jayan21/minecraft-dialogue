@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # Read user info from spreadsheet
     all_users = []
-    with open(args.user_info_csv, 'rb') as csvfile:
+    with open(args.user_info_csv, 'rt') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             all_users.append(row)
@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     # Read gold config file paths from spreadsheet
     all_configs = []
-    with open(args.configs_csv, 'rb') as csvfile:
+    with open(args.configs_csv, 'rt') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             all_configs.append(row)
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     # Read fixed viewer info from spreadsheet
     fixed_viewer = None
     if args.fixed_viewer_csv is not None:
-        with open(args.fixed_viewer_csv, 'rb') as csvfile:
+        with open(args.fixed_viewer_csv, 'rt') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 fixed_viewer = row
@@ -52,22 +52,22 @@ if __name__ == "__main__":
     # Check that fixed viewer parameters are set
     if args.lan and args.num_fixed_viewers > 0:
         if args.fixed_viewer_csv is None:
-            print "Error: In LAN mode, you must specify a --fixed_viewer_csv parameter. Consider using a default localhost, such as the specification in sample_fixed_viewer.csv."
+            print("Error: In LAN mode, you must specify a --fixed_viewer_csv parameter. Consider using a default localhost, such as the specification in sample_fixed_viewer.csv.")
             exit()
 
         if fixed_viewer is None:
-            print "Error: In LAN mode, you must have at least one available Fixed Viewer client in the Fixed Viewer csv. Consider using a default localhost, such as the specification in sample_fixed_viewer.csv."
+            print("Error: In LAN mode, you must have at least one available Fixed Viewer client in the Fixed Viewer csv. Consider using a default localhost, such as the specification in sample_fixed_viewer.csv.")
             exit()
 
     if args.fixed_viewer_csv is not None and args.num_fixed_viewers == 0:
-        print "Warning: You specified a --fixed_viewer_csv parameter, but did not specify the number of fixed viewer clients to spawn (--num_fixed_viewers). As a result, the missions will launch with no fixed viewer clients."
+        print("Warning: You specified a --fixed_viewer_csv parameter, but did not specify the number of fixed viewer clients to spawn (--num_fixed_viewers). As a result, the missions will launch with no fixed viewer clients.")
 
     # Execute rounds
     for config in all_configs:
 
-        print "\nROUND STARTED..."
-        print "\nGOLD CONFIG: " + config["gold file path"]
-        print "EXISTING CONFIG: " + config["existing file path"]
+        print("\nROUND STARTED...")
+        print("\nGOLD CONFIG: " + config["gold file path"])
+        print("EXISTING CONFIG: " + config["existing file path"])
 
         builder_port = (10000 if builder.get("port") is None else int(builder["port"]))
         architect_port = (10000 if architect.get("port") is None else int(architect["port"]))
@@ -90,13 +90,13 @@ if __name__ == "__main__":
         }
 
         # submit mission jobs to process pool
-        print "\nMISSIONS RUNNING..."
+        print("\nMISSIONS RUNNING...")
         cwc_run_mission(mission_args)
 
-        print "\nROUND ENDED..."
-        print "\nWAITING..."
+        print("\nROUND ENDED...")
+        print("\nWAITING...")
 
         # Wait for some time
         time.sleep(10)
 
-    print "\nSESSION COMPLETE!"
+    print("\nSESSION COMPLETE!")

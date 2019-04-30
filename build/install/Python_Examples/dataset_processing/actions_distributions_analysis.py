@@ -25,7 +25,7 @@ def process_log_dir(logs_root_dir, log_dir, gold_configs_dir):
 
 def process_dialog_states(observations_dict, gold_config):
 	for i, world_state in enumerate(observations_dict["WorldStates"]):
-		print("STATE NUMBER: " + str(i) + "\n")
+		print(("STATE NUMBER: " + str(i) + "\n"))
 		built_config_raw = world_state["BlocksInGrid"]
 		built_config = list(map(reformat_built_config_block, built_config_raw))
 
@@ -33,57 +33,45 @@ def process_dialog_states(observations_dict, gold_config):
 		_, perturbations_and_diffs = get_diff(gold_config = gold_config, built_config = built_config)
 
 		# get type distributions
-		diffs_built_config_space = list(map(lambda x: x.diff.diff_built_config_space, perturbations_and_diffs))
+		diffs_built_config_space = list([x.diff.diff_built_config_space for x in perturbations_and_diffs])
 		type_distributions_built_config_space = get_type_distributions(diffs_built_config_space=diffs_built_config_space, built_config=built_config)
 
-		grid_locations_with_blocks = list(filter(
-			lambda x: x.grid_location["type"] != "empty",
-			type_distributions_built_config_space
-		))
-		print(len(grid_locations_with_blocks))
+		grid_locations_with_blocks = list([x for x in type_distributions_built_config_space if x.grid_location["type"] != "empty"])
+		print((len(grid_locations_with_blocks)))
 
-		empty_grid_locations_with_next_placements = list(filter(
-			lambda x: x.grid_location["type"] == "empty" and x.type_distribution["empty"] < 1.0,
-			type_distributions_built_config_space
-		))
-		print(len(empty_grid_locations_with_next_placements))
+		empty_grid_locations_with_next_placements = list([x for x in type_distributions_built_config_space if x.grid_location["type"] == "empty" and x.type_distribution["empty"] < 1.0])
+		print((len(empty_grid_locations_with_next_placements)))
 
 		import pprint
 		pp = pprint.PrettyPrinter()
 		print("grid_locations_with_blocks\n")
-		pp.pprint(list(map(lambda x: x.__dict__, grid_locations_with_blocks)))
+		pp.pprint(list([x.__dict__ for x in grid_locations_with_blocks]))
 		print("\n\n")
 		print("empty_grid_locations_with_next_placements\n")
-		pp.pprint(list(map(lambda x: x.__dict__, empty_grid_locations_with_next_placements)))
+		pp.pprint(list([x.__dict__ for x in empty_grid_locations_with_next_placements]))
 
 		# reverse diff
 		_, perturbations_and_diffs_reverse = get_diff(gold_config = built_config, built_config = gold_config)
 
 		# get type distributions
-		diffs_gold_config_space = list(map(lambda x: x.diff.diff_built_config_space, perturbations_and_diffs_reverse))
+		diffs_gold_config_space = list([x.diff.diff_built_config_space for x in perturbations_and_diffs_reverse])
 		type_distributions_gold_config_space = get_type_distributions(diffs_built_config_space=diffs_gold_config_space, built_config=gold_config)
 
-		grid_locations_with_blocks = list(filter(
-			lambda x: x.grid_location["type"] != "empty",
-			type_distributions_gold_config_space
-		))
+		grid_locations_with_blocks = list([x for x in type_distributions_gold_config_space if x.grid_location["type"] != "empty"])
 
-		empty_grid_locations_with_next_placements = list(filter(
-			lambda x: x.grid_location["type"] == "empty" and x.type_distribution["empty"] < 1.0,
-			type_distributions_gold_config_space
-		))
+		empty_grid_locations_with_next_placements = list([x for x in type_distributions_gold_config_space if x.grid_location["type"] == "empty" and x.type_distribution["empty"] < 1.0])
 
 		import pprint
 		pp = pprint.PrettyPrinter()
 		print("grid_locations_with_blocks\n")
-		pp.pprint(list(map(lambda x: x.__dict__, grid_locations_with_blocks)))
+		pp.pprint(list([x.__dict__ for x in grid_locations_with_blocks]))
 		print("\n\n")
 		print("empty_grid_locations_with_next_placements\n")
-		pp.pprint(list(map(lambda x: x.__dict__, empty_grid_locations_with_next_placements)))
+		pp.pprint(list([x.__dict__ for x in empty_grid_locations_with_next_placements]))
 
 		print("\n\n")
-		print("*" * 100)
-		print("*" * 100)
+		print(("*" * 100))
+		print(("*" * 100))
 		print("\n\n")
 
 color_regex = re.compile("red|orange|purple|blue|green|yellow")
@@ -107,7 +95,7 @@ def get_gold_config(gold_config_xml_file):
 	"""
 
 	with open(gold_config_xml_file) as f:
-		all_lines = list(map(lambda t: t.strip(), f.readlines()))
+		all_lines = list([t.strip() for t in f.readlines()])
 
 	gold_config_raw = list(map(ET.fromstring, all_lines))
 
