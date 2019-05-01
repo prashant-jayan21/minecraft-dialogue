@@ -3,18 +3,21 @@
 # Record all observations
 
 from __future__ import print_function
-import os, sys, time, json, datetime, copy, pickle, random, re
+import os, sys, time, json, datetime, copy, pickle, random, re, webbrowser
 import MalmoPython, numpy as np
 import cwc_mission_utils as mission_utils, cwc_debug_utils as debug_utils, cwc_io_utils as io_utils
 from json_to_xml import blocks_to_xml
 from cwc_builder_utils import *
 from cwc_debug_utils import *
+from collections import defaultdict
 
 sys.path.append('./config_diff_tool')
 from diff import diff
 
 num_prev_states = 7
 color_regex = re.compile("red|orange|purple|blue|green|yellow")
+url_pfx_1 = "https://docs.google.com/forms/d/e/1FAIpQLSdOJXWyNHPJk7HJgy1tM6h-5dZTK4eOZ-j8ZaoxXiJgkoAdsw/viewform?usp=pp_url&entry.1855312032="
+url_pfx_2 = "&entry.528882131="
 
 def addFixedViewers(n):
 	fvs = ''
@@ -198,7 +201,7 @@ def reformat(block):
 	}
 
 def cwc_run_mission(args):
-	print("Calling cwc_run_builder_demo with args:", args, "\n")
+	print("Calling cwc_replay_mission with args:", args, "\n")
 	start_time = time.time()
 
 	num_fixed_viewers = args["num_fixed_viewers"]
@@ -211,30 +214,70 @@ def cwc_run_mission(args):
 		print("Error: please provide a generated sentences file for the replay tool.")
 		sys.exit(0)
 
-	generated_sentences = read_generated_sentences_json(args["generated_sentences_file"])
+	split = "val" if "-val-" in args["generated_sentences_file"] else "test"
+	with open(args["jsons_dir"]+"/"+split+"-jsons-2.pkl", 'rb') as f:
+		reference_dataset = pickle.load(f)
+
+	if args["sample_sentences"]:
+		generated_sentences_json = read_generated_sentences_json(args["generated_sentences_file"])
+		generated_sentences_by_gold_config = defaultdict(list)
+		for sentence in generated_sentences_json:
+			gold_config_id = reference_dataset[sentence["json_id"]]["gold_config_name"]
+			generated_sentences_by_gold_config[gold_config_id].append(sentence)
+
+		print("Loaded", len(generated_sentences_json), "examples over", len(generated_sentences_by_gold_config), "total gold configs.")
+
+		generated_sentences = []
+		for gold_config_id in generated_sentences_by_gold_config:
+			sampled_sentences = np.random.choice(generated_sentences_by_gold_config[gold_config_id], 3, replace=False)
+			generated_sentences.extend(sampled_sentences)
+
+		print("Sampled", len(generated_sentences), "examples.")
+
+		with open('sampled_generated_sentences-'+split+'.json', 'w') as f:
+			json.dump(generated_sentences, f)
+
+	else:
+		with open('sampled_generated_sentences-'+split+'.json', 'r') as f:
+			generated_sentences = json.load(f)
+
+		print("Loaded", len(generated_sentences), "examples.")
+
+	sentences_with_ids = []
+	for i, sentence in enumerate(generated_sentences):
+		sentences_with_ids.append((i, sentence))
+	generated_sentences = sentences_with_ids
+
 	if args["shuffle"]:
 		random.shuffle(generated_sentences)
 	generated_sentences = generated_sentences[:num_samples_to_replay]
 
-	with open(args["jsons_dir"]+"/val-jsons-2.pkl", 'rb') as f:
-		reference_dataset = pickle.load(f)
-
-	for sample in generated_sentences:
+	sentence_id = 0
+	while sentence_id < range(len(generated_sentences)):
+		eval_id, sample = generated_sentences[sentence_id]
 		json_id = sample["json_id"]
 		sample_id = sample["sample_id"]
 		reference_json = reference_dataset[json_id]
 
-		print("\nEvaluating sample", sample_id, "from json", str(json_id)+".")
-		response = raw_input("Replay this sample? [y: yes, n: skip this sample, q: end evaluation]  ")
+		ground_truth_utterance = sample["ground_truth_utterance"] # FIXME: use ground_truth_utterance_raw
+		generated_utterance = sample["generated_utterance"][0]
 
-		if response == 'q':
-			print("Ending the evaluation.")
-			sys.exit(0)
+		utterance = generated_utterance
+		if use_gold_utterances:
+			utterance = ground_truth_utterance
 
-		if response == 's':
-			continue
+		print("\nEvaluating sample", sample_id, "from json", str(json_id)+" ("+str(sentence_id+1)+"/"+str(len(generated_sentences))+").")
+		# response = raw_input("Replay this sample? [y: yes, n: skip this sample, q: end evaluation]  ")
+
+		# if response == 'q':
+		# 	print("Ending the evaluation.")
+		# 	sys.exit(0)
+
+		# if response == 's':
+		# 	continue
 
 		print("Loading sample...")
+
 		# initialize the agents
 		agent_hosts, client_pool = initialize_agents(args)
 		experiment_prefix = "-".join(reference_json["logfile_path"].split("/")[-2].split("-")[:-1])
@@ -307,7 +350,7 @@ def cwc_run_mission(args):
 						print("Sending chat message:", chat_message)
 						ah = agent_hosts[1] if chat_message.startswith("<Builder>") else agent_hosts[2]
 						sendChat(ah, " ".join(chat_message.split()[1:]))
-						time.sleep(1)
+						time.sleep(0.5)
 
 				blocks_delta = diff(gold_config=current_blocks_in_grid, built_config=last_blocks_in_grid)
 				# print("Computed diff:", blocks_delta)
@@ -347,39 +390,39 @@ def cwc_run_mission(args):
 		time.sleep(1)
 
 		if not error_encountered:
-			ground_truth_utterance = sample["ground_truth_utterance"] # FIXME: use ground_truth_utterance_raw
-			generated_utterance = sample["generated_utterance"][0]
+			sendChat(agent_hosts[2], "("+str(eval_id)+") "+utterance)
+			time.sleep(1)
+			webbrowser.open(url_pfx_1+str(eval_id)+url_pfx_2+utterance.replace(' ','+'), new=1)
 
-			print("Ground truth utterance:", ground_truth_utterance)
-			print("Generated utterance:", generated_utterance)
-
-			utterance = generated_utterance
-			if use_gold_utterances:
-				utterance = ground_truth_utterance
-
-			sendChat(agent_hosts[2], utterance)
-
-		timed_out = False
+		timed_out, replay_example = False, False
 		while not timed_out:
 			for i in range(3+num_fixed_viewers):
 				ah = agent_hosts[i]
 				world_state = ah.getWorldState()
+				for observation in world_state.observations:
+					if observation.text is not None:
+						obsrv = json.loads(observation.text)
+						if obsrv.get("Chat") is not None and any("replay" in chat for chat in obsrv.get("Chat")):
+							replay_example = True
+							print("NOTICE: will replay this example.")
 
 				if not world_state.is_mission_running:
 					timed_out = True
+					if not replay_example:
+						sentence_id += 1
 
 		print("Quit signal received. Waiting for mission to end...")
 		# Mission should have ended already, but we want to wait until all the various agent hosts
 		# have had a chance to respond to their mission ended message.
 		hasEnded = False
 		while not hasEnded:
-		    hasEnded = True  # assume all good
-		    sys.stdout.write('.')
-		    time.sleep(0.1)
-		    for ah in agent_hosts[1:3]:
-		        world_state = ah.getWorldState()
-		        if world_state.is_mission_running:
-		            hasEnded = False  # all not good
+			hasEnded = True  # assume all good
+			sys.stdout.write('.')
+			time.sleep(0.1)
+			for ah in agent_hosts[1:3]:
+				world_state = ah.getWorldState()
+				if world_state.is_mission_running:
+					hasEnded = False  # all not good
 
 		print("Mission ended")
 		# Mission has ended.
