@@ -15,7 +15,7 @@ if __name__ == "__main__":
     parser.add_argument("--replay_gold", default=False, action='store_true', help="Use ground truth utterances in the replay tool, instead of generated utterances")
     parser.add_argument("--shuffle", default=False, action='store_true', help='shuffle sentences to be evaluated')
     parser.add_argument("--num_samples_to_replay", default=5, help="Number of samples to view in replay tool")
-    parser.add_argument("--jsons_dir", default="/Users/Anjali/Documents/UIUC/research/CwC/BlocksWorld/Minecraft/cwc-minecraft-models/data/saved_cwc_datasets/lower-no_perspective_coords/")
+    parser.add_argument("--jsons_dir", default="./")
     parser.add_argument("--sample_sentences", default=False, action='store_true')
     parser.add_argument("--num_sentences", default=100)
     args = parser.parse_args()
