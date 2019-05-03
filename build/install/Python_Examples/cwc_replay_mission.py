@@ -18,6 +18,8 @@ num_prev_states = 7
 color_regex = re.compile("red|orange|purple|blue|green|yellow")
 url_pfx_1 = "https://docs.google.com/forms/d/e/1FAIpQLSdOJXWyNHPJk7HJgy1tM6h-5dZTK4eOZ-j8ZaoxXiJgkoAdsw/viewform?usp=pp_url&entry.1855312032="
 url_pfx_2 = "&entry.528882131="
+url_pfx_3 = "&entry.848417593="
+url_pfx_4 = "&entry.649792857="
 
 def addFixedViewers(n):
 	fvs = ''
@@ -284,6 +286,33 @@ def cwc_run_mission(args):
 		gold_config_xml_substring = blocks_to_xml(reference_json["gold_config_structure"], displacement=100, postprocessed=False)
 		prev_idx = max(sample_id-num_prev_states, 0)
 
+		if prev_idx > 0:
+			print("\nChecking for Architect utterances in the history...")
+			last_chat_history, chat_delta = None, []
+			for s in range(prev_idx, sample_id):
+				logged_observation = reference_json["WorldStates"][s]
+				if last_chat_history is not None and len(last_chat_history) < len(logged_observation["ChatHistory"]):
+					for i in range(len(last_chat_history), len(logged_observation["ChatHistory"])):
+						print(logged_observation["ChatHistory"][i])
+						chat_delta.append(logged_observation["ChatHistory"][i].split()[0])
+				last_chat_history = logged_observation["ChatHistory"]
+
+			if not any("Architect" in cd for cd in chat_delta):
+				print("No Architect utterance found: scanning additional samples. Old prev_idx:", prev_idx)
+
+				while prev_idx > 0:
+					prev_idx -= 1
+					sample_chat = reference_json["WorldStates"][prev_idx]["ChatHistory"][-1]
+					print(sample_chat)
+					if sample_chat.startswith("<Architect>"):
+						break
+
+				print("New prev_idx:", prev_idx)
+
+			print()
+		else:
+			print("\nChat history starts from index 0.\n")
+
 		# experiment ID
 		experiment_time = str(int(round(time.time() * 1000)))
 		experiment_id = str(experiment_prefix + "-" + experiment_time)
@@ -321,6 +350,7 @@ def cwc_run_mission(args):
 			sys.exit(0)
 
 		if response == 's':
+			sentence_id += 1
 			continue
 
 		print("Beginning the replay in 5 seconds...")
@@ -392,7 +422,7 @@ def cwc_run_mission(args):
 		if not error_encountered:
 			sendChat(agent_hosts[2], "("+str(eval_id)+") "+utterance)
 			time.sleep(1)
-			webbrowser.open(url_pfx_1+str(eval_id)+url_pfx_2+utterance.replace(' ','+'), new=1)
+			webbrowser.open(url_pfx_1+str(eval_id)+url_pfx_2+utterance.replace(' ','+')+url_pfx_3+str(eval_id)+url_pfx_4+utterance.replace(' ','+'), new=1)
 
 		timed_out, replay_example = False, False
 		while not timed_out:
