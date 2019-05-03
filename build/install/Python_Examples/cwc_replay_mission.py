@@ -20,6 +20,7 @@ url_pfx_1 = "https://docs.google.com/forms/d/e/1FAIpQLSdOJXWyNHPJk7HJgy1tM6h-5dZ
 url_pfx_2 = "&entry.528882131="
 url_pfx_3 = "&entry.848417593="
 url_pfx_4 = "&entry.649792857="
+suppress_form = False
 
 def addFixedViewers(n):
 	fvs = ''
@@ -221,28 +222,17 @@ def cwc_run_mission(args):
 		reference_dataset = pickle.load(f)
 
 	if args["sample_sentences"]:
-		generated_sentences_json = read_generated_sentences_json(args["generated_sentences_file"])
-		generated_sentences_by_gold_config = defaultdict(list)
-		for sentence in generated_sentences_json:
-			gold_config_id = reference_dataset[sentence["json_id"]]["gold_config_name"]
-			generated_sentences_by_gold_config[gold_config_id].append(sentence)
-
-		print("Loaded", len(generated_sentences_json), "examples over", len(generated_sentences_by_gold_config), "total gold configs.")
-
-		generated_sentences = []
-		for gold_config_id in generated_sentences_by_gold_config:
-			sampled_sentences = np.random.choice(generated_sentences_by_gold_config[gold_config_id], 3, replace=False)
-			generated_sentences.extend(sampled_sentences)
-
+		generated_sentences = read_generated_sentences_json(args["generated_sentences_file"])
+		print("Loaded", len(generated_sentences), "examples.")
+		random.shuffle(generated_sentences)
+		generated_sentences = generated_sentences[:args["num_sentences"]]
 		print("Sampled", len(generated_sentences), "examples.")
-
 		with open('sampled_generated_sentences-'+split+'.json', 'w') as f:
 			json.dump(generated_sentences, f)
 
 	else:
 		with open('sampled_generated_sentences-'+split+'.json', 'r') as f:
 			generated_sentences = json.load(f)
-
 		print("Loaded", len(generated_sentences), "examples.")
 
 	sentences_with_ids = []
@@ -285,6 +275,7 @@ def cwc_run_mission(args):
 		experiment_prefix = "-".join(reference_json["logfile_path"].split("/")[-2].split("-")[:-1])
 		gold_config_xml_substring = blocks_to_xml(reference_json["gold_config_structure"], displacement=100, postprocessed=False)
 		prev_idx = max(sample_id-num_prev_states, 0)
+		chat_to_emit = None
 
 		if prev_idx > 0:
 			print("\nChecking for Architect utterances in the history...")
@@ -303,8 +294,10 @@ def cwc_run_mission(args):
 				while prev_idx > 0:
 					prev_idx -= 1
 					sample_chat = reference_json["WorldStates"][prev_idx]["ChatHistory"][-1]
+					print(reference_json["WorldStates"][prev_idx]["ChatHistory"])
 					print(sample_chat)
 					if sample_chat.startswith("<Architect>"):
+						chat_to_emit = sample_chat.replace("<Architect> ", "")
 						break
 
 				print("New prev_idx:", prev_idx)
@@ -357,12 +350,16 @@ def cwc_run_mission(args):
 		time.sleep(5)
 		# todo?: also initialize builder inventory?
 
+		if chat_to_emit is not None:
+			sendChat(agent_hosts[2], chat_to_emit)
+
 		error_encountered = False
 		last_chat_history, last_blocks_in_grid = None, None
 		for s in range(prev_idx, sample_id):
 			logged_observation = reference_json["WorldStates"][s]
 			current_blocks_in_grid = get_built_config(logged_observation)
-			# prettyPrintObservation(logged_observation)	        
+			# prettyPrintObservation(logged_observation)	
+			    
 
 			if last_chat_history is not None:
 				screenshot_path = logged_observation["ScreenshotPath"]
@@ -420,9 +417,11 @@ def cwc_run_mission(args):
 		time.sleep(1)
 
 		if not error_encountered:
+			print("Sending chat message TO BE EVALUATED:", "("+str(eval_id)+") "+utterance)
 			sendChat(agent_hosts[2], "("+str(eval_id)+") "+utterance)
 			time.sleep(1)
-			webbrowser.open(url_pfx_1+str(eval_id)+url_pfx_2+utterance.replace(' ','+')+url_pfx_3+str(eval_id)+url_pfx_4+utterance.replace(' ','+'), new=1)
+			if not suppress_form:
+				webbrowser.open(url_pfx_1+str(eval_id)+url_pfx_2+utterance.replace(' ','+')+url_pfx_3+str(eval_id)+url_pfx_4+utterance.replace(' ','+'), new=1)
 
 		timed_out, replay_example = False, False
 		while not timed_out:
