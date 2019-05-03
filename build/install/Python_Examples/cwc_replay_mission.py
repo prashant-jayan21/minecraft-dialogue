@@ -168,7 +168,7 @@ def initialize_agents(args):
 		print("Architect IP:", architect_ip, "\tPort:", architect_port)
 		print("FixedViewer IP:", fixed_viewer_ip, "\tPort:", fixed_viewer_port, "\tNumber of clients:", num_fixed_viewers, "\n")
 
-		client_pool.add(MalmoPython.ClientInfo(architect_ip, architect_port+1))
+		client_pool.add(MalmoPython.ClientInfo(builder_ip, builder_port+1))
 		client_pool.add(MalmoPython.ClientInfo(builder_ip, builder_port))
 		client_pool.add(MalmoPython.ClientInfo(architect_ip, architect_port))
 
