@@ -3,7 +3,7 @@
 # Record all observations
 
 from __future__ import print_function
-import os, sys, time, json, datetime, copy, pickle, random, re, webbrowser
+import os, sys, time, json, datetime, copy, pickle, random, re, webbrowser, string
 import MalmoPython, numpy as np
 import cwc_mission_utils as mission_utils, cwc_debug_utils as debug_utils, cwc_io_utils as io_utils
 from json_to_xml import blocks_to_xml
@@ -16,10 +16,7 @@ from diff import diff
 
 num_prev_states = 7
 color_regex = re.compile("red|orange|purple|blue|green|yellow")
-url_pfx_1 = "https://docs.google.com/forms/d/e/1FAIpQLSdOJXWyNHPJk7HJgy1tM6h-5dZTK4eOZ-j8ZaoxXiJgkoAdsw/viewform?usp=pp_url&entry.1855312032="
-url_pfx_2 = "&entry.528882131="
-url_pfx_3 = "&entry.848417593="
-url_pfx_4 = "&entry.649792857="
+url_pfxs = ["https://docs.google.com/forms/d/e/1FAIpQLSdOJXWyNHPJk7HJgy1tM6h-5dZTK4eOZ-j8ZaoxXiJgkoAdsw/viewform?usp=pp_url&entry.528882131=", "&entry.329825687="]
 suppress_form = False
 
 def addFixedViewers(n):
@@ -212,17 +209,31 @@ def cwc_run_mission(args):
 	existing_is_gold = args["existing_is_gold"]
 	num_samples_to_replay = args["num_samples_to_replay"]
 	use_gold_utterances = args["replay_gold"]
-
-	if args["generated_sentences_file"] is None:
-		print("Error: please provide a generated sentences file for the replay tool.")
-		sys.exit(0)
-
-	split = "val" if "-val-" in args["generated_sentences_file"] else "test"
-	with open(args["jsons_dir"]+"/"+split+"-jsons-2.pkl", 'rb') as f:
-		reference_dataset = pickle.load(f)
+	sources = args["generated_sentences_sources"]
 
 	if args["sample_sentences"]:
-		generated_sentences = read_generated_sentences_json(args["generated_sentences_file"])
+		if args["generated_sentences_files"] is None or len(args["generated_sentences_files"]) < 1:
+			print("Error: please provide generated sentences files for the replay tool.")
+			sys.exit(0)
+
+		split = "val" if "-val-" in args["generated_sentences_files"][0] else "test"
+		with open(args["jsons_dir"]+"/"+split+"-jsons-2.pkl", 'rb') as f:
+			reference_dataset = pickle.load(f)
+
+		generated_sentences = []
+		for j, generated_sentences_file in enumerate(args["generated_sentences_files"]):
+			sentences = read_generated_sentences_json(generated_sentences_file)
+			for i in range(len(sentences)):
+				sentence = sentences[i]
+				if len(generated_sentences) <= i:
+					generated_sentences.append({"json_id": sentence["json_id"], "sample_id": sentence["sample_id"], "ground_truth_utterance": sentence["ground_truth_utterance_raw"], "generated_sentences": []})
+				
+				if sentence["json_id"] != generated_sentences[i]["json_id"] or sentence["sample_id"] != generated_sentences[i]["sample_id"]:
+					print("WARNING: JSON or sample ID do not match; skipping.")
+					continue
+
+				generated_sentences[i]["generated_sentences"].append((sources[j], sentence["generated_utterance"][0]))
+
 		print("Loaded", len(generated_sentences), "examples.")
 		random.shuffle(generated_sentences)
 		generated_sentences = generated_sentences[:args["num_sentences"]]
@@ -230,8 +241,16 @@ def cwc_run_mission(args):
 		with open('sampled_generated_sentences-'+split+'.json', 'w') as f:
 			json.dump(generated_sentences, f)
 
+		print("Sampled examples. Please re-run with the generated_sentences_json arg to initiate the replay.")
+		sys.exit(0)
+
 	else:
-		with open('sampled_generated_sentences-'+split+'.json', 'r') as f:
+		split = "val" if "-val-" in args["generated_sentences_json"] else "test"
+
+		with open(args["jsons_dir"]+"/"+split+"-jsons-2.pkl", 'rb') as f:
+			reference_dataset = pickle.load(f)
+
+		with open(args["generated_sentences_json"], 'r') as f:
 			generated_sentences = json.load(f)
 		print("Loaded", len(generated_sentences), "examples.")
 
@@ -250,24 +269,9 @@ def cwc_run_mission(args):
 		json_id = sample["json_id"]
 		sample_id = sample["sample_id"]
 		reference_json = reference_dataset[json_id]
-
-		ground_truth_utterance = sample["ground_truth_utterance"] # FIXME: use ground_truth_utterance_raw
-		generated_utterance = sample["generated_utterance"][0]
-
-		utterance = generated_utterance
-		if use_gold_utterances:
-			utterance = ground_truth_utterance
+		print(json.dumps(sample, indent=4))
 
 		print("\nEvaluating sample", sample_id, "from json", str(json_id)+" ("+str(sentence_id+1)+"/"+str(len(generated_sentences))+").")
-		# response = raw_input("Replay this sample? [y: yes, n: skip this sample, q: end evaluation]  ")
-
-		# if response == 'q':
-		# 	print("Ending the evaluation.")
-		# 	sys.exit(0)
-
-		# if response == 's':
-		# 	continue
-
 		print("Loading sample...")
 
 		# initialize the agents
@@ -289,18 +293,16 @@ def cwc_run_mission(args):
 				last_chat_history = logged_observation["ChatHistory"]
 
 			if not any("Architect" in cd for cd in chat_delta):
-				print("No Architect utterance found: scanning additional samples. Old prev_idx:", prev_idx)
+				print("No Architect utterance found: scanning additional samples. old prev_idx:", prev_idx, end=', ')
 
 				while prev_idx > 0:
 					prev_idx -= 1
 					sample_chat = reference_json["WorldStates"][prev_idx]["ChatHistory"][-1]
-					print(reference_json["WorldStates"][prev_idx]["ChatHistory"])
-					print(sample_chat)
 					if sample_chat.startswith("<Architect>"):
 						chat_to_emit = sample_chat.replace("<Architect> ", "")
 						break
 
-				print("New prev_idx:", prev_idx)
+				print("new prev_idx:", prev_idx)
 
 			print()
 		else:
@@ -358,8 +360,6 @@ def cwc_run_mission(args):
 		for s in range(prev_idx, sample_id):
 			logged_observation = reference_json["WorldStates"][s]
 			current_blocks_in_grid = get_built_config(logged_observation)
-			# prettyPrintObservation(logged_observation)	
-			    
 
 			if last_chat_history is not None:
 				screenshot_path = logged_observation["ScreenshotPath"]
@@ -417,11 +417,25 @@ def cwc_run_mission(args):
 		time.sleep(1)
 
 		if not error_encountered:
-			print("Sending chat message TO BE EVALUATED:", "("+str(eval_id)+") "+utterance)
-			sendChat(agent_hosts[2], "("+str(eval_id)+") "+utterance)
-			time.sleep(1)
+			print("Full chat history:", last_chat_history)
+			sentences = sample["generated_sentences"]
+			sentences.append(('human', sample["ground_truth_utterance"]))
+			random.shuffle(sentences)
+
+			form_sentences = []
+			for k, (source, sentence) in enumerate(sentences):
+				identifier = string.ascii_letters[k]
+				print('Sending chat message to be evaluated: ('+identifier+') ('+source+')', sentence)
+				to_send = "("+str(eval_id)+identifier+") "+sentence
+				sendChat(agent_hosts[2], to_send)
+				form_sentences.append(to_send.replace(' ','+'))
+				time.sleep(1)
+
 			if not suppress_form:
-				webbrowser.open(url_pfx_1+str(eval_id)+url_pfx_2+utterance.replace(' ','+')+url_pfx_3+str(eval_id)+url_pfx_4+utterance.replace(' ','+'), new=1)
+				url = ""
+				for i in range(len(url_pfxs)):
+					url += url_pfxs[i]+form_sentences[i]
+				webbrowser.open(url, new=1)
 
 		timed_out, replay_example = False, False
 		while not timed_out:
