@@ -262,7 +262,7 @@ def cwc_run_mission(args):
 	generated_sentences = generated_sentences[:num_samples_to_replay]
 
 	sentence_id = 0
-	while sentence_id < range(len(generated_sentences)):
+	while sentence_id < len(generated_sentences):
 		eval_id, sample = generated_sentences[sentence_id]
 		json_id = sample["json_id"]
 		sample_id = sample["sample_id"]
