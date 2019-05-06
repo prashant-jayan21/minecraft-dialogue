@@ -216,10 +216,6 @@ def cwc_run_mission(args):
 			print("Error: please provide generated sentences files for the replay tool.")
 			sys.exit(0)
 
-		split = "val" if "-val-" in args["generated_sentences_files"][0] else "test"
-		with open(args["jsons_dir"]+"/"+split+"-jsons-2.pkl", 'rb') as f:
-			reference_dataset = pickle.load(f)
-
 		generated_sentences = []
 		for j, generated_sentences_file in enumerate(args["generated_sentences_files"]):
 			sentences = read_generated_sentences_json(generated_sentences_file)
@@ -237,7 +233,9 @@ def cwc_run_mission(args):
 		print("Loaded", len(generated_sentences), "examples.")
 		random.shuffle(generated_sentences)
 		generated_sentences = generated_sentences[:args["num_sentences"]]
+
 		print("Sampled", len(generated_sentences), "examples.")
+		split = "val" if "-val-" in args["generated_sentences_files"][0] else "test"
 		with open('sampled_generated_sentences-'+split+'.json', 'w') as f:
 			json.dump(generated_sentences, f)
 
@@ -245,7 +243,7 @@ def cwc_run_mission(args):
 		sys.exit(0)
 
 	else:
-		split = "val" if "-val-" in args["generated_sentences_json"] else "test"
+		split = "val" if "-val" in args["generated_sentences_json"] else "test"
 
 		with open(args["jsons_dir"]+"/"+split+"-jsons-2.pkl", 'rb') as f:
 			reference_dataset = pickle.load(f)
