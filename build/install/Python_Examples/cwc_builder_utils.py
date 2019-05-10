@@ -129,11 +129,11 @@ def setPitchYaw(ah, pitch=None, yaw=None):
     """ Sets the pitch and yaw of the agent. For efficiency, only set pitch/yaw to non-None values if they differ from the agent's current pitch/yaw values. """
     if yaw is not None:
         sendCommand(ah, "setYaw "+str(yaw))
-        time.sleep(1)
+        time.sleep(0.2)
 
     if pitch is not None:
         sendCommand(ah, "setPitch "+str(pitch))
-        time.sleep(1)
+        time.sleep(0.2)
 
 def chooseInventorySlot(ah, index):
     """ Selects the given block color from the hotbar. """
