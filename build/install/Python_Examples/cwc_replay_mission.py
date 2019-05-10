@@ -16,12 +16,13 @@ from diff import diff
 
 num_prev_states = 7
 color_regex = re.compile("red|orange|purple|blue|green|yellow")
-url_pfxs = ["https://docs.google.com/forms/d/e/1FAIpQLSdOJXWyNHPJk7HJgy1tM6h-5dZTK4eOZ-j8ZaoxXiJgkoAdsw/viewform?usp=pp_url&entry.1041006143=", 
-			"&entry.736588817=", "&entry.528882131=", "&entry.730665366=", 
-			"&entry.635524191=", "&entry.26185139=", "&entry.1201649239=", 
-			"&entry.1621785412=", "&entry.2140249019=", "&entry.2001652602="]
-
 suppress_form = False
+url_pfxs = ["https://docs.google.com/forms/d/e/1FAIpQLSdOJXWyNHPJk7HJgy1tM6h-5dZTK4eOZ-j8ZaoxXiJgkoAdsw/viewform?usp=pp_url&entry.1041006143=", "&entry.736588817=",
+			"&entry.528882131=", "&entry.730665366=",
+			"&entry.26185139=", "&entry.1201649239=",
+			"&entry.2140249019=", "&entry.2001652602=", 
+			"&entry.1283703002="]
+
 
 def addFixedViewers(n):
 	fvs = ''
@@ -550,8 +551,10 @@ def cwc_run_mission(args):
 			if not any(sen[0] == 'human' for sen in sentences):
 				sentences.append(('human', sample["ground_truth_utterance"]))
 			random.shuffle(sentences)
+			sendChat(agent_hosts[2], "=== Utterance ID: "+str(eval_id)+" ===")
 
-			form_sentences = [evaluator_id]
+			form_sentences = [evaluator_id, str(eval_id)]
+			formatted_sens = []
 			for k, (source, sentence) in enumerate(sentences):
 				identifier = string.ascii_letters[k]
 				if eval_id not in vars_map:
@@ -561,13 +564,14 @@ def cwc_run_mission(args):
 				vars_map[eval_id][identifier] = source
 
 				print('Sending chat message to be evaluated: ('+identifier+') ('+source+')', sentence)
-				to_send = "("+str(eval_id)+identifier+") "+sentence
-				sendChat(agent_hosts[2], to_send)
-
-				form_sentences.append(str(eval_id)+identifier)
-				form_sentences.append(sentence.replace(' ','+'))
-				form_sentences.append(sentence.replace(' ','+'))
+				sendChat(agent_hosts[2], '('+identifier+') '+sentence)
+				sentence = sentence.replace(' ','+')
+				form_sentences.append(sentence)
+				form_sentences.append(sentence)
+				formatted_sens.append('('+identifier+')+'+sentence)
 				time.sleep(0.2)
+
+			form_sentences.append('%0A'.join(formatted_sens))
 
 			if not suppress_form:
 				url = ""
