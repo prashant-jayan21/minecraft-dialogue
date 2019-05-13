@@ -205,6 +205,22 @@ def reformat(block):
 		"type": color_regex.findall(str(block["Type"]))[0] # NOTE: DO NOT CHANGE! Unicode to str conversion needed downstream when stringifying the dict.
 	}
 
+def squash_punctuation(sentence):
+	formatted_sentence = ""
+	tokens = sentence.split()
+	for i in range(len(tokens)):
+		to_add = " "
+		if (tokens[i] in string.punctuation or tokens[i][0] in string.punctuation) and tokens[i] != '"':
+			if tokens[i].startswith("'") \
+			or (tokens[i-1] not in string.punctuation and (i+1 == len(tokens) or not((tokens[i] == ':' or tokens[i] == ';') and tokens[i+1] == ')'))) \
+			or (tokens[i-1] == '?' and tokens[i] == '!') or (tokens[i-1] == '!' and tokens[i] == '?') \
+			or ((tokens[i-1] == ':' or tokens[i-1] == ';') and tokens[i] == ')') \
+			or (tokens[i-1] == tokens[i] and (tokens[i] == '.' or tokens[i] == '!' or tokens[i] == '?')):
+				to_add = ""
+
+		formatted_sentence += to_add+tokens[i]
+	return formatted_sentence.strip()
+
 def cwc_run_mission(args):
 	print("Calling cwc_replay_mission with args:", args, "\n")
 	start_time = time.time()
@@ -551,7 +567,7 @@ def cwc_run_mission(args):
 			if not any(sen[0] == 'human' for sen in sentences):
 				sentences.append(('human', sample["ground_truth_utterance"]))
 			random.shuffle(sentences)
-			sendChat(agent_hosts[2], "=== Utterance ID: "+str(eval_id)+" ===")
+			sendChat(agent_hosts[2], "=== Example ID: "+str(eval_id)+" ===")
 
 			form_sentences = [evaluator_id, str(eval_id)]
 			formatted_sens = []
@@ -563,8 +579,11 @@ def cwc_run_mission(args):
 					print("Warning: overwriting vars_map entry for eval_id", eval_id, "identifier", identifier)
 				vars_map[eval_id][identifier] = source
 
+				if source != 'human':
+					sentence = squash_punctuation(sentence)
 				print('Sending chat message to be evaluated: ('+identifier+') ('+source+')', sentence)
 				sendChat(agent_hosts[2], '('+identifier+') '+sentence)
+
 				sentence = sentence.replace(' ','+')
 				form_sentences.append(sentence)
 				form_sentences.append(sentence)
