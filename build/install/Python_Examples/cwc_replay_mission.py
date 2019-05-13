@@ -17,11 +17,16 @@ from diff import diff
 num_prev_states = 7
 color_regex = re.compile("red|orange|purple|blue|green|yellow")
 suppress_form = False
+use_grid_form = True
 url_pfxs = ["https://docs.google.com/forms/d/e/1FAIpQLSdOJXWyNHPJk7HJgy1tM6h-5dZTK4eOZ-j8ZaoxXiJgkoAdsw/viewform?usp=pp_url&entry.1041006143=", "&entry.736588817=",
 			"&entry.528882131=", "&entry.730665366=",
 			"&entry.26185139=", "&entry.1201649239=",
 			"&entry.2140249019=", "&entry.2001652602=", 
 			"&entry.1283703002="]
+
+if use_grid_form:
+	url_pfxs = ["https://docs.google.com/forms/d/e/1FAIpQLSe5MYfe3i2TwHkIXS6ecOWJDDFducFnrhSJl1yECIZbgW7uLA/viewform?usp=pp_url&entry.1027302661=", "&entry.1583955982=",
+				"&entry.1819794788=", "&entry.1890765153=", "&entry.1266038414=", "&entry.1449017998=", "&entry.762526574="]
 
 
 def addFixedViewers(n):
@@ -581,16 +586,21 @@ def cwc_run_mission(args):
 
 				if source != 'human':
 					sentence = squash_punctuation(sentence)
-				print('Sending chat message to be evaluated: ('+identifier+') ('+source+')', sentence)
-				sendChat(agent_hosts[2], '('+identifier+') '+sentence)
+				# print('Sending chat message to be evaluated: ('+identifier+') ('+source+')', sentence)
+				# sendChat(agent_hosts[2], '('+identifier+') '+sentence)
 
 				sentence = sentence.replace(' ','+')
-				form_sentences.append(sentence)
-				form_sentences.append(sentence)
+				if not use_grid_form:
+					form_sentences.append(sentence)
+					form_sentences.append(sentence)
 				formatted_sens.append('('+identifier+')+'+sentence)
 				time.sleep(0.2)
 
-			form_sentences.append('%0A'.join(formatted_sens))
+			if not use_grid_form:
+				form_sentences.append('%0A'.join(formatted_sens))
+			else:
+				for i in range(5):
+					form_sentences.append('%0A%0A'.join(formatted_sens))
 
 			if not suppress_form:
 				url = ""
