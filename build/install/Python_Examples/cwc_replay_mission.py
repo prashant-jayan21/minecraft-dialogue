@@ -26,7 +26,7 @@ url_pfxs = ["https://docs.google.com/forms/d/e/1FAIpQLSdOJXWyNHPJk7HJgy1tM6h-5dZ
 
 if use_grid_form:
 	url_pfxs = ["https://docs.google.com/forms/d/e/1FAIpQLSe5MYfe3i2TwHkIXS6ecOWJDDFducFnrhSJl1yECIZbgW7uLA/viewform?usp=pp_url&entry.1027302661=", "&entry.1583955982=",
-				"&entry.1819794788=", "&entry.1890765153=", "&entry.1266038414=", "&entry.1449017998=", "&entry.762526574="]
+				"&entry.1819794788=", "&entry.1497119261=", "&entry.1890765153=", "&entry.1266038414=", "&entry.1449017998="]
 
 
 def addFixedViewers(n):
@@ -498,8 +498,8 @@ def cwc_run_mission(args):
 			sentence_id += 1
 			continue
 
-		print("Beginning the replay in 3 seconds...")
-		time.sleep(3)
+		print("Beginning the replay in 5 seconds...")
+		time.sleep(5)
 
 		if chat_to_emit is not None:
 			sendChat(agent_hosts[2], chat_to_emit)
@@ -528,7 +528,7 @@ def cwc_run_mission(args):
 						print("Sending chat message:", chat_message)
 						ah = agent_hosts[1] if chat_message.startswith("<Builder>") else agent_hosts[2]
 						sendChat(ah, " ".join(chat_message.split()[1:]))
-						time.sleep(0.1)
+						time.sleep(0.3)
 
 				blocks_delta = diff(gold_config=current_blocks_in_grid, built_config=last_blocks_in_grid)
 
@@ -563,6 +563,7 @@ def cwc_run_mission(args):
 
 			last_chat_history = logged_observation["ChatHistory"]
 			last_blocks_in_grid = current_blocks_in_grid
+			time.sleep(0.1)
 
 		time.sleep(1)
 
