@@ -475,16 +475,18 @@ def cwc_run_mission(args):
 		mission_utils.safeWaitForStart(agent_hosts)
 
 		print("Replaying observations:", range(prev_idx, sample_id+1))
-		response = raw_input("Begin replay? [y: yes, s: skip this sample, q: end evaluation]  ")
+		
+		if not replay_example:
+			response = raw_input("Begin replay? [y: yes, s: skip this sample, q: end evaluation]  ")
 
-		if response == 'q':
-			save_state(generated_sentences[sentence_id:]+skipped_examples, vars_map, args["sampled_sentences_dir"], vars_map_path, evaluator_id, split)
-			sys.exit(0)
+			if response == 'q':
+				save_state(generated_sentences[sentence_id:]+skipped_examples, vars_map, args["sampled_sentences_dir"], vars_map_path, evaluator_id, split)
+				sys.exit(0)
 
-		if response == 's':
-			skipped_examples.append(generated_sentences[sentence_id])
-			sentence_id += 1
-			continue
+			if response == 's':
+				skipped_examples.append(generated_sentences[sentence_id])
+				sentence_id += 1
+				continue
 
 		print("Beginning the replay in 5 seconds...")
 		time.sleep(5)
