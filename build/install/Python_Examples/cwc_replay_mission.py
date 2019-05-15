@@ -17,16 +17,8 @@ from diff import diff
 num_prev_states = 7
 color_regex = re.compile("red|orange|purple|blue|green|yellow")
 suppress_form = False
-use_grid_form = True
-url_pfxs = ["https://docs.google.com/forms/d/e/1FAIpQLSdOJXWyNHPJk7HJgy1tM6h-5dZTK4eOZ-j8ZaoxXiJgkoAdsw/viewform?usp=pp_url&entry.1041006143=", "&entry.736588817=",
-			"&entry.528882131=", "&entry.730665366=",
-			"&entry.26185139=", "&entry.1201649239=",
-			"&entry.2140249019=", "&entry.2001652602=", 
-			"&entry.1283703002="]
-
-if use_grid_form:
-	url_pfxs = ["https://docs.google.com/forms/d/e/1FAIpQLSe5MYfe3i2TwHkIXS6ecOWJDDFducFnrhSJl1yECIZbgW7uLA/viewform?usp=pp_url&entry.1027302661=", "&entry.1583955982=",
-				"&entry.1819794788=", "&entry.1497119261=", "&entry.1890765153=", "&entry.1266038414=", "&entry.1449017998="]
+url_pfxs = ["https://docs.google.com/forms/d/e/1FAIpQLSe5MYfe3i2TwHkIXS6ecOWJDDFducFnrhSJl1yECIZbgW7uLA/viewform?usp=pp_url&entry.1027302661=", "&entry.1583955982=",
+			"&entry.1819794788=", "&entry.1497119261=", "&entry.1890765153=", "&entry.1266038414=", "&entry.1449017998="]
 
 
 def addFixedViewers(n):
@@ -226,6 +218,18 @@ def squash_punctuation(sentence):
 		formatted_sentence += to_add+tokens[i]
 	return formatted_sentence.strip()
 
+def save_state(remaining_sentences, vars_map, sampled_sentences_dir, vars_map_path, evaluator_id, split):
+	if not os.path.exists(os.path.join(sampled_sentences_dir, evaluator_id)):
+		os.makedirs(os.path.join(sampled_sentences_dir, evaluator_id))
+
+	with open(os.path.join(sampled_sentences_dir, evaluator_id, "unfinished-"+split+".json"), 'w') as f:
+		print("Saving remaining", len(remaining_sentences), "examples to", os.path.join(sampled_sentences_dir, evaluator_id, "unfinished-"+split+".json"))
+		json.dump(remaining_sentences, f)
+
+	with open(vars_map_path, 'w') as f:
+		print("Saving vars_map to", vars_map_path)
+		json.dump(vars_map, f)
+
 def cwc_run_mission(args):
 	print("Calling cwc_replay_mission with args:", args, "\n")
 	start_time = time.time()
@@ -380,6 +384,9 @@ def cwc_run_mission(args):
 		random.shuffle(generated_sentences)
 
 	sentence_id = 0
+	replay_example = False
+	skipped_examples = []
+
 	while sentence_id < len(generated_sentences) and sentence_id < num_samples_to_replay:
 		eval_id, sample = generated_sentences[sentence_id]
 		json_id = sample["json_id"]
@@ -387,28 +394,19 @@ def cwc_run_mission(args):
 		reference_json = reference_dataset[json_id]
 
 		print("\nEvaluating sample", sample_id, "from json", str(json_id)+" ("+str(sentence_id+1)+"/"+str(len(generated_sentences))+") with eval_id", str(eval_id)+".")
-		print(json.dumps(sample, indent=4))
+		if split == 'val':
+			print(json.dumps(sample, indent=4))
 
-		response = raw_input("Begin replay? [y: yes, s: skip this sample, q: end evaluation]  ")
+		# response = raw_input("Begin replay? [y: yes, s: skip this sample, q: end evaluation]  ")
 
-		if response == 'q':
-			print("Ending the evaluation; saving", len(generated_sentences[sentence_id:]), "unfinished samples to", os.path.join(args["sampled_sentences_dir"], evaluator_id, "unfinished-"+split+".json"))	
-			if not os.path.exists(os.path.join(args["sampled_sentences_dir"], evaluator_id)):
-				os.makedirs(os.path.join(args["sampled_sentences_dir"], evaluator_id))
+		# if response == 'q':
+		# 	save_state(generated_sentences[sentence_id:]+skipped_examples, vars_map, args["sampled_sentences_dir"], vars_map_path, evaluator_id, split)
+		# 	sys.exit(0)
 
-			with open(os.path.join(args["sampled_sentences_dir"], evaluator_id, "unfinished-"+split+".json"), 'w') as f:
-				print("Saving remaining", len(generated_sentences[sentence_id:]), "examples to", os.path.join(args["sampled_sentences_dir"], evaluator_id, "unfinished-"+split+".json"))
-				json.dump(generated_sentences[sentence_id:], f)
-
-			with open(vars_map_path, 'w') as f:
-				print("Saving vars_map to", vars_map_path)
-				json.dump(vars_map, f)
-
-			sys.exit(0)
-
-		if response == 's':
-			sentence_id += 1
-			continue
+		# if response == 's':
+		# 	skipped_examples.append(generated_sentences[sentence_id])
+		# 	sentence_id += 1
+		# 	continue
 
 		print("Loading sample...")
 
@@ -444,13 +442,13 @@ def cwc_run_mission(args):
 
 		# initialize the agents
 		agent_hosts, client_pool = initialize_agents(args)
-		experiment_prefix = "-".join(reference_json["logfile_path"].split("/")[-2].split("-")[:-1])
-		gold_config_xml_substring = blocks_to_xml(reference_json["gold_config_structure"], displacement=100, postprocessed=False)
 
 		# experiment ID
+		experiment_prefix = "-".join(reference_json["logfile_path"].split("/")[-2].split("-")[:-1])
 		experiment_time = str(int(round(time.time() * 1000)))
 		experiment_id = str(experiment_prefix + "-" + experiment_time)
 
+		gold_config_xml_substring = blocks_to_xml(reference_json["gold_config_structure"], displacement=100, postprocessed=False)
 		existing_config_xml_substring = blocks_to_xml(reference_json["WorldStates"][prev_idx]["BlocksInGrid"], postprocessed=True)
 	  
 		missionXML = generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_viewers, draw_inventory_blocks)
@@ -480,21 +478,11 @@ def cwc_run_mission(args):
 		response = raw_input("Begin replay? [y: yes, s: skip this sample, q: end evaluation]  ")
 
 		if response == 'q':
-			print("Ending the evaluation; saving", len(generated_sentences[sentence_id:]), "unfinished samples to", os.path.join(args["sampled_sentences_dir"], evaluator_id, "unfinished-"+split+".json"))
-			if not os.path.exists(os.path.join(args["sampled_sentences_dir"], evaluator_id)):
-				os.makedirs(os.path.join(args["sampled_sentences_dir"], evaluator_id))
-
-			with open(os.path.join(args["sampled_sentences_dir"], evaluator_id, "unfinished-"+split+".json"), 'w') as f:
-				print("Saving remaining", len(generated_sentences[sentence_id:]), "examples to", os.path.join(args["sampled_sentences_dir"], evaluator_id, "unfinished-"+split+".json"))
-				json.dump(generated_sentences[sentence_id:], f)
-
-			with open(vars_map_path, 'w') as f:
-				print("Saving vars_map to", vars_map_path)
-				json.dump(vars_map, f)
-
+			save_state(generated_sentences[sentence_id:]+skipped_examples, vars_map, args["sampled_sentences_dir"], vars_map_path, evaluator_id, split)
 			sys.exit(0)
 
 		if response == 's':
+			skipped_examples.append(generated_sentences[sentence_id])
 			sentence_id += 1
 			continue
 
@@ -567,7 +555,7 @@ def cwc_run_mission(args):
 
 		time.sleep(1)
 
-		if not error_encountered: # TODO: format puncutation here
+		if not error_encountered: 
 			print("Full chat history:", last_chat_history)
 			sentences = sample["generated_sentences"]
 			if not any(sen[0] == 'human' for sen in sentences):
@@ -575,40 +563,32 @@ def cwc_run_mission(args):
 			random.shuffle(sentences)
 			sendChat(agent_hosts[2], "=== Example ID: "+str(eval_id)+" ===")
 
-			form_sentences = [evaluator_id, str(eval_id)]
-			formatted_sens = []
-			for k, (source, sentence) in enumerate(sentences):
-				identifier = string.ascii_letters[k]
-				if eval_id not in vars_map:
-					vars_map[eval_id] = {}
-				if identifier in vars_map[eval_id]:
-					print("Warning: overwriting vars_map entry for eval_id", eval_id, "identifier", identifier)
-				vars_map[eval_id][identifier] = source
+			if not replay_example:
+				formatted_sens = []
+				for k, (source, sentence) in enumerate(sentences):
+					identifier = string.ascii_letters[k]
+					if eval_id not in vars_map:
+						vars_map[eval_id] = {}
+					if identifier in vars_map[eval_id]:
+						print("Warning: overwriting vars_map entry for eval_id", eval_id, "identifier", identifier)
+					vars_map[eval_id][identifier] = source
 
-				if source != 'human':
-					sentence = squash_punctuation(sentence)
-				# print('Sending chat message to be evaluated: ('+identifier+') ('+source+')', sentence)
-				# sendChat(agent_hosts[2], '('+identifier+') '+sentence)
+					if source != 'human':
+						sentence = squash_punctuation(sentence)
 
-				sentence = sentence.replace(' ','+')
-				if not use_grid_form:
-					form_sentences.append(sentence)
-					form_sentences.append(sentence)
-				formatted_sens.append('('+identifier+')+'+sentence)
-				time.sleep(0.2)
+					sentence = sentence.replace(' ','+')
+					formatted_sens.append('('+identifier+')+'+sentence)
 
-			if not use_grid_form:
-				form_sentences.append('%0A'.join(formatted_sens))
-			else:
+				form_sentences = [evaluator_id, str(eval_id)]
 				for i in range(5):
 					form_sentences.append('%0A%0A'.join(formatted_sens))
 
-			if not suppress_form:
-				url = ""
-				for i in range(len(url_pfxs)):
-					url += url_pfxs[i]+form_sentences[i]
-				time.sleep(2)
-				webbrowser.open(url, new=1)
+				if not suppress_form:
+					url = ""
+					for i in range(len(url_pfxs)):
+						url += url_pfxs[i]+form_sentences[i]
+					time.sleep(2)
+					webbrowser.open(url, new=1)
 
 		timed_out, replay_example = False, False
 		while not timed_out:
@@ -618,26 +598,18 @@ def cwc_run_mission(args):
 				for observation in world_state.observations:
 					if observation.text is not None:
 						obsrv = json.loads(observation.text)
-						if obsrv.get("Chat") is not None and any("replay" in chat for chat in obsrv.get("Chat")):
+						if obsrv.get("Chat") is not None and any("replay" in chat and "Notice:" not in chat for chat in obsrv.get("Chat")):
+							sendChat(agent_hosts[2], "=== Notice: will replay this example ("+str(eval_id)+"). ===")
 							replay_example = True
 							print("NOTICE: will replay this example.")
 
 				if not world_state.is_mission_running:
 					timed_out = True
-					if not replay_example:
-						sentence_id += 1
 
 		print("Quit signal received. Waiting for mission to end...")
-		if not os.path.exists(os.path.join(args["sampled_sentences_dir"], evaluator_id)):
-			os.makedirs(os.path.join(args["sampled_sentences_dir"], evaluator_id))
-
-		with open(os.path.join(args["sampled_sentences_dir"], evaluator_id, "unfinished-"+split+".json"), 'w') as f:
-			print("Saving remaining", len(generated_sentences[sentence_id:]), "examples to", os.path.join(args["sampled_sentences_dir"], evaluator_id, "unfinished-"+split+".json"))
-			json.dump(generated_sentences[sentence_id:], f)
-
-		with open(vars_map_path, 'w') as f:
-			print("Saving vars_map to", vars_map_path)
-			json.dump(vars_map, f)
+		if not replay_example:
+			sentence_id += 1
+		save_state(generated_sentences[sentence_id:]+skipped_examples, vars_map, args["sampled_sentences_dir"], vars_map_path, evaluator_id, split)
 
 		# Mission should have ended already, but we want to wait until all the various agent hosts
 		# have had a chance to respond to their mission ended message.
