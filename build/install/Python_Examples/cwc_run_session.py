@@ -21,7 +21,7 @@ if __name__ == "__main__":
     parser.add_argument("--sampled_sentences_dir", default="sampled_sentences/")
     parser.add_argument("--sample_sentences", default=False, action='store_true')
     parser.add_argument("--num_sentences", default=100)
-    parser.add_argument("--ignore_ids", default=[1, 2, 53, 49], nargs='+', help='player IDs to be ignored when sampling examples to be evaluated')
+    parser.add_argument("--ignore_ids", default=[1, 2, 39], nargs='+', help='player IDs to be ignored when sampling examples to be evaluated')
     parser.add_argument("--evaluator_id", default=1, help="ID of human evaluator")
     parser.add_argument("--resume_evaluation", default=False, action='store_true', help='resumes evaluation of given player ID by playing examples unseen by that player')
     args = parser.parse_args()
