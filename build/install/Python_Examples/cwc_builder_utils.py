@@ -147,7 +147,7 @@ def performAction(ah, action):
     sendCommand(ah, action_type+' 1')
     time.sleep(0.1)
     sendCommand(ah, action_type+' 0')
-    time.sleep(0.2)
+    time.sleep(0.25)
 
 def sendCommand(ah, command):
     """ Use this method to send all commands to the agent. """

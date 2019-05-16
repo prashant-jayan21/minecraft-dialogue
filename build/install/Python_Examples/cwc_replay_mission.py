@@ -16,6 +16,7 @@ from diff import diff
 
 num_prev_states = 7
 color_regex = re.compile("red|orange|purple|blue|green|yellow")
+disable_saves = False
 suppress_form = False
 url_pfxs = ["https://docs.google.com/forms/d/e/1FAIpQLSe5MYfe3i2TwHkIXS6ecOWJDDFducFnrhSJl1yECIZbgW7uLA/viewform?usp=pp_url&entry.1027302661=", "&entry.1583955982=",
 			"&entry.1819794788=", "&entry.1497119261=", "&entry.1890765153=", "&entry.1266038414=", "&entry.1449017998="]
@@ -202,6 +203,32 @@ def reformat(block):
 		"type": color_regex.findall(str(block["Type"]))[0] # NOTE: DO NOT CHANGE! Unicode to str conversion needed downstream when stringifying the dict.
 	}
 
+def location_is_empty(blocks_in_grid, x, y, z):
+	""" Checks whether or not a grid location is empty given the current world state. """
+	blocks_list = blocks_in_grid.get(x, {}).get(z, {})
+	return y not in blocks_list and y > 0
+
+def reformat_builder_grid(blocks_in_grid):
+    """ Reformats BuilderGridAbsolute blocks into a nested dictionary of coordinate values, ordered x, z, y. """
+    blocks_dict = {}
+
+    if blocks_in_grid is not None:
+        for block in blocks_in_grid:
+            x = block["X"] if block.get("X") is not None else block["x"]
+            y = block["Y"] if block.get("Y") is not None else block["y"]
+            z = block["Z"] if block.get("Z") is not None else block["z"]
+            color = block["Type"].replace("cwc_minecraft_","").replace("_rn","") if block.get("Type") is not None else block["type"]
+
+            if blocks_dict.get(x) is None:
+                blocks_dict[x] = {}
+
+            if blocks_dict[x].get(z) is None:
+                blocks_dict[x][z] = defaultdict(str)
+
+            blocks_dict[x][z][y] = color
+
+    return blocks_dict
+
 def squash_punctuation(sentence):
 	formatted_sentence = ""
 	tokens = sentence.split()
@@ -219,6 +246,9 @@ def squash_punctuation(sentence):
 	return formatted_sentence.strip()
 
 def save_state(remaining_sentences, vars_map, sampled_sentences_dir, vars_map_path, evaluator_id, split):
+	if disable_saves:
+		return 
+
 	if not os.path.exists(os.path.join(sampled_sentences_dir, evaluator_id)):
 		os.makedirs(os.path.join(sampled_sentences_dir, evaluator_id))
 
@@ -475,7 +505,7 @@ def cwc_run_mission(args):
 		mission_utils.safeWaitForStart(agent_hosts)
 
 		print("Replaying observations:", range(prev_idx, sample_id+1))
-		
+
 		if not replay_example:
 			response = raw_input("Begin replay? [y: yes, s: skip this sample, q: end evaluation]  ")
 
@@ -544,8 +574,26 @@ def cwc_run_mission(args):
 						block = blocks_delta["built_minus_gold"][0]
 
 					x, y, z, color = block['x'], block['y'], block['z'], block['type']
-					# todo: if auto_find_location: find_teleport_location...
 					execute_action(agent_hosts[1], action=action, color=color, teleport=False)
+
+					num_attempts = 0
+					blocks_in_grid = None
+					while blocks_in_grid is None and num_attempts < 999:
+						world_state = agent_hosts[1].getWorldState()
+
+						# retrieve relevant information from the most recent observations
+						for observation in world_state.observations:
+							if observation.text is not None:
+								obsrv = json.loads(observation.text)
+								blocks_in_grid = obsrv.get("BuilderGridAbsolute", blocks_in_grid)
+
+						num_attempts += 1
+
+					blocks_in_grid = reformat_builder_grid(blocks_in_grid) if blocks_in_grid is not None else reformat_builder_grid(last_blocks_in_grid)
+					if (action == 'putdown' and location_is_empty(blocks_in_grid, x, y, z)) or (action == 'pickup' and not location_is_empty(blocks_in_grid, x, y, z)):
+						print("execute_action failed! Retrying...")
+						tx, ty, tz, t_pitch, t_yaw = find_teleport_location(blocks_in_grid, x, y, z, action)
+						execute_action(agent_hosts[1], action=action, color=color, tx=tx, ty=ty, tz=tz, t_pitch=t_pitch, t_yaw=t_yaw, teleport=True)
 
 					# if auto_find_location: TODO
 					# teleportMovement(agent_hosts[1], teleport_x=builder_position["X"], teleport_y=builder_position["Y"], teleport_z=builder_position["Z"])
@@ -554,6 +602,11 @@ def cwc_run_mission(args):
 			last_chat_history = logged_observation["ChatHistory"]
 			last_blocks_in_grid = current_blocks_in_grid
 			time.sleep(0.1)
+
+		logged_observation = reference_json["WorldStates"][sample_id]
+		builder_position = logged_observation["BuilderPosition"]
+		teleportMovement(agent_hosts[1], teleport_x=builder_position["X"], teleport_y=builder_position["Y"], teleport_z=builder_position["Z"])
+		setPitchYaw(agent_hosts[1], pitch=builder_position["Pitch"] if builder_position["Pitch"] != last_pitch else None, yaw=builder_position["Yaw"] if builder_position["Yaw"] != last_yaw else None)
 
 		time.sleep(1)
 
@@ -591,6 +644,7 @@ def cwc_run_mission(args):
 						url += url_pfxs[i]+form_sentences[i]
 					time.sleep(2)
 					webbrowser.open(url, new=1)
+					print(url)
 
 		timed_out, replay_example = False, False
 		while not timed_out:
