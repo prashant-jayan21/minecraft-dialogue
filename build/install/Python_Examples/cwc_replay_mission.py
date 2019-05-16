@@ -16,6 +16,8 @@ from diff import diff
 
 num_prev_states = 7
 color_regex = re.compile("red|orange|purple|blue|green|yellow")
+debug_sentences = True
+enable_fast_skipping = False
 disable_saves = False
 suppress_form = False
 url_pfxs = ["https://docs.google.com/forms/d/e/1FAIpQLSe5MYfe3i2TwHkIXS6ecOWJDDFducFnrhSJl1yECIZbgW7uLA/viewform?usp=pp_url&entry.1027302661=", "&entry.1583955982=",
@@ -234,7 +236,7 @@ def squash_punctuation(sentence):
 	tokens = sentence.split()
 	for i in range(len(tokens)):
 		to_add = " "
-		if (tokens[i] in string.punctuation or tokens[i][0] in string.punctuation) and tokens[i] != '"':
+		if (tokens[i] in string.punctuation or tokens[i][0] in string.punctuation) and tokens[i] != '"' and tokens[i][0] != '<':
 			if tokens[i].startswith("'") \
 			or (tokens[i-1] not in string.punctuation and (i+1 == len(tokens) or not((tokens[i] == ':' or tokens[i] == ';') and tokens[i+1] == ')'))) \
 			or (tokens[i-1] == '?' and tokens[i] == '!') or (tokens[i-1] == '!' and tokens[i] == '?') \
@@ -386,29 +388,28 @@ def cwc_run_mission(args):
 		print("Sampled examples. Please re-run with sample_sentences=False to initiate the replay.")
 		sys.exit(0)
 
-	sentences_path = os.path.join(args["sampled_sentences_dir"], 'sampled_generated_sentences-'+split+'.json')
+	sentences_path = os.path.join(args["sampled_sentences_dir"], ('sampled_generated_sentences-' if not debug_sentences else '')+split+'.json')
 	vars_map_path = os.path.join(args["sampled_sentences_dir"], evaluator_id, "vars-map.json")
+
+	vars_map = {}
 	
 	if args["resume_evaluation"]:
 		sentences_path = os.path.join(args["sampled_sentences_dir"], evaluator_id, "unfinished-"+split+".json")
+		if not os.path.isfile(vars_map_path):
+			print("Error: cannot find file:", vars_map_path)
+			sys.exit(0)
+
+		with open(vars_map_path, 'r') as f:
+			vars_map = json.load(f)
+			print("Loaded vars_map from", vars_map_path)
 
 	if not os.path.isfile(sentences_path):
 		print("Error: cannot find file:", sentences_path)
 		sys.exit(0)
 
-	if args["resume_evaluation"] and not os.path.isfile(vars_map_path):
-		print("Error: cannot find file:", vars_map_path)
-		sys.exit(0)
-
 	with open(sentences_path, 'r') as f:
 		generated_sentences = json.load(f)
 	print("Loaded", len(generated_sentences), "examples from", sentences_path)
-
-	vars_map = {}
-	if args["resume_evaluation"]:
-		with open(vars_map_path, 'r') as f:
-			vars_map = json.load(f)
-			print("Loaded vars_map from", vars_map_path)
 
 	if args["shuffle"]:
 		random.shuffle(generated_sentences)
@@ -427,16 +428,17 @@ def cwc_run_mission(args):
 		if split == 'val':
 			print(json.dumps(sample, indent=4))
 
-		# response = raw_input("Begin replay? [y: yes, s: skip this sample, q: end evaluation]  ")
+		if enable_fast_skipping:
+			response = raw_input("Begin replay? [y: yes, s: skip this sample, q: end evaluation]  ")
 
-		# if response == 'q':
-		# 	save_state(generated_sentences[sentence_id:]+skipped_examples, vars_map, args["sampled_sentences_dir"], vars_map_path, evaluator_id, split)
-		# 	sys.exit(0)
+			if response == 'q':
+				save_state(generated_sentences[sentence_id:]+skipped_examples, vars_map, args["sampled_sentences_dir"], vars_map_path, evaluator_id, split)
+				sys.exit(0)
 
-		# if response == 's':
-		# 	skipped_examples.append(generated_sentences[sentence_id])
-		# 	sentence_id += 1
-		# 	continue
+			if response == 's':
+				skipped_examples.append(generated_sentences[sentence_id])
+				sentence_id += 1
+				continue
 
 		print("Loading sample...")
 
@@ -631,7 +633,7 @@ def cwc_run_mission(args):
 					if source != 'human':
 						sentence = squash_punctuation(sentence)
 
-					sentence = sentence.replace(' ','+')
+					sentence = sentence.replace('<','%3C').replace('>','%3E').replace(' ','+')
 					formatted_sens.append('('+identifier+')+'+sentence)
 
 				form_sentences = [evaluator_id, str(eval_id)]
