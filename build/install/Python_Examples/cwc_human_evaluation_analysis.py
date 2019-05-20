@@ -1,5 +1,5 @@
-import sys, os, csv, json, string, argparse
-from nltk import agreement
+import sys, os, csv, json, string, argparse, numpy as np
+from nltk.metrics.agreement import AnnotationTask
 from collections import defaultdict
 
 def squash_punctuation(sentence):
@@ -53,6 +53,8 @@ def main(args):
 
 	# reformat evaluation csv
 	evaluation_examples = []
+	utterance_lengths = defaultdict(list)
+
 	for example in csv_data:
 		evaluator_id, example_id = example[1], example[2]
 		orig_example = orig_examples[int(example_id)]
@@ -68,6 +70,7 @@ def main(args):
 				print(utterances[i])
 				print(orig_utterance)
 			formatted_example["utterances"][var_map[identifier]] = utterances[i]
+			utterance_lengths[var_map[identifier]].append(len(utterances[i].split()))
 
 		for i in range(len(start_idxs)):
 			start_idx = start_idxs[i]
@@ -79,6 +82,11 @@ def main(args):
 				formatted_example[question_type][var_map[identifier]] = [x.strip() for x in example[start_idx+j].split(',')] if question_type == 'dialogue-acts' else example[start_idx+j]
 
 		evaluation_examples.append(formatted_example)
+
+	print("Mean utterance lengths:")
+	for key in utterance_lengths:
+		print((key+":").ljust(15), "{:.2f}".format(np.mean(utterance_lengths[key])))
+	print()
 
 	# compute counts of annotations for percentages
 	evaluation_counts = {}
@@ -144,24 +152,64 @@ def main(args):
 				example = by_annotator[question_type][example_id]
 				f.write(str(example['total'])+'\t'+str(example['1'])+'\t'+str(example['2'])+'\t'+str(example['39'])+'\t'+example_id.ljust(15)+example['utterance']+'\n')
 
-	# print(json.dumps(by_annotator, indent=4))
+	print("Using NLTK agreement metrics\n")
 	for question_type in question_types:
-		tuples_lst = []
+		if question_type == 'dialogue-acts':
+			for dialogue_act in answer_ordering[question_type]:
+				tuples_lst = []
+				for example_id in by_annotator[question_type]:
+					example = by_annotator[question_type][example_id]
+					for evaluator_id in ['1', '2', '39']:
+						label = '1' if dialogue_act in example[evaluator_id] else '0'
+						if dialogue_act == 'Multiple acts':
+							label = '1' if len(example[evaluator_id]) > 1 else '0'
+						tuples_lst.append(('c'+evaluator_id, example_id, label))
+
+				t = AnnotationTask(data=tuples_lst)
+				print(question_type+", "+dialogue_act+" fleiss:", "{:.2f}".format(t.multi_kappa()))
+				print(question_type+", "+dialogue_act+" alpha: ", "{:.2f}".format(t.alpha()))
+				print()
+		else:
+			tuples_lst = []
+			for example_id in by_annotator[question_type]:
+				example = by_annotator[question_type][example_id]
+				for evaluator_id in ['1', '2', '39']:
+					tuples_lst.append(('c'+evaluator_id, example_id, example[evaluator_id]))
+
+			t = AnnotationTask(data=tuples_lst)
+			print(question_type+" fleiss:", "{:.2f}".format(t.multi_kappa()))
+			print(question_type+" alpha: ", "{:.2f}".format(t.alpha()))
+			print()
 
 	# write files to compute Krippendorf's alpha
 	for question_type in question_types:
 		if question_type == 'dialogue-acts':
-			continue
-		with open('human_evaluation/'+question_type+'.txt', 'w') as f:
-			f.write('1\t2\t39\n')
-			for example_id in by_annotator[question_type]:
-				example = by_annotator[question_type][example_id]
-				if any(x not in example for x in ['1', '2', '39']):
-					print("WARNING: missing data for example:", example)
-					continue
-				for evaluator_id in ['1', '2', '39']:
-					f.write(str(example[evaluator_id])+'\t')
-				f.write('\n')
+			for dialogue_act in answer_ordering[question_type]:
+				with open('human_evaluation/'+question_type+'_'+dialogue_act+'.txt', 'w') as f:
+					f.write('1\t2\t39\n')
+					for example_id in by_annotator[question_type]:
+						example = by_annotator[question_type][example_id]
+						if any(x not in example for x in ['1', '2', '39']):
+							print("WARNING: missing data for example:", example)
+							continue
+						for evaluator_id in ['1', '2', '39']:
+							label = '1' if dialogue_act in example[evaluator_id] else '0'
+							if dialogue_act == 'Multiple acts':
+								label = '1' if len(example[evaluator_id]) > 1 else '0'
+							f.write(label+'\t')
+						f.write('\n')
+
+		else:
+			with open('human_evaluation/'+question_type+'.txt', 'w') as f:
+				f.write('1\t2\t39\n')
+				for example_id in by_annotator[question_type]:
+					example = by_annotator[question_type][example_id]
+					if any(x not in example for x in ['1', '2', '39']):
+						print("WARNING: missing data for example:", example)
+						continue
+					for evaluator_id in ['1', '2', '39']:
+						f.write(str(example[evaluator_id])+'\t')
+					f.write('\n')
 
 if __name__ == "__main__":
 	# Parse CLAs
