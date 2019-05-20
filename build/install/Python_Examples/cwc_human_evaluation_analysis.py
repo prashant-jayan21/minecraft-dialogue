@@ -1,6 +1,8 @@
-import sys, os, csv, json, string, argparse, numpy as np
+import sys, os, csv, json, string, argparse, numpy as np, matplotlib.pyplot as plt
 from nltk.metrics.agreement import AnnotationTask
 from collections import defaultdict
+
+show_plot = False
 
 def squash_punctuation(sentence):
 	formatted_sentence = ""
@@ -53,7 +55,9 @@ def main(args):
 
 	# reformat evaluation csv
 	evaluation_examples = []
+	processed_examples = set()
 	utterance_lengths = defaultdict(list)
+	utterances_by_length = {}
 
 	for example in csv_data:
 		evaluator_id, example_id = example[1], example[2]
@@ -70,7 +74,13 @@ def main(args):
 				print(utterances[i])
 				print(orig_utterance)
 			formatted_example["utterances"][var_map[identifier]] = utterances[i]
-			utterance_lengths[var_map[identifier]].append(len(utterances[i].split()))
+			if example_id not in processed_examples:
+				utterance_length = len(squash_punctuation(utterances[i]).split())
+				utterance_lengths[var_map[identifier]].append(utterance_length)
+
+				if var_map[identifier] not in utterances_by_length:
+					utterances_by_length[var_map[identifier]] = defaultdict(list)
+				utterances_by_length[var_map[identifier]][utterance_length].append(squash_punctuation(utterances[i]))
 
 		for i in range(len(start_idxs)):
 			start_idx = start_idxs[i]
@@ -82,28 +92,49 @@ def main(args):
 				formatted_example[question_type][var_map[identifier]] = [x.strip() for x in example[start_idx+j].split(',')] if question_type == 'dialogue-acts' else example[start_idx+j]
 
 		evaluation_examples.append(formatted_example)
+		processed_examples.add(example_id)
 
 	print("Mean utterance lengths:")
 	for key in utterance_lengths:
 		print((key+":").ljust(15), "{:.2f}".format(np.mean(utterance_lengths[key])))
 	print()
 
+	for model in utterances_by_length:
+		with open('human_evaluation/utterances_by_length-'+model+'.txt', 'w') as f:
+			for length in sorted(utterances_by_length[model]):
+				for utterance in utterances_by_length[model][length]:
+					f.write(str(length)+'\t'+utterance+'\n')
+
 	# compute counts of annotations for percentages
 	evaluation_counts = {}
+	evaluation_counts_by_dialogue_act = {}
+	for dialogue_act in answer_ordering['dialogue-acts']:
+		evaluation_counts_by_dialogue_act[dialogue_act] = {}
+
 	for example in evaluation_examples:
 		for question_type in question_types:
 			if question_type not in evaluation_counts:
 				evaluation_counts[question_type] = {}
+				if question_type != 'dialogue-acts':
+					for dialogue_act in answer_ordering['dialogue-acts']:
+						evaluation_counts_by_dialogue_act[dialogue_act][question_type] = {}
 			for model in example[question_type]:
 				if model not in evaluation_counts[question_type]:
 					evaluation_counts[question_type][model] = defaultdict(int)
+					if question_type != 'dialogue-acts':
+						for dialogue_act in answer_ordering['dialogue-acts']:
+							evaluation_counts_by_dialogue_act[dialogue_act][question_type][model] = defaultdict(int)
 				if question_type != 'dialogue-acts':
 					evaluation_counts[question_type][model][example[question_type][model]] += 1
 					evaluation_counts[question_type][model]["total"] += 1
+
+					for dialogue_act in example['dialogue-acts'][model]:
+						evaluation_counts_by_dialogue_act[dialogue_act][question_type][model][example[question_type][model]] += 1
+						evaluation_counts_by_dialogue_act[dialogue_act][question_type][model]["total"] += 1
 				else:
 					for act_type in example[question_type][model]:
 						evaluation_counts[question_type][model][act_type] += 1
-						evaluation_counts[question_type][model]['total'] += 1
+					evaluation_counts[question_type][model]['total'] += 1
 					if len(example[question_type][model]) > 1:
 						evaluation_counts[question_type][model]['Multiple acts'] += 1
 
@@ -115,11 +146,30 @@ def main(args):
 			print_str = ''
 			for i in range(len(answer_ordering[question_type])):
 				label = answer_ordering[question_type][i]
-				print_str += '\t\t'+"{:.2f}".format(100*evaluation_counts[question_type][model][label]/float(evaluation_counts[question_type][model]['total'])).rjust(5)+" % "+label+'\n'
+				print_str += '\t\t'+"{:.2f}".format(100*evaluation_counts[question_type][model][label]/float(evaluation_counts[question_type][model]['total'])).rjust(5)+(" % ("+str(evaluation_counts[question_type][model][label])+"/"+str(evaluation_counts[question_type][model]['total'])+") ").ljust(12)+label+'\n'
 				avg_value += evaluation_counts[question_type][model][label]*(len(answer_ordering[question_type])-i-1)
 			print('\t', model.ljust(15), '' if question_type == 'dialogue-acts' else '(average: '+"{:.2f}".format(avg_value/float(evaluation_counts[question_type][model]['total']))+')')
 			print(print_str)
 		print()
+
+	for dialogue_act in answer_ordering['dialogue-acts'][:-1]:
+		print(dialogue_act)
+		for question_type in question_types:
+			if question_type == 'dialogue-acts':
+				continue
+			print('\t', question_type)
+			for model in model_types:
+				avg_value = 0
+				print_str = ''
+				if evaluation_counts_by_dialogue_act[dialogue_act][question_type][model]['total'] < 1:
+					continue
+				for i in range(len(answer_ordering[question_type])):
+					label = answer_ordering[question_type][i]
+					print_str += '\t\t\t'+"{:.2f}".format(100*evaluation_counts_by_dialogue_act[dialogue_act][question_type][model][label]/float(evaluation_counts_by_dialogue_act[dialogue_act][question_type][model]['total'])).rjust(5)+(" % ("+str(evaluation_counts_by_dialogue_act[dialogue_act][question_type][model][label])+"/"+str(evaluation_counts_by_dialogue_act[dialogue_act][question_type][model]['total'])+") ").ljust(12)+label+'\n'
+					avg_value += evaluation_counts_by_dialogue_act[dialogue_act][question_type][model][label]*(len(answer_ordering[question_type])-i-1)
+				print('\t\t', model.ljust(15), '(average: '+"{:.2f}".format(avg_value/float(evaluation_counts_by_dialogue_act[dialogue_act][question_type][model]['total']))+')')
+				print(print_str)
+			print()
 
 	# collate data per example for computing inter-annotator agreement
 	by_example_id = defaultdict(list)
@@ -150,8 +200,45 @@ def main(args):
 		with open('human_evaluation/by_utterance-'+question_type+'.txt', 'w') as f:
 			for example_id in by_annotator[question_type]:
 				example = by_annotator[question_type][example_id]
-				f.write(str(example['total'])+'\t'+str(example['1'])+'\t'+str(example['2'])+'\t'+str(example['39'])+'\t'+example_id.ljust(15)+example['utterance']+'\n')
+				f.write(str(example['total'])+'\t'+str(example['1'])+'\t'+str(example['2'])+'\t'+str(example['39'])+'\t'+example_id.split('_')[1].ljust(15)+example['utterance']+'\n')
 
+	with open('human_evaluation/by_utterance.tsv', 'w') as f:
+		header_str = 'example id\tutterance\tsource\tfluency (total)\tfluency (1)\tfluency (2)\tfluency (39)'
+		for dialogue_act in answer_ordering['dialogue-acts']:
+			header_str += '\t'+dialogue_act+' (total)'
+			for i in ['1', '2', '39']:
+				header_str += '\t'+dialogue_act+' ('+i+')'
+		for question_type in question_types[2:]:
+			header_str += '\t'+question_type+' (total)'
+			for i in ['1', '2', '39']:
+				header_str += '\t'+question_type+' ('+i+')'
+		f.write(header_str+'\n')
+
+		for example_id in by_annotator['fluency']:
+			to_write = str(example_id.split('_')[0])+'\t'+by_annotator['fluency'][example_id]['utterance']+'\t'+example_id.split('_')[1]+'\t'
+			for question_type in answer_ordering:
+				example = by_annotator[question_type][example_id]
+				if question_type != 'dialogue-acts':
+					total = sum(example[x] for x in ['1', '2', '39'])
+					to_write += str(total)+'\t'
+					for evaluator_id in ['1', '2', '39']:
+						to_write += str(example[evaluator_id])+'\t'
+				else:
+					for dialogue_act in answer_ordering[question_type]:
+						if dialogue_act == 'Multiple acts':
+							total = sum([1 for x in ['1', '2', '39'] if len(example[x]) > 1])
+							to_write += str(total)+'\t'
+							for evaluator_id in ['1', '2', '39']:
+								to_write += ('1' if len(example[evaluator_id]) > 1 else '0')+'\t'
+						else:
+							total = sum([1 for x in ['1', '2', '39'] if dialogue_act in example[x]])
+							to_write += str(total)+'\t'
+							for evaluator_id in ['1', '2', '39']:
+								to_write += ('1' if dialogue_act in example[evaluator_id] else '0')+'\t'
+
+			f.write(to_write[:-1]+'\n')
+
+	# compute agreemeent using nltk metrics
 	print("Using NLTK agreement metrics\n")
 	for question_type in question_types:
 		if question_type == 'dialogue-acts':
@@ -210,6 +297,19 @@ def main(args):
 					for evaluator_id in ['1', '2', '39']:
 						f.write(str(example[evaluator_id])+'\t')
 					f.write('\n')
+
+	figures = [221, 222, 223, 224]
+	fig = plt.figure()
+	for i, model in enumerate(['seq2seq_attn', 'acl-model', 'emnlp-model', 'human']):
+		a = fig.add_subplot(figures[i])
+		plt.hist(utterance_lengths[model], bins=np.arange(1,max(utterance_lengths[model])+1))
+		plt.title(model)
+		plt.xticks(np.arange(0, max(utterance_lengths[model])+1, 1.0))
+		plt.ylim(top=50)
+		plt.xlim(right=25)
+
+	if show_plot:
+		plt.show()
 
 if __name__ == "__main__":
 	# Parse CLAs
