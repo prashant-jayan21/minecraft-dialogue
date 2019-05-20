@@ -211,25 +211,25 @@ def location_is_empty(blocks_in_grid, x, y, z):
 	return y not in blocks_list and y > 0
 
 def reformat_builder_grid(blocks_in_grid):
-    """ Reformats BuilderGridAbsolute blocks into a nested dictionary of coordinate values, ordered x, z, y. """
-    blocks_dict = {}
+	""" Reformats BuilderGridAbsolute blocks into a nested dictionary of coordinate values, ordered x, z, y. """
+	blocks_dict = {}
 
-    if blocks_in_grid is not None:
-        for block in blocks_in_grid:
-            x = block["X"] if block.get("X") is not None else block["x"]
-            y = block["Y"] if block.get("Y") is not None else block["y"]
-            z = block["Z"] if block.get("Z") is not None else block["z"]
-            color = block["Type"].replace("cwc_minecraft_","").replace("_rn","") if block.get("Type") is not None else block["type"]
+	if blocks_in_grid is not None:
+		for block in blocks_in_grid:
+			x = block["X"] if block.get("X") is not None else block["x"]
+			y = block["Y"] if block.get("Y") is not None else block["y"]
+			z = block["Z"] if block.get("Z") is not None else block["z"]
+			color = block["Type"].replace("cwc_minecraft_","").replace("_rn","") if block.get("Type") is not None else block["type"]
 
-            if blocks_dict.get(x) is None:
-                blocks_dict[x] = {}
+			if blocks_dict.get(x) is None:
+				blocks_dict[x] = {}
 
-            if blocks_dict[x].get(z) is None:
-                blocks_dict[x][z] = defaultdict(str)
+			if blocks_dict[x].get(z) is None:
+				blocks_dict[x][z] = defaultdict(str)
 
-            blocks_dict[x][z][y] = color
+			blocks_dict[x][z][y] = color
 
-    return blocks_dict
+	return blocks_dict
 
 def squash_punctuation(sentence):
 	formatted_sentence = ""
