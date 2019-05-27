@@ -36,7 +36,7 @@ def drawInventoryBlocks():
                  <DrawCuboid type="cwcmod:cwc_minecraft_red_rn" x1="-7" y1="1" z1="0" x2="-8" y2="2" z2="-4"/>
             '''
 
-def generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_viewers, draw_inventory_blocks):
+def generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_viewers, draw_inventory_blocks, architect_demo):
     return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
@@ -83,8 +83,8 @@ def generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_v
                     <AgentStart>
                       <Placement x = "0" y = "5" z = "-6" pitch="45"/>
                     </AgentStart>
-                    <AgentHandlers>
-                      <ChatCommands/>
+                    <AgentHandlers>''' + ('''
+                      <ChatCommands/>''' if architect_demo else '''''') + '''
                     </AgentHandlers>
                   </AgentSection>
 
@@ -137,6 +137,8 @@ def cwc_run_mission(args):
     draw_inventory_blocks = args["draw_inventory_blocks"]
     existing_is_gold = args["existing_is_gold"]
 
+    architect_demo = args["architect_demo"]
+
     # Create agent hosts:
     agent_hosts = []
     for i in range(3+num_fixed_viewers):
@@ -179,7 +181,7 @@ def cwc_run_mission(args):
     existing_config_xml_substring = io_utils.readXMLSubstringFromFile(args["existing_config"], existing_is_gold)
 
     # construct mission xml
-    missionXML = generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_viewers, draw_inventory_blocks)
+    missionXML = generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_viewers, draw_inventory_blocks, architect_demo)
     missionXML_oracle = generateOracleXML(experiment_id, gold_config_xml_substring)
 
     # oracle
@@ -198,31 +200,32 @@ def cwc_run_mission(args):
     mission_utils.safeWaitForStart(agent_hosts)
 
     # model and gold config xml loading
-    args2 = Namespace(
-        model_dir = '/Users/prashant/Work/cwc-minecraft-models/models_remote/utterances_and_block_region_counters/20190227/utterances_and_block_region_counters_trainer-1551313181240/1551313181248/',
-        data_dir = '/Users/prashant/Work/cwc-minecraft-models/data/logs/',
-        gold_configs_dir = '/Users/prashant/Work/cwc-minecraft-models/data/gold-configurations/',
-        saved_dataset_dir = None,
-        vocab_dir = "/Users/prashant/Work/cwc-minecraft-models/vocabulary/",
-        output_path = None,
-        num_workers = 0,
-        seed = 1234,
-        beam_size = 10,
-        max_decoding_length = 50,
-        development_mode = False,
-        decoding_strategy = 'beam',
-        gamma = 0.8,
-        regenerate_sentences = True,
-        model_iteration = 'best',
-        split = 'val',
-        disable_shuffle = False
-    )
+    if architect_demo:
+        args2 = Namespace(
+            model_dir = '/Users/prashant/Work/cwc-minecraft-models/models_remote/utterances_and_block_region_counters/20190227/utterances_and_block_region_counters_trainer-1551313181240/1551313181248/',
+            data_dir = '/Users/prashant/Work/cwc-minecraft-models/data/logs/',
+            gold_configs_dir = '/Users/prashant/Work/cwc-minecraft-models/data/gold-configurations/',
+            saved_dataset_dir = None,
+            vocab_dir = "/Users/prashant/Work/cwc-minecraft-models/vocabulary/",
+            output_path = None,
+            num_workers = 0,
+            seed = 1234,
+            beam_size = 10,
+            max_decoding_length = 50,
+            development_mode = False,
+            decoding_strategy = 'beam',
+            gamma = 0.8,
+            regenerate_sentences = True,
+            model_iteration = 'best',
+            split = 'val',
+            disable_shuffle = False
+        )
 
-    config_name = args["gold_config"].split("/")[-1].split(".")[0]
-    config_xml_file = join(args2.gold_configs_dir, config_name + ".xml")
-    config_structure = get_gold_config(config_xml_file)
+        config_name = args["gold_config"].split("/")[-1].split(".")[0]
+        config_xml_file = join(args2.gold_configs_dir, config_name + ".xml")
+        config_structure = get_gold_config(config_xml_file)
 
-    config_params, models, encoder_vocab, decoder_vocab = generate_seq2seq_online.setup(args2)
+        config_params, models, encoder_vocab, decoder_vocab = generate_seq2seq_online.setup(args2)
 
     # poll for observations
     timed_out = False
@@ -240,42 +243,45 @@ def cwc_run_mission(args):
                 for observation in world_state.observations:
                     total_elements += len(json.loads(observation.text))
 
-                # print(("Received", len(world_state.observations), "observations. Total number of elements:", total_elements))
+                if not architect_demo:
+                    print(("Received", len(world_state.observations), "observations. Total number of elements:", total_elements))
                 for observation in world_state.observations:
-                    # print("Processing observation:", end=' ')
-                    # debug_utils.printObservationElements(json.loads(observation.text))
-                    # pprint.PrettyPrinter(indent=4).pprint(json.loads(observation.text))
+                    if not architect_demo:
+                        print("Processing observation:", end=' ')
+                        debug_utils.printObservationElements(json.loads(observation.text))
+                        pprint.PrettyPrinter(indent=4).pprint(json.loads(observation.text))
                     all_observations.append(observation)
 
-                for observation in world_state.observations:
-                    if json.loads(observation.text).get('Chat') == ['<Builder> xxx']:
-                        print("Speak Architect")
+                if architect_demo:
+                    for observation in world_state.observations:
+                        if json.loads(observation.text).get('Chat') == ['<Builder> xxx']:
+                            print("Speak Architect")
 
-                        def f(all_observations):
-                            all_world_states = []
+                            def f(all_observations):
+                                all_world_states = []
 
-                            for observation in all_observations:
-                                world_state = json.loads(observation.text)
-                                world_state["Timestamp"] = observation.timestamp.replace(microsecond=0).isoformat(' ')
-                                # debug_utils.prettyPrintObservation(world_state)
-                                all_world_states.append(world_state)
+                                for observation in all_observations:
+                                    world_state = json.loads(observation.text)
+                                    world_state["Timestamp"] = observation.timestamp.replace(microsecond=0).isoformat(' ')
+                                    # debug_utils.prettyPrintObservation(world_state)
+                                    all_world_states.append(world_state)
 
-                            return all_world_states
+                                return all_world_states
 
-                        all_world_states = f(all_observations)
+                            all_world_states = f(all_observations)
 
-                        reformatted = reformatObservations(all_world_states)
-                        all_world_states_merged = mergeObservations(reformatted)
-                        string_to_write = postprocess(all_world_states_merged, False)
+                            reformatted = reformatObservations(all_world_states)
+                            all_world_states_merged = mergeObservations(reformatted)
+                            string_to_write = postprocess(all_world_states_merged, False)
 
-                        log = {}
-                        log["WorldStates"] = all_world_states_merged
+                            log = {}
+                            log["WorldStates"] = all_world_states_merged
 
-                        # pprint.PrettyPrinter(indent=4).pprint(log)
-                        gen_architect_utterance = generate_seq2seq_online.predict(args2, config_name, config_structure, log, config_params, models, encoder_vocab, decoder_vocab)
-                        agent_hosts[2].sendCommand("chat " + gen_architect_utterance)
+                            # pprint.PrettyPrinter(indent=4).pprint(log)
+                            gen_architect_utterance = generate_seq2seq_online.predict(args2, config_name, config_structure, log, config_params, models, encoder_vocab, decoder_vocab)
+                            agent_hosts[2].sendCommand("chat " + gen_architect_utterance)
 
-                        all_observations = all_observations[:-1 * len(world_state.observations)]
+                            all_observations = all_observations[:-1 * len(world_state.observations)]
 
                 print("-----")
 

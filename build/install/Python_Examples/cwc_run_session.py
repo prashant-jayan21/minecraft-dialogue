@@ -13,6 +13,7 @@ if __name__ == "__main__":
     parser.add_argument("--lan", default=False, action="store_true", help="LAN mode")
     parser.add_argument("--draw_inventory_blocks", action="store_true", help="Starts the mission with inventory blocks on the ground")
     parser.add_argument("--existing_is_gold", action="store_true", help="Indicates existing configs are actually gold configs and need to be displaced")
+    parser.add_argument("--architect_demo", default=False, action="store_true", help="whether to run the architect demo")
     args = parser.parse_args()
 
     # Read user info from spreadsheet
@@ -81,7 +82,8 @@ if __name__ == "__main__":
             "fixed_viewer_port": fixed_viewer_port,
             "num_fixed_viewers": args.num_fixed_viewers,
             "draw_inventory_blocks": args.draw_inventory_blocks,
-            "existing_is_gold": args.existing_is_gold
+            "existing_is_gold": args.existing_is_gold,
+            "architect_demo": args.architect_demo
         }
 
         # submit mission jobs to process pool
