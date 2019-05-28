@@ -101,7 +101,7 @@ where `sample_gold_configs.csv` contains a newline-separated list of target stru
 Although not recommended, you can also run this session with "Fixed Viewer" angle cameras that will take screenshots periodically from those angles as data is collected. To do so, start up 7 Minecraft clients, then run the following command:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv
 ```
 
 ### Running via LAN ###
@@ -123,3 +123,19 @@ Edit `sample_user_info.csv` to reflect the correct IP addresses. For each line, 
 * IP address
 * port (default: 10000 should be used unless under special circumstances)
 * player role (`architect/builder`), where the `architect` machine has 2 instances of Minecraft running and the `builder` has 1
+
+To run without any Fixed Viewer clients, a session with the above information can be run as follows:
+
+```
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --lan
+```
+
+where `sample_gold_configs.csv` contains a newline-separated list of target structures to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional).
+
+To use Fixed Viewer clients, launch 4 clients on the desired machine, and edit `sample_fixed_viewer.csv` to reflect the IP address of that machine. The current default uses `127.0.0.1` (localhost), i.e. the machine running the Python session will also act as the machine managing the Fixed Viewer clients.
+
+To run with Fixed Viewer clients, a session can be run as follows:
+
+```
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --lan 
+```
