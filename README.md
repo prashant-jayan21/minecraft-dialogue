@@ -9,16 +9,45 @@ built on top of Minecraft.
 
 ** Disclaimer: these instructions have been tested with OSX + IntelliJ only. **
 
-1. Clone cwc-minecraft: ``` git clone https://github.com/CogComp/cwc-minecraft.git ```
+Follow the instructions to build Malmö from source for your OS (make sure to clone this repository, `https://github.com/CogComp/cwc-minecraft.git`, instead of the original Malmo project): 
+* [Windows](doc/build_windows.md)
+* [Linux](doc/build_linux.md)
+* [MacOSX](doc/build_macosx.md)
+    
+Alternatively, for MacOSX, you can use the instructions are copied below for ease of access.
 
-2. Follow the instructions to build Malmö from source for your OS, skipping the cloning step: [Windows](doc/build_windows.md), [Linux](doc/build_linux.md), [MacOSX](doc/build_macosx.md). 
+1. Install Homebrew: http://www.howtogeek.com/211541/homebrew-for-os-x-easily-installs-desktop-apps-and-terminal-utilities/
+
+2. Install dependencies:
+
+  ```
+  brew update
+  brew upgrade
+  brew install boost --with-python
+  brew install ffmpeg swig boost-python xerces-c doxygen git cmake
+  sudo brew cask install java
+  brew install xsd
+  brew unlink xsd
+  brew install mono
+  brew link --overwrite xsd
+  ```
+
+3. Build Project Malmo:
+    1. `git clone https://github.com/CogComp/cwc-minecraft.git ~/MalmoPlatform`  
+    2. `wget https://raw.githubusercontent.com/bitfehler/xs3p/1b71310dd1e8b9e4087cf6120856c5f701bd336b/xs3p.xsl -P ~/MalmoPlatform/Schemas`
+    3. Add `export MALMO_XSD_PATH=~/MalmoPlatform/Schemas` to your `~/.bashrc` and do `source ~/.bashrc`
+    3. `cd MalmoPlatform`
+    4. `mkdir build`
+    5. `cd build`
+    6. `cmake ..`
+    7. `make install`
+    8. Then you can run the samples that are installed ready-to-run in e.g. `install/Python_Examples`
+
 When running `make install`, you may run into a particular error involving copying the file `libMalmoNETNative.so`. There are a couple of solutions:
 
-    i. From the project directory, ``` cp build/Malmo/src/CSharpWrapper/MalmoNETNative.so build/Malmo/src/CSharpWrapper/libMalmoNETNative.so ```
+1. From the project directory, ``` cp build/Malmo/src/CSharpWrapper/MalmoNETNative.so build/Malmo/src/CSharpWrapper/libMalmoNETNative.so ```
     The assumption is that the library is the same, but somehow had a slight change of name that the build script wasn't expecting.
-    
-    
-    ii. Disable the C# part of the build by setting `INCLUDE_CSHARP` to `OFF` in `CMakeLists.txt` as done in https://github.com/CogComp/cwc-minecraft/commit/a02b5722576f9d78f8886ba6ca038e6cb047be57
+2. Disable the C# part of the build by setting `INCLUDE_CSHARP` to `OFF` in `CMakeLists.txt` as done in https://github.com/CogComp/cwc-minecraft/commit/a02b5722576f9d78f8886ba6ca038e6cb047be57
 
 
 3. Set up a workspace in IntelliJ by following [these instructions](https://bedrockminer.jimdo.com/modding-tutorials/set-up-minecraft-forge/set-up-fast-setup/), or by doing the following:
