@@ -85,3 +85,41 @@ Running a mission involves 2 steps:
 1. Run the Minecraft client as mentioned above. You may need to run another one for 2 agent missions.
 
 2. Run the Python code. As of now we recommend using Python 2 (using Python 3 has some issues which we intend to resolve soon -- follow [this issue](https://gitlab-beta.engr.illinois.edu/hockenmaier/cwc-minecraft/issues/6)).
+
+## Running a Minecraft Data Collection session ###
+The data collection sessions can either be run locally on a single machine (not recommended outside of development), or across multiple machines via LAN. 
+
+### Running locally ###
+On a single machine, start up 3 Minecraft clients. Then run the following command:
+
+```
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv
+```
+
+where `sample_gold_configs.csv` contains a newline-separated list of target structures to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional). `sample_user_info.csv` can be safely ignored.
+
+Although not recommended, you can also run this session with "Fixed Viewer" angle cameras that will take screenshots periodically from those angles as data is collected. To do so, start up 7 Minecraft clients, then run the following command:
+
+```
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 
+```
+
+### Running via LAN ###
+You will need:
+* 1 machine for the Architect (requiring two Minecraft clients)
+* 1 machine for the Builder (requiring one Minecraft client)
+* 1 machine to run the Python session (requiring no clients)
+* optionally, 1 machine to run the 4 Fixed Viewer cameras (requires 4 Minecraft clients; this can be the same machine that runs the Python session)
+
+The machines must be on the same local area network and reachable via ping (some networks don't allow for this).
+
+You will need to find the IP addresses of each machine:
+* MacOSX: `System Preferences > Network` will show the IP address under the `Status: Connected` message.
+* Windows: run `ipconfig` and look at the `IPv4` address.
+
+Edit `sample_user_info.csv` to reflect the correct IP addresses. For each line, in comma-separated fashion:
+* ID of player
+* name of player (this field is ignored, so anything works here)
+* IP address
+* port (default: 10000 should be used unless under special circumstances)
+* player role (`architect/builder`), where the `architect` machine has 2 instances of Minecraft running and the `builder` has 1
