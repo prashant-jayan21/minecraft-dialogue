@@ -144,7 +144,7 @@ To run with Fixed Viewer clients, a session can be run as follows:
 
 ## Creating your own target structures ##
 
-## Running the architect demo (DO NOT DO THIS YET)##
+## Running the architect demo (DO NOT DO THIS YET) ##
 
 ### Requirements: ###
 - UPGRADE TO MALMO 0.35.5 AND PYTHON 3 (instructions at https://github.com/rislam/cwc-minecraft/pull/16#issuecomment-488160813)
