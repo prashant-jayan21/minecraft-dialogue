@@ -96,7 +96,7 @@ On a single machine, start up 3 Minecraft clients. Then run the following comman
 /usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv
 ```
 
-where `sample_gold_configs.csv` contains a newline-separated list of target structures to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional). `sample_user_info.csv` can be safely ignored.
+where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional). `sample_user_info.csv` can be safely ignored.
 
 Although not recommended, you can also run this session with "Fixed Viewer" cameras that will take screenshots periodically from those angles as data is collected. To do so, start up 7 Minecraft clients, then run the following command:
 
@@ -109,7 +109,7 @@ You will need:
 * 1 machine for the Architect (requiring two Minecraft clients)
 * 1 machine for the Builder (requiring one Minecraft client)
 * 1 machine to run the Python session (requiring no clients)
-* optionally, 1 machine to run the 4 Fixed Viewer cameras (requires 4 Minecraft clients; this can be the same machine that runs the Python session)
+* optionally, 1 machine to run 4 Fixed Viewer cameras (requires 4 Minecraft clients; this can be the same machine that runs the Python session)
 
 The machines must be on the same local area network and reachable via ping (some networks don't allow for this).
 
@@ -130,7 +130,7 @@ A basic session with the above information can be run as follows:
 /usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --lan
 ```
 
-where `sample_gold_configs.csv` contains a newline-separated list of target structures to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional).
+where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional).
 
 Alternatively, you can run a session with "Fixed Viewer" cameras that will take screenshots periodically from those angles as data is collected. To use these Fixed Viewer clients, launch 4 clients on the desired machine, and edit `sample_fixed_viewer.csv` to reflect the IP address of that machine. The current default uses `127.0.0.1` (localhost), i.e. the machine running the Python session will also act as the machine managing the Fixed Viewer clients.
 
