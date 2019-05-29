@@ -145,7 +145,7 @@ To run with Fixed Viewer clients, a session can be run as follows:
 ## Creating your own target structures ##
 To create target structures, you only need one open Minecraft client open on your local machine.
 
-In this mode, instead of playing games where the target structures are dictated by the file paths in `sample_gold_configs.csv`, you now need to specify the names of the __new__ target structures to be created in `sample_gold_configs.csv`. Note that if the names of the new structures conflict with any existing structures that exist at that file path, the session will fail before you are able to create a structure by that name. Each target structure is automatically saved at the specified file path after you build it as the Builder in Minecraft and end the mission by pressing __Ctrl+C in the Minecraft client__.
+In this mode, instead of playing games where the target structures are dictated by the file paths in `sample_gold_configs.csv`, you now need to specify the names of the __new__ target structures to be created in `sample_gold_configs.csv`. Note that if a given name of a new structure conflicts with any existing structures that exist at that file path, the game for that particular structure will fail before you are able to create a structure by that name. Each target structure is automatically saved at the specified file path after you build it as the Builder in Minecraft and end the mission by pressing __Ctrl+C in the Minecraft client__.
 
 To run:
 
