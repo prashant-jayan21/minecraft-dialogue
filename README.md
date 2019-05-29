@@ -143,6 +143,19 @@ To run with Fixed Viewer clients, a session can be run as follows:
 ## Data format and postprocessing ##
 
 ## Creating your own target structures ##
+To create target structures, you only need one open Minecraft client open on your local machine.
+
+In this mode, instead of playing games where the target structures are dictated by the file paths in `sample_gold_configs.csv`, you now need to specify the names of the __new__ target structures to be created in `sample_gold_configs.csv`. Note that if the names of the new structures conflict with any existing structures that exist at that file path, the session will fail before you are able to create a structure by that name. Each target structure is automatically saved at the specified file path after you build it as the Builder in Minecraft and end the mission by pressing __Ctrl+C in the Minecraft client__.
+
+To run:
+
+```
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --create_target_structures
+```
+
+## Useful debugging tips ##
+### Disable screenshots ###
+By default, the Minecraft clients take screenshots every time a block is picked up or put down or a chat message is sent/received (saved in `Minecraft/run/screenshots` with the associated experiment ID). This can fill up your disk quickly if you're not careful. If debugging, you can turn off screenshots by setting the `disableScreenshots` static variable found in `Minecraft/src/main/java/cwc/CwCMod.java` to `true` (by default, this is `false`). (This will be made into a more automatic solution in the future.)
 
 ## Running the architect demo (DO NOT DO THIS YET) ##
 
