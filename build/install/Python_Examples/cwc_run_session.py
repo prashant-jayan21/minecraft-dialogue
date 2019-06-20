@@ -63,8 +63,8 @@ if __name__ == "__main__":
     for config in all_configs:
 
         print("\nROUND STARTED...")
-        print("\nGOLD CONFIG: " + config["gold file path"])
-        print("EXISTING CONFIG: " + config["existing file path"])
+        print(("\nGOLD CONFIG: " + config["gold file path"]))
+        print(("EXISTING CONFIG: " + config["existing file path"]))
 
         builder_port = (10000 if builder.get("port") is None else int(builder["port"]))
         architect_port = (10000 if architect.get("port") is None else int(architect["port"]))

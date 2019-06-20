@@ -149,7 +149,7 @@ def cwc_run_mission(args):
     builder_idx = 0 if create_target_structures else 1
 
     if create_target_structures and os.path.isfile(args["gold_config"]):
-      print "ERROR: attempting to create target structure", args["gold_config"], "but it already exists! Please update the configs_csv file to include file paths for NEW target structures only."
+      print(("ERROR: attempting to create target structure", args["gold_config"], "but it already exists! Please update the configs_csv file to include file paths for NEW target structures only."))
       sys.exit(0)
 
     architect_demo = args["architect_demo"]
@@ -270,7 +270,7 @@ def cwc_run_mission(args):
                     print(("Received", len(world_state.observations), "observations. Total number of elements:", total_elements))
                 for observation in world_state.observations:
                     if not architect_demo:
-                        print("Processing observation:", end=' ')
+                        print("Processing observation:")
                         debug_utils.printObservationElements(json.loads(observation.text))
                         pprint.PrettyPrinter(indent=4).pprint(json.loads(observation.text))
                     all_observations.append(observation)
@@ -334,15 +334,15 @@ def cwc_run_mission(args):
       h, m = divmod(m, 60)
       raw_observations["WorldStates"] = merged
 
-      print(json.dumps(raw_observations, indent=4))
+      print((json.dumps(raw_observations, indent=4)))
       xml_str = to_xml(raw_observations)
 
       if len(xml_str) > 0:
         with open(args['gold_config'], 'w') as f:
           f.write(xml_str)
-        print "Wrote gold configuration to", args["gold_config"], " ("+str(len(xml_str.split('\n'))-1)+' blocks)'
+        print(("Wrote gold configuration to", args["gold_config"], " ("+str(len(xml_str.split('\n'))-1)+' blocks)'))
       else:
-        print "WARNING: creating target structures: created structure was empty. Configuration", args["gold_config"], "not saved."
+        print(("WARNING: creating target structures: created structure was empty. Configuration", args["gold_config"], "not saved."))
 
     m, s = divmod(time_elapsed, 60)
     h, m = divmod(m, 60)

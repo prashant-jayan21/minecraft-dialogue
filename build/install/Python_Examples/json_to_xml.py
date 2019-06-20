@@ -23,7 +23,7 @@ def main(args):
 	gold = open(gf, 'w')
 	gold.write(to_xml(log))
 
-	print("Wrote gold configuration to", gf)
+	print(("Wrote gold configuration to", gf))
 	gold.close()
 
 if __name__ == '__main__':
