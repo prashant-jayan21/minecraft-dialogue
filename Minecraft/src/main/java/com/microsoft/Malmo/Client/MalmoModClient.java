@@ -1,15 +1,15 @@
 // --------------------------------------------------------------------------------------------------
 //  Copyright (c) 2016 Microsoft Corporation
-//  
+//
 //  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 //  associated documentation files (the "Software"), to deal in the Software without restriction,
 //  including without limitation the rights to use, copy, modify, merge, publish, distribute,
 //  sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
 //  furnished to do so, subject to the following conditions:
-//  
+//
 //  The above copyright notice and this permission notice shall be included in all copies or
 //  substantial portions of the Software.
-//  
+//
 //  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
 //  NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
 //  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
@@ -23,24 +23,33 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import cwc.CwCMod;
+import org.lwjgl.input.Mouse;
+
+import com.microsoft.Malmo.Utils.CraftingHelper;
+import com.microsoft.Malmo.Utils.ScreenHelper.TextCategory;
+import com.microsoft.Malmo.Utils.TextureHelper;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.util.MouseHelper;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 
-import org.lwjgl.input.Mouse;
-
-import com.microsoft.Malmo.Utils.CraftingHelper;
-import com.microsoft.Malmo.Utils.ScreenHelper.TextCategory;
 import org.lwjgl.opengl.Display;
 
 public class MalmoModClient
 {
+    public interface MouseEventListener
+    {
+        public void onXYZChange(int deltaX, int deltaY, int deltaZ);
+    }
+
     public class MouseHook extends MouseHelper
     {
         public boolean isOverriding = true;
-        /* (non-Javadoc)
+        private MouseEventListener observer = null;
+
+		/* (non-Javadoc)
          * @see net.minecraft.util.MouseHelper#mouseXYChange()
          * If we are overriding control, don't allow Minecraft to do any of the usual camera/yaw/pitch stuff that happens when the mouse moves.
          */
@@ -52,13 +61,27 @@ public class MalmoModClient
                 Mouse.setCursorPosition(Display.getWidth() / 2, Display.getHeight() / 2);
                 this.deltaX = 0;
                 this.deltaY = 0;
+                if (Mouse.isGrabbed())
+                    Mouse.setGrabbed(false);
             }
             else
             {
                 super.mouseXYChange();
+                if (this.observer != null)
+                    this.observer.onXYZChange(this.deltaX, this.deltaY, Mouse.getDWheel());
             }
         }
-        
+
+        @Override
+        public void grabMouseCursor()
+        {
+            if (MalmoModClient.this.inputType != InputType.HUMAN)
+            {
+                return;
+            }
+            super.grabMouseCursor();
+        }
+
         @Override
         /**
          * Ungrabs the mouse cursor so it can be moved and set it to the center of the screen
@@ -69,15 +92,20 @@ public class MalmoModClient
             // but it's seriously annoying, so we don't.
             Mouse.setGrabbed(false);
         }
+
+        public void requestEvents(MouseEventListener observer)
+        {
+            this.observer = observer;
+        }
     }
-    
+
     // Control overriding:
     enum InputType
     {
         HUMAN, AI
     }
 
-    private InputType inputType = InputType.HUMAN;
+    protected InputType inputType = InputType.HUMAN;
     protected MouseHook mouseHook;
     protected MouseHelper originalMouseHelper;
 	private KeyManager keyManager;
@@ -88,12 +116,12 @@ public class MalmoModClient
 	{
         // Register for various events:
         MinecraftForge.EVENT_BUS.register(this);
-
         GameSettings settings = Minecraft.getMinecraft().gameSettings;
+        TextureHelper.hookIntoRenderPipeline();
         setUpExtraKeys(settings);
 
         this.stateMachine = new ClientStateMachine(ClientState.WAITING_FOR_MOD_READY, this);
-        
+
         this.originalMouseHelper = Minecraft.getMinecraft().mouseHelper;
         this.mouseHook = new MouseHook();
         this.mouseHook.isOverriding = true;
@@ -115,16 +143,20 @@ public class MalmoModClient
 
         // This stops Minecraft from doing the annoying thing of stealing your mouse.
         System.setProperty("fml.noGrab", input == InputType.AI ? "true" : "false");
+        inputType = input;
         if (input == InputType.HUMAN)
+        {
             Minecraft.getMinecraft().mouseHelper.grabMouseCursor();
+        }
         else
+        {
             Minecraft.getMinecraft().mouseHelper.ungrabMouseCursor();
+        }
 
-    	inputType = input;
 		this.stateMachine.getScreenHelper().addFragment("Mouse: " + input, TextCategory.TXT_INFO, INFO_MOUSE_CONTROL);
     }
 
-    
+
     /** Set up some handy extra keys:
      * @param settings Minecraft's original GameSettings object
      */
@@ -165,7 +197,7 @@ public class MalmoModClient
         });
         this.keyManager = new KeyManager(settings, extraKeys);
     }
-    
+
     /*
     @SideOnly(Side.CLIENT)
     @SubscribeEvent

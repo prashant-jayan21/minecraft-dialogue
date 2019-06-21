@@ -2,7 +2,7 @@
 # Human architect, planner as builder
 # Record all observations
 
-from __future__ import print_function
+
 from enum import Enum
 from collections import defaultdict, OrderedDict
 from cwc_builder_utils import *
@@ -127,7 +127,7 @@ class DialogueManager:
 
     def parse(self, all_observations, text, pitch=0, yaw=0):
         """ Calls the dialogue manager to parse an input Architect utterance and handle it appropriately according to the dialogue manager's current dialogue state. """
-        print("DialogueManager::received text:", text)
+        print(("DialogueManager::received text:", text))
 
         # State: request additional description
         if self.next_state == State.REQUEST_DESCRIPTION:
@@ -192,8 +192,8 @@ class DialogueManager:
             ds = DialogueState(State.PLAN, blocks_in_grid=self.blocks_in_grid)
             existing_blocks = self.get_blocks_in_grid_repr()
 
-            print("DialogueManager::semantic parse to planner:", self.last_successful_parse)
-            print("DialogueManager::blocks_in_grid to planner:", existing_blocks)
+            print(("DialogueManager::semantic parse to planner:", self.last_successful_parse))
+            print(("DialogueManager::blocks_in_grid to planner:", existing_blocks))
 
             # produce a plan
             try:
@@ -241,11 +241,11 @@ class DialogueManager:
                 updated_pitch, updated_yaw, _ = self.update_blocks_in_grid(all_observations)
                 last_pitch = updated_pitch if updated_pitch is not None else last_pitch
                 last_yaw = updated_yaw if updated_yaw is not None else last_yaw
-                print("DialogueManager::execute_plan returned with status:", execute_status)
+                print(("DialogueManager::execute_plan returned with status:", execute_status))
 
                 execute_status, _, _ = self.execute_plan(last_pitch, last_yaw, all_observations, verify=True)
                 self.update_blocks_in_grid(all_observations)
-                print("DialogueManager::verify_plan returned with status:", execute_status)
+                print(("DialogueManager::verify_plan returned with status:", execute_status))
 
                 ds.execute_status = execute_status    
                 self.goto_default_loc()  
@@ -259,7 +259,7 @@ class DialogueManager:
                     self.current_shapes = []
                     self.attempts["description"] = 0
                     self.append_to_history(ds, all_observations)
-                    print(self.built_shapes)
+                    print((self.built_shapes))
                     self.successfully_parsed_inputs.append(self.last_successful_input)
                     self.next_state = State.REQUEST_VERIFICATION
 
@@ -347,9 +347,9 @@ class DialogueManager:
             self.system_text = ""
             
             augmentation, unhandled_queries = get_augmentation(text, missing_queries)
-            print("\nDialogueManager::generated augmentation:", augmentation)
+            print(("\nDialogueManager::generated augmentation:", augmentation))
             augmented_text = augment_text(self.last_successful_input, missing_queries, augmentation, self.last_successful_parse_by_parts)
-            print("DialogueManager::final augmented input:", augmented_text)
+            print(("DialogueManager::final augmented input:", augmented_text))
 
             if augmented_text is not None:
                 parse, current_shapes, parse_by_parts = self.parser.parse(augmented_text)
@@ -448,7 +448,7 @@ class DialogueManager:
         last_pitch, last_yaw = pitch, yaw
 
         if verbose:
-            print("\nexecute_plan::"+("executing" if not verify else "verifying"), "the plan:", self.last_planner_response.plan)
+            print(("\nexecute_plan::"+("executing" if not verify else "verifying"), "the plan:", self.last_planner_response.plan))
 
         # execute the plan
         for (action, block_id, x, y, z, color) in plan_list:
@@ -516,7 +516,7 @@ class DialogueManager:
         if blocks_in_grid_new is not None:
             self.blocks_in_grid = reformat_builder_grid(blocks_in_grid_new)
             if verbose:
-                print("execute_plan::updated blocks_in_grid after polling for", num_attempts, "attempts:", self.blocks_in_grid)
+                print(("execute_plan::updated blocks_in_grid after polling for", num_attempts, "attempts:", self.blocks_in_grid))
             updated = True
 
         return pitch_new, yaw_new, updated
@@ -532,7 +532,7 @@ class DialogueManager:
             try:
                 self.block_id_map.pop((x,y,z))
             except KeyError:
-                print("update_block_ids::Warning: tried to remove non-existent block id for", (x,y,z), "from id map!")
+                print(("update_block_ids::Warning: tried to remove non-existent block id for", (x,y,z), "from id map!"))
 
     def get_block_id(self, x, y, z):
         """ Gets the unique block ID for a given location in the grid. If an ID does not exist for that location, assigns a new ID and returns it. """
@@ -556,7 +556,7 @@ class DialogueManager:
         return blocks_in_grid_repr[:-1] if len(blocks_in_grid_repr) > 0 else None
 
     def print_state(self, state):
-        print("\nDialogueManager::\n"+str(state)+"\n")
+        print(("\nDialogueManager::\n"+str(state)+"\n"))
 
 def addFixedViewers(n):
     fvs = ''
@@ -699,9 +699,9 @@ def initialize_agents(args):
         for i in range(num_fixed_viewers):
             client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10003 + i))
     else:
-        print("Builder IP: ", builder_ip, "\tPort:", builder_port)
-        print("Architect IP:", architect_ip, "\tPort:", architect_port)
-        print("FixedViewer IP:", fixed_viewer_ip, "\tPort:", fixed_viewer_port, "\tNumber of clients:", num_fixed_viewers, "\n")
+        print(("Builder IP: ", builder_ip, "\tPort:", builder_port))
+        print(("Architect IP:", architect_ip, "\tPort:", architect_port))
+        print(("FixedViewer IP:", fixed_viewer_ip, "\tPort:", fixed_viewer_port, "\tNumber of clients:", num_fixed_viewers, "\n"))
 
         client_pool.add(MalmoPython.ClientInfo(architect_ip, architect_port+1))
         client_pool.add(MalmoPython.ClientInfo(builder_ip, builder_port))
@@ -713,7 +713,7 @@ def initialize_agents(args):
     return agent_hosts, client_pool
 
 def cwc_run_mission(args):
-    print("Calling cwc_run_builder_demo with args:", args, "\n")
+    print(("Calling cwc_run_builder_demo with args:", args, "\n"))
     start_time = time.time()
 
     # initialize the agents
@@ -782,7 +782,7 @@ def cwc_run_mission(args):
                         obsrv = json.loads(observation.text)
                         print("Observation processed:")
                         if verbose:
-                            print(json.dumps(obsrv, indent=4), '\n')
+                            print((json.dumps(obsrv, indent=4), '\n'))
 
                         chat_instruction = obsrv.get("Chat", chat_instruction) 
                         blocks_in_grid = obsrv.get("BuilderGridAbsolute", blocks_in_grid)
@@ -790,10 +790,10 @@ def cwc_run_mission(args):
                         yaw = obsrv.get("Yaw", yaw)
 
                         if obsrv.get("Chat") is not None:
-                            print("Chat:", chat_instruction)
+                            print(("Chat:", chat_instruction))
 
                         if obsrv.get("BuilderGridAbsolute") is not None:
-                            print("BuilderGridAbsolute:", obsrv["BuilderGridAbsolute"])
+                            print(("BuilderGridAbsolute:", obsrv["BuilderGridAbsolute"]))
 
                         print()
 
@@ -834,7 +834,7 @@ def cwc_run_mission(args):
 
     m, s = divmod(time_elapsed, 60)
     h, m = divmod(m, 60)
-    print("Done! Mission time elapsed: %d:%02d:%02d (%.2fs)\n" % (h, m, s, time_elapsed))
+    print(("Done! Mission time elapsed: %d:%02d:%02d (%.2fs)\n" % (h, m, s, time_elapsed)))
 
     print("Waiting for mission to end...")
     # Mission should have ended already, but we want to wait until all the various agent hosts
@@ -950,7 +950,7 @@ def get_previous_referent(var, current_shapes):
         if var == existing_var:
             return current_shapes[i-1]
 
-    print("get_previous_referent::Error: could not find referent shape in current_shapes:", current_shapes, "given var:", var)
+    print(("get_previous_referent::Error: could not find referent shape in current_shapes:", current_shapes, "given var:", var))
     return None
 
 def get_dim_values(response):
@@ -1012,7 +1012,7 @@ def get_dim_labels(response, queries, dim_values):
         elif is_number(tokens[i]):
             if len(unassigned_labels) > 0:
                 if dim_labels.get(unassigned_labels[-1]) is not None:
-                    print("get_dim_labels::Warning: duplicate", unassigned_labels[-1], "values")
+                    print(("get_dim_labels::Warning: duplicate", unassigned_labels[-1], "values"))
                 dim_labels[unassigned_labels.pop()] = tokens[i]
             else:
                 unassigned_values.append(tokens[i])
@@ -1022,7 +1022,7 @@ def get_dim_labels(response, queries, dim_values):
                 if tokens[i] in dim_label_map[key]:
                     if len(unassigned_values) > 0:
                         if dim_labels.get(key) is not None:
-                            print("get_dim_labels::Warning: duplicate", key, "values")
+                            print(("get_dim_labels::Warning: duplicate", key, "values"))
 
                         dim_labels[key] = unassigned_values.pop()
                     else:
@@ -1034,7 +1034,7 @@ def get_dim_labels(response, queries, dim_values):
         if key not in dim_labels and len(unassigned_values) > 0:
             dim_labels[key] = unassigned_values.pop(0)
 
-    print("get_dim_labels::parsed the following dimensions:", dim_labels)
+    print(("get_dim_labels::parsed the following dimensions:", dim_labels))
     return dim_labels
 
 def get_dim_value_map(response, queries):
@@ -1050,7 +1050,7 @@ def generate_clarification_questions(missing, current_shapes, built_shapes):
     for missing_query in missing_queries:
         if 'dim' in missing_query:
             _, shape, var, dim = missing_query
-            if (var, shape) not in missing_shape_dims.keys():
+            if (var, shape) not in list(missing_shape_dims.keys()):
                 missing_shape_dims[(var, shape)] = []
             missing_shape_dims[(var, shape)].append(missing_query)
 
@@ -1063,7 +1063,7 @@ def generate_clarification_questions(missing, current_shapes, built_shapes):
             optional_suffix = "other " if shape == referent_shape else ""
             missing_rel_questions.append(([missing_query], str("In more detail, "+prefix+"where the "+shape_ordinal+shape+" is placed with respect to the "+optional_suffix+referent_shape+suffix+", and how their blocks align?")))
 
-    for key, missing_queries in missing_shape_dims.items():
+    for key, missing_queries in list(missing_shape_dims.items()):
         var, shape = key
         prefix = random.choice(["What is ", "What's ", "Can you describe ", "Could you tell me "])
         shape_ordinal = get_ordinal(shape, var, current_shapes)
@@ -1089,7 +1089,7 @@ def get_augmentation(text, queries):
     dim_value_map = get_dim_value_map(text, queries)
 
     if len(dim_value_map) < 1:
-        print("get_augmentation::Error: could not parse any dimensions from text:", text)
+        print(("get_augmentation::Error: could not parse any dimensions from text:", text))
         return None, []
 
     # square parameter descriptions
@@ -1097,7 +1097,7 @@ def get_augmentation(text, queries):
         if dim_value_map.get('size') is not None:
             return " size "+str(dim_value_map['size']), []
         if (dim_value_map.get('width') is None and dim_value_map.get('length') is None) or dim_value_map['width'] != dim_value_map['length']:
-            print("get_augmentation::Error: cannot parse square dimensions from text:", text)
+            print(("get_augmentation::Error: cannot parse square dimensions from text:", text))
             return None, []
         return " size "+str(dim_value_map.get('width', dim_value_map['length'])), []
 
@@ -1108,7 +1108,7 @@ def get_augmentation(text, queries):
     for missing_query in queries:
         dim = missing_query[3]
         if dim_value_map.get(dim) is None:
-            print("get_augmentation::Warning: cannot identify dim", dim, "for shape", shape, "from text:", text)
+            print(("get_augmentation::Warning: cannot identify dim", dim, "for shape", shape, "from text:", text))
             unhandled_queries.append(missing_query)
         else:
             missing_str += dim+" "+str(dim_value_map[dim])+" and "
@@ -1123,7 +1123,7 @@ def augment_text(text, queries, augmentation, parse_by_parts):
         return None
 
     augmentation = augmentation.strip()
-    print("augment_text::augmenting:", text, "with augmentation:", augmentation)
+    print(("augment_text::augmenting:", text, "with augmentation:", augmentation))
 
     split_text = [instr.strip() for instr in re.split(r'(\.| such that)', text.lower())]
     modified_input = ""

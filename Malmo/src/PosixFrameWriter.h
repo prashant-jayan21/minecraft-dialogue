@@ -29,7 +29,7 @@ namespace malmo
     {
     public:
 
-        PosixFrameWriter(std::string path, short width, short height, int frames_per_second, int64_t bit_rate = 400000);
+        PosixFrameWriter(std::string path, std::string info_filename, short width, short height, int frames_per_second, int64_t bit_rate = 400000, int channels = 3, bool drop_input_frames = false);
         ~PosixFrameWriter();
         void open() override;
         void close() override;
@@ -39,11 +39,15 @@ namespace malmo
         std::string search_path();
         
         int64_t bit_rate;
-
         std::string ffmpeg_path;
         
         int pipe_fd[2];
         pid_t process_id;
+
+        typedef std::pair<pid_t, int> pid_fd;
+        static std::stack<pid_fd> child_process_stack;
+        static std::vector<pid_fd> child_processes_pending_deletion;
+        static void close_pending_children();
     };
 }
 

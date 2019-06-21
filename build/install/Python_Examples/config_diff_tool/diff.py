@@ -42,7 +42,7 @@ def get_next_actions(all_next_actions, num_next_actions_needed, last_action, bui
     all_next_placements = random.sample(all_next_placements, len(all_next_placements))
 
     if feasible_next_placements:
-        all_next_placements = list(filter(lambda x: is_feasible_next_placement(x, built_config), all_next_placements))
+        all_next_placements = list([x for x in all_next_placements if is_feasible_next_placement(x, built_config)])
 
     if last_action:
         # sort all next actions by distance from last action and pick top-k
@@ -68,7 +68,10 @@ def get_next_actions(all_next_actions, num_next_actions_needed, last_action, bui
         "built_minus_gold": next_removals
     }
 
-def is_feasible_next_placement(block, built_config):
+def is_feasible_next_placement(block, built_config, extra_check):
+    # check if there is an existing block at block's location
+    if extra_check and conflicting_block_exists(block, built_config):
+        return False
 
     # check if block is on ground
     if block_on_ground(block):
@@ -79,6 +82,16 @@ def is_feasible_next_placement(block, built_config):
         return True
     else:
         return False
+
+def conflicting_block_exists(block, built_config):
+    for existing_block in built_config:
+        if conflicts(existing_block, block):
+            return True
+
+    return False
+
+def conflicts(existing_block, block):
+    return existing_block["x"] == block["x"] and existing_block["y"] == block["y"] and existing_block["z"] == block["z"]
 
 def block_on_ground(block):
     return block["y"] == 1
@@ -125,29 +138,29 @@ def get_diff(gold_config, built_config):
     perturbations = generate_perturbations(built_config, gold_config = gold_config)
 
     # compute diffs for each perturbation
-    diffs = list(map(lambda t: diff(gold_config = gold_config, built_config = t.perturbed_config), perturbations))
+    diffs = list([diff(gold_config = gold_config, built_config = t.perturbed_config) for t in perturbations])
 
     # convert diffs back to actions in the built config space and not the perturbed config space
     # filter out perturbations that yield infeasible diff actions (those outside the build region)
-    perturbations_and_diffs = list(filter(lambda x: is_feasible_perturbation(x[0], x[1]), list(zip(perturbations, diffs))))
+    perturbations_and_diffs = list([x for x in list(zip(perturbations, diffs)) if is_feasible_perturbation(x[0], x[1])])
 
     # recompute diffs in gold config space
-    orig_diffs = list(map(lambda x: diff(gold_config = gold_config, built_config = x[0].perturbed_config), perturbations_and_diffs))
+    orig_diffs = list([diff(gold_config = gold_config, built_config = x[0].perturbed_config) for x in perturbations_and_diffs])
     perturbations_diffs_and_orig_diffs = [x + (y,) for x, y in zip(perturbations_and_diffs, orig_diffs)]
-    perturbations_and_diffs = list(map(lambda x: (x[0], Diff(diff_built_config_space = x[1], diff_gold_config_space = x[2])), perturbations_diffs_and_orig_diffs))
+    perturbations_and_diffs = list([(x[0], Diff(diff_built_config_space = x[1], diff_gold_config_space = x[2])) for x in perturbations_diffs_and_orig_diffs])
 
     # select perturbation with min diff
     min_perturbation_and_diff = min(perturbations_and_diffs, key = lambda t: len(t[1].diff_built_config_space["gold_minus_built"]) + len(t[1].diff_built_config_space["built_minus_gold"]))
 
     # get all minimal diffs
-    diff_sizes = list(map(lambda t: len(t[1].diff_built_config_space["gold_minus_built"]) + len(t[1].diff_built_config_space["built_minus_gold"]), perturbations_and_diffs))
+    diff_sizes = list([len(t[1].diff_built_config_space["gold_minus_built"]) + len(t[1].diff_built_config_space["built_minus_gold"]) for t in perturbations_and_diffs])
     min_diff_size = min(diff_sizes)
 
     perturbations_and_diffs_and_diff_sizes = list(zip(perturbations_and_diffs, diff_sizes))
-    perturbations_and_minimal_diffs_and_diff_sizes = list(filter(lambda x: x[1] == min_diff_size, perturbations_and_diffs_and_diff_sizes))
+    perturbations_and_minimal_diffs_and_diff_sizes = list([x for x in perturbations_and_diffs_and_diff_sizes if x[1] == min_diff_size])
 
     # reformat final output
-    perturbations_and_minimal_diffs = list(map(lambda x: PerturbedConfigAndDiff(perturbed_config=x[0][0], diff=x[0][1]), perturbations_and_minimal_diffs_and_diff_sizes))
+    perturbations_and_minimal_diffs = list([PerturbedConfigAndDiff(perturbed_config=x[0][0], diff=x[0][1]) for x in perturbations_and_minimal_diffs_and_diff_sizes])
 
     return min_perturbation_and_diff[1].diff_built_config_space, perturbations_and_minimal_diffs
 
@@ -162,10 +175,10 @@ def is_feasible_perturbation(perturbed_config, diff):
     def find_orig_block(block, block_pairs):
         return next(x[1] for x in block_pairs if x[0] == block)
 
-    for key, diff_config in diff.items():
+    for key, diff_config in list(diff.items()):
         if key == "built_minus_gold": # retrieve from original built config instead of applying inverse transform
             block_pairs = list(zip(perturbed_config.perturbed_config, perturbed_config.original_config))
-            diff[key] = list(map(lambda x: find_orig_block(x, block_pairs), diff_config))
+            diff[key] = list([find_orig_block(x, block_pairs) for x in diff_config])
         else:
             diff[key] = invert_perturbation_transform(
                 config = diff_config,
@@ -258,7 +271,7 @@ def generate_perturbation(config, x_target, z_target, rot_target, gold_config):
             }
         ]
 
-        dummy_config_translated = list(map(lambda t: f(t, x_diff = x_diff, z_diff = z_diff), dummy_config))
+        dummy_config_translated = list([f(t, x_diff = x_diff, z_diff = z_diff) for t in dummy_config])
 
         # rotate
 
@@ -294,7 +307,7 @@ def generate_perturbation(config, x_target, z_target, rot_target, gold_config):
             'type': d["type"]
         }
 
-    config_translated = list(map(lambda t: f(t, x_diff = x_diff, z_diff = z_diff), config))
+    config_translated = list([f(t, x_diff = x_diff, z_diff = z_diff) for t in config])
 
     # rotate
 
@@ -311,7 +324,7 @@ def generate_perturbation(config, x_target, z_target, rot_target, gold_config):
             'type': d["type"]
         }
 
-    config_translated_referred = list(map(lambda t: g(t, x_source = x_source, y_source = y_source, z_source = z_source), config_translated))
+    config_translated_referred = list([g(t, x_source = x_source, y_source = y_source, z_source = z_source) for t in config_translated])
 
     # rotate about pivot
 
@@ -329,10 +342,10 @@ def generate_perturbation(config, x_target, z_target, rot_target, gold_config):
             'type': d["type"]
         }
 
-    config_translated_referred_rotated = list(map(lambda t: h(t, rot_matrix = R_yaw), config_translated_referred))
+    config_translated_referred_rotated = list([h(t, rot_matrix = R_yaw) for t in config_translated_referred])
 
     # convert back to abs coordinates
-    config_translated_rotated = list(map(lambda t: g(t, x_source = -1 * x_source, y_source = -1 * y_source, z_source = -1 * z_source), config_translated_referred_rotated))
+    config_translated_rotated = list([g(t, x_source = -1 * x_source, y_source = -1 * y_source, z_source = -1 * z_source) for t in config_translated_referred_rotated])
 
     return PerturbedConfig(
         perturbed_config = config_translated_rotated,
@@ -360,7 +373,7 @@ def invert_perturbation_transform(config, perturbed_config):
             'type': d["type"]
         }
 
-    config_referred = list(map(lambda t: g(t, x_source = x_source, y_source = y_source, z_source = z_source), config))
+    config_referred = list([g(t, x_source = x_source, y_source = y_source, z_source = z_source) for t in config])
 
     # rotate about pivot
 
@@ -378,10 +391,10 @@ def invert_perturbation_transform(config, perturbed_config):
             'type': d["type"]
         }
 
-    config_referred_rotated = list(map(lambda t: h(t, rot_matrix = R_yaw), config_referred))
+    config_referred_rotated = list([h(t, rot_matrix = R_yaw) for t in config_referred])
 
     # convert back to abs coordinates
-    config_rotated = list(map(lambda t: g(t, x_source = -1 * x_source, y_source = -1 * y_source, z_source = -1 * z_source), config_referred_rotated))
+    config_rotated = list([g(t, x_source = -1 * x_source, y_source = -1 * y_source, z_source = -1 * z_source) for t in config_referred_rotated])
 
     x_diff = -1 * perturbed_config.translation[0]
     z_diff = -1 * perturbed_config.translation[1]
@@ -395,7 +408,7 @@ def invert_perturbation_transform(config, perturbed_config):
             'type': d["type"]
         }
 
-    config_rotated_translated = list(map(lambda t: f(t, x_diff = x_diff, z_diff = z_diff), config_rotated))
+    config_rotated_translated = list([f(t, x_diff = x_diff, z_diff = z_diff) for t in config_rotated])
 
     return config_rotated_translated
 
@@ -428,14 +441,14 @@ def get_built_config_distribution(built_config, minimal_diffs):
     """
 
     def f(block, minimal_diffs):
-        diffs_containing_block = list(filter(lambda x: block in x["built_minus_gold"], minimal_diffs))
+        diffs_containing_block = list([x for x in minimal_diffs if block in x["built_minus_gold"]])
         return len(diffs_containing_block)
 
     # get counts
-    scores = list(map(lambda x: f(x, minimal_diffs), built_config))
+    scores = list([f(x, minimal_diffs) for x in built_config])
     # normalize
     if not sum(scores) == 0:
-        normalized_scores = list(map(lambda x: float(x)/float(sum(scores)), scores))
+        normalized_scores = list([float(x)/float(sum(scores)) for x in scores])
     else:
         normalized_scores = scores
 
@@ -452,14 +465,14 @@ def get_gold_config_distribution(gold_config, minimal_diffs):
     """
 
     def f(block, minimal_diffs):
-        diffs_containing_block = list(filter(lambda x: block in x["gold_minus_built"], minimal_diffs))
+        diffs_containing_block = list([x for x in minimal_diffs if block in x["gold_minus_built"]])
         return len(diffs_containing_block)
 
     # get counts
-    scores = list(map(lambda x: f(x, minimal_diffs), gold_config))
+    scores = list([f(x, minimal_diffs) for x in gold_config])
     # normalize
     if not sum(scores) == 0:
-        normalized_scores = list(map(lambda x: float(x)/float(sum(scores)), scores))
+        normalized_scores = list([float(x)/float(sum(scores)) for x in scores])
     else:
         normalized_scores = scores
 

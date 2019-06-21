@@ -1,15 +1,15 @@
 // --------------------------------------------------------------------------------------------------
 //  Copyright (c) 2016 Microsoft Corporation
-//  
+//
 //  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 //  associated documentation files (the "Software"), to deal in the Software without restriction,
 //  including without limitation the rights to use, copy, modify, merge, publish, distribute,
 //  sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
 //  furnished to do so, subject to the following conditions:
-//  
+//
 //  The above copyright notice and this permission notice shall be included in all copies or
 //  substantial portions of the Software.
-//  
+//
 //  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
 //  NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
 //  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
@@ -58,6 +58,14 @@ import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 
 import com.microsoft.Malmo.Client.MalmoModClient;
+import com.microsoft.Malmo.MissionHandlers.AbsoluteMovementCommandsImplementation;
+import com.microsoft.Malmo.MissionHandlers.DiscreteMovementCommandsImplementation;
+import com.microsoft.Malmo.MissionHandlers.InventoryCommandsImplementation;
+import com.microsoft.Malmo.MissionHandlers.ObservationFromFullInventoryImplementation;
+import com.microsoft.Malmo.MissionHandlers.ObservationFromFullStatsImplementation;
+import com.microsoft.Malmo.MissionHandlers.ObservationFromGridImplementation;
+import com.microsoft.Malmo.MissionHandlers.ObservationFromSystemImplementation;
+import com.microsoft.Malmo.MissionHandlers.SimpleCraftCommandsImplementation;
 import com.microsoft.Malmo.Schemas.MissionInit;
 import com.microsoft.Malmo.Server.MalmoModServer;
 import com.microsoft.Malmo.Utils.AddressHelper;
@@ -126,7 +134,8 @@ public class MalmoMod
         network.registerMessage(DiscreteMovementCommandsImplementation.AttackActionMessageHandler.class, DiscreteMovementCommandsImplementation.AttackActionMessage.class, 9, Side.SERVER);
         network.registerMessage(ObservationFromFullInventoryImplementation.InventoryRequestMessageHandler.class, ObservationFromFullInventoryImplementation.InventoryRequestMessage.class, 10, Side.SERVER);
         network.registerMessage(InventoryCommandsImplementation.InventoryChangeMessageHandler.class, InventoryCommandsImplementation.InventoryChangeMessage.class, 11, Side.CLIENT);
-        network.registerMessage(CwCObservationImplementation.CwCRequestMessageHandler.class,CwCObservationImplementation.CwCRequestMessage.class, 12, Side.SERVER);
+        network.registerMessage(CwCObservationImplementation.CwCRequestMessageHandler.class,CwCObservationImplementation.CwCRequestMessage.class, 13, Side.SERVER);
+        network.registerMessage(ObservationFromSystemImplementation.SystemRequestMessageHandler.class, ObservationFromSystemImplementation.SystemRequestMessage.class, 12, Side.SERVER);
     }
 
     @EventHandler
@@ -150,7 +159,7 @@ public class MalmoMod
     {
         if (Minecraft.getMinecraft().isCallingFromMinecraftThread())
             return clientProperties;
-        
+
         MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
         if (server != null && server.isCallingFromMinecraftThread())
             return serverProperties;
@@ -185,6 +194,14 @@ public class MalmoMod
             throw new Exception("Trying to send a mission request directly when no server has been created!");
 
         this.server.sendMissionInitDirectToServer(minit);
+    }
+
+    public float getServerTickRate() throws Exception
+    {
+        if (this.server == null)
+            throw new Exception("Trying to get the server tick rate when no server has been created!");
+
+        return this.server.getServerTickRate();
     }
 
     public enum MalmoMessageType

@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 import re, string, argparse
 
 ordinal_map = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6, "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10,"1st":1, "2nd":2, "3rd":3, "4th":4, "5th":5, "6th":6, "7th":7, "8th":8, "9th":9, "10th":10}
@@ -47,12 +47,12 @@ class RuleBasedParser:
 
         self.reset()
 
-        print("parse::received instructions:", instruction)
+        print(("parse::received instructions:", instruction))
         instruction = preprocess(instruction)
 
         # split the utterance by delimiters '.' and 'such that'
         instructions = [instr.strip() for instr in re.split(r'\.| such that', instruction) if len(instr.strip()) > 0]
-        print("parse::parsing instructions:", instructions, "\n")
+        print(("parse::parsing instructions:", instructions, "\n"))
 
         # parse the utterances
         logical_form = []
@@ -81,28 +81,28 @@ class RuleBasedParser:
                 return None, None, None
 
             logical_form.append(to_add)
-            print("parse::current_shapes:", self.current_shapes, "\n")
+            print(("parse::current_shapes:", self.current_shapes, "\n"))
 
-        print("\nparse::parse result:", "^".join(logical_form))
+        print(("\nparse::parse result:", "^".join(logical_form)))
         return "^".join(logical_form), self.current_shapes, logical_form
 
     def parse_isolated_shape(self, instruction): 
         """ Parses an instruction that defines a shape in isolation. """
-        print("parse_isolated_shape::parsing instruction:", instruction, "...")
+        print(("parse_isolated_shape::parsing instruction:", instruction, "..."))
         # get relevant values
         primitive_values = {}
         for token in instruction.split():
             for primitive_type in primitives_map:
                 if token in primitives_map[primitive_type]:
                     if primitive_type in primitive_values:
-                        print("parse_isolated_shape::Warning: type", primitive_type, "("+primitive_values[primitive_type][0]+") already processed for instruction", instruction)
+                        print(("parse_isolated_shape::Warning: type", primitive_type, "("+primitive_values[primitive_type][0]+") already processed for instruction", instruction))
                     elif primitive_type not in primitive_values:
                         primitive_values[primitive_type]=[]
                     primitive_values[primitive_type].append(token)
 
         # missing information?
         if not set(primitive_values.keys()).issuperset(set(['shape', 'number'])):
-            print("parse_isolated_shape::Warning: instruction", instruction, "is missing information.")
+            print(("parse_isolated_shape::Warning: instruction", instruction, "is missing information."))
 
         # string together logical form fragments
         logical_form = []
@@ -111,22 +111,22 @@ class RuleBasedParser:
             if lf is not None:
                 logical_form.append(lf)
             elif primitive_type != 'color':
-                print('parse_isolated_shape::Warning: missing type', primitive_type)
+                print(('parse_isolated_shape::Warning: missing type', primitive_type))
 
         if primitive_values.get("shape") is None:
-            print("parse_isolated_shape::Error: no shape found in instruction:", instruction)
+            print(("parse_isolated_shape::Error: no shape found in instruction:", instruction))
             return None
 
         # add this shape to list of processed shapes
         self.current_shapes.append([primitive_values["shape"][0], self.get_var()])
 
         # join and return full logical form
-        print("parse_isolated_shape::parsed instruction:", instruction, "->", "^".join(logical_form))
+        print(("parse_isolated_shape::parsed instruction:", instruction, "->", "^".join(logical_form)))
         return "^".join(logical_form)
 
     def parse_general_spatial_rel(self, instruction):
         """ Parses an instruction that defines a shape with a general spatial relation. """
-        print("parse_general_spatial_rel::parsing instruction:", instruction, "...")
+        print(("parse_general_spatial_rel::parsing instruction:", instruction, "..."))
 
         # find the general spatial relation
         instr_split = regex_split(instruction, "spatial_rel")
@@ -150,12 +150,12 @@ class RuleBasedParser:
         # construct the logical form
         var = self.get_var()
         logical_form = self.parse_isolated_shape(instr_split[0])+"^"+spatial_rel_primitive+'('+var+','+referent_var+')'
-        print("parse_general_spatial_rel::parsed instruction:", instruction, "->", logical_form)
+        print(("parse_general_spatial_rel::parsed instruction:", instruction, "->", logical_form))
         return logical_form
 
     def parse_fine_grained_spatial_rel(self, instruction):
         """ Parses an instruction that defines a fine-grained spatial relation between two existing shapes. """
-        print("parse_fine_grained_spatial_rel::parsing instruction:", instruction, "...")
+        print(("parse_fine_grained_spatial_rel::parsing instruction:", instruction, "..."))
 
         # find the general spatial relation
         instr_split = regex_split(instruction, "spatial_rel")
@@ -207,7 +207,7 @@ class RuleBasedParser:
 
         # append the general spatial relation and return
         logical_form = b1+"^"+b2+"^spatial-rel("+spatial_rel_primitive+",0,w"+str(id2)+",w"+str(id1)+")"
-        print("parse_fine_grained_spatial_rel::parsed instruction:", instruction, "->", logical_form)
+        print(("parse_fine_grained_spatial_rel::parsed instruction:", instruction, "->", logical_form))
         return logical_form
 
     def allocate_block_var(self, ordinal, var):
@@ -249,7 +249,7 @@ def regex_split(instruction, primitive_type):
     # unhandled
     if len(instr_split) != 3:
         if primitive_type != "ordinals" and primitive_type != "location_predicates":
-            print("parse_general_spatial_rel::Warning: unhandled number of", primitive_type+"s found in instruction:", instruction)
+            print(("parse_general_spatial_rel::Warning: unhandled number of", primitive_type+"s found in instruction:", instruction))
         return None
 
     return [instr.strip() for instr in instr_split]
@@ -279,7 +279,7 @@ def format_lf(primitive_type, primitive_values, var):
         
         return s[:-1]
 
-    print("format_lf::Error: no format found for type:", primitive_type)
+    print(("format_lf::Error: no format found for type:", primitive_type))
     return None
 
 def define_block(block_id_counter, ordinal, var):

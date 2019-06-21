@@ -9,24 +9,24 @@ import cwc_mission_utils as mission_utils, cwc_debug_utils as debug_utils, cwc_i
 def addFixedViewers(n):
     fvs = ''
     for i in range(n):
-        fvs += '''<AgentSection mode="Spectator"> 
-                    <Name>FixedViewer'''+str(i+1)+'''</Name> 
-                    <AgentStart> 
+        fvs += '''<AgentSection mode="Spectator">
+                    <Name>FixedViewer'''+str(i+1)+'''</Name>
+                    <AgentStart>
                       ''' + mission_utils.fv_placements[i] + '''
-                      </AgentStart> 
-                    <AgentHandlers/> 
+                      </AgentStart>
+                    <AgentHandlers/>
                   </AgentSection>
                 '''
     return fvs
 
 def drawInventoryBlocks():
-    return ''' 
+    return '''
                 <DrawCuboid type="cwcmod:cwc_minecraft_orange_rn" x1="5" y1="1" z1="7" x2="1" y2="2" z2="8"/>
                 <DrawCuboid type="cwcmod:cwc_minecraft_yellow_rn" x1="-1" y1="1" z1="7" x2="-5" y2="2" z2="8"/>
                 <DrawCuboid type="cwcmod:cwc_minecraft_green_rn" x1="7" y1="1" z1="6" x2="8" y2="2" z2="2"/>
                 <DrawCuboid type="cwcmod:cwc_minecraft_blue_rn" x1="7" y1="1" z1="0" x2="8" y2="2" z2="-4"/>
                 <DrawCuboid type="cwcmod:cwc_minecraft_purple_rn" x1="-7" y1="1" z1="6" x2="-8" y2="2" z2="2"/>
-                 <DrawCuboid type="cwcmod:cwc_minecraft_red_rn" x1="-7" y1="1" z1="0" x2="-8" y2="2" z2="-4"/> 
+                 <DrawCuboid type="cwcmod:cwc_minecraft_red_rn" x1="-7" y1="1" z1="0" x2="-8" y2="2" z2="-4"/>
             '''
 
 def generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_viewers, draw_inventory_blocks):
@@ -118,7 +118,7 @@ def generateOracleXML(experiment_id, gold_config_xml_substring):
                 </Mission>'''
 
 def cwc_run_mission(args):
-    print "Calling cwc_run_mission with args:", args, "\n"
+    print(("Calling cwc_run_mission with args:", args, "\n"))
     start_time = time.time()
 
     builder_ip, builder_port = args["builder_ip_addr"], args["builder_port"]
@@ -140,7 +140,7 @@ def cwc_run_mission(args):
     client_pool = MalmoPython.ClientPool()
 
     if not args["lan"]:
-        print "Starting in local mode."
+        print("Starting in local mode.")
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10000))
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10001))
         client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10002))
@@ -148,9 +148,9 @@ def cwc_run_mission(args):
         for i in range(num_fixed_viewers):
             client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10003+i))
     else:
-        print ("Builder IP: "+builder_ip), "\tPort:", builder_port
-        print "Architect IP:", architect_ip, "\tPort:", architect_port
-        print "FixedViewer IP:", fixed_viewer_ip, "\tPort:", fixed_viewer_port, "\tNumber of clients:", num_fixed_viewers, "\n"
+        print((("Builder IP: "+builder_ip), "\tPort:", builder_port))
+        print(("Architect IP:", architect_ip, "\tPort:", architect_port))
+        print(("FixedViewer IP:", fixed_viewer_ip, "\tPort:", fixed_viewer_port, "\tNumber of clients:", num_fixed_viewers, "\n"))
 
         client_pool.add(MalmoPython.ClientInfo(architect_ip, architect_port+1))
         client_pool.add(MalmoPython.ClientInfo(builder_ip, builder_port))
@@ -176,7 +176,7 @@ def cwc_run_mission(args):
     # oracle
     my_mission_oracle = MalmoPython.MissionSpec(missionXML_oracle, True)
     mission_utils.safeStartMission(agent_hosts[0], my_mission_oracle, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission_oracle")
-    
+
     # builder, architect
     my_mission = MalmoPython.MissionSpec(missionXML, True)
     mission_utils.safeStartMission(agent_hosts[1], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission")
@@ -204,19 +204,19 @@ def cwc_run_mission(args):
                 for observation in world_state.observations:
                     total_elements += len(json.loads(observation.text))
 
-                print "Received", len(world_state.observations), "observations. Total number of elements:", total_elements
+                print(("Received", len(world_state.observations), "observations. Total number of elements:", total_elements))
                 for observation in world_state.observations:
-                    print "Processing observation:", 
+                    print("Processing observation:")
                     debug_utils.printObservationElements(json.loads(observation.text))
                     all_observations.append(observation)
 
-                print "-----"
+                print("-----")
 
         time.sleep(1)
 
     time_elapsed = time.time()-start_time
 
-    print "Mission has been quit. All world states:\n"
+    print("Mission has been quit. All world states:\n")
 
     all_world_states = []
     for observation in all_observations:
@@ -230,10 +230,10 @@ def cwc_run_mission(args):
 
     m, s = divmod(time_elapsed, 60)
     h, m = divmod(m, 60)
-    print "Done! Mission time elapsed: %d:%02d:%02d (%.2fs)" % (h, m, s, time_elapsed)
-    print
+    print(("Done! Mission time elapsed: %d:%02d:%02d (%.2fs)" % (h, m, s, time_elapsed)))
+    print()
 
-    print "Waiting for mission to end..."
+    print("Waiting for mission to end...")
     # Mission should have ended already, but we want to wait until all the various agent hosts
     # have had a chance to respond to their mission ended message.
     hasEnded = False
@@ -246,7 +246,7 @@ def cwc_run_mission(args):
             if world_state.is_mission_running:
                 hasEnded = False # all not good
 
-    print "Mission ended"
+    print("Mission ended")
     # Mission has ended.
 
     time.sleep(2)

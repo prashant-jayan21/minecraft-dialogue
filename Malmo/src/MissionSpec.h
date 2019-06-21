@@ -21,10 +21,7 @@
 #define _MISSIONSPEC_H_
 
 // Boost:
-#include <boost/shared_ptr.hpp>
-
-// Schemas:
-#include <Mission.h>
+#include <boost/property_tree/ptree.hpp>
 
 // STL:
 #include <string>
@@ -163,7 +160,28 @@ namespace malmo
             //! \param width The width of the image in pixels. Ensure this is divisible by 4.
             //! \param height The height of the image in pixels. Ensure this is divisible by 2.
             void requestVideo(int width, int height);
-            
+
+            //! Asks for 8bpp greyscale image data to be sent from Minecraft for the agent. Only supports single agent missions.
+            //! Data will be delivered in a TimestampedVideoFrame structure as LLLL...
+            //! The default camera viewpoint will be used (first-person view) - use setViewpoint to change this.
+            //! \param width The width of the image in pixels. Ensure this is divisible by 4.
+            //! \param height The height of the image in pixels. Ensure this is divisible by 2.
+            void requestLuminance(int width, int height);
+
+            //! Asks for 24bpp colourmap image data to be sent from Minecraft for the agent. Only supports single agent missions.
+            //! Data will be delivered in a TimestampedVideoFrame structure as RGBRGB...
+            //! The default camera viewpoint will be used (first-person view) - use setViewpoint to change this.
+            //! \param width The width of the image in pixels. Ensure this is divisible by 4.
+            //! \param height The height of the image in pixels. Ensure this is divisible by 2.
+            void requestColourMap(int width, int height);
+
+            //! Asks for 32bpp depth data to be sent from Minecraft for the agent. Only supports single agent missions.
+            //! Data will be delivered in a TimestampedVideoFrame structure as an array of floats.
+            //! The default camera viewpoint will be used (first-person view) - use setViewpoint to change this.
+            //! \param width The width of the image in pixels. Ensure this is divisible by 4.
+            //! \param height The height of the image in pixels. Ensure this is divisible by 2.
+            void request32bppDepth(int width, int height);
+
             //! Asks for image data and depth data to be sent from Minecraft for the agent. Only supports single agent missions.
             //! Data will be delivered in a TimestampedVideoFrame structure as RGBDRGBDRGBD...
             //! If saving the video to file only the depth will be recorded, as greyscale.
@@ -292,7 +310,22 @@ namespace malmo
             //! \param role The agent index. Zero based.
             //! \returns True if video was requested.
             bool isVideoRequested(int role) const;
-            
+
+            //! Gets whether depthmap video has been requested for one of the agents involved in this mission.
+            //! \param role The agent index. Zero based.
+            //! \returns True if depthmap video was requested.
+            bool isDepthRequested(int role) const;
+
+            //! Gets whether luminance video has been requested for one of the agents involved in this mission.
+            //! \param role The agent index. Zero based.
+            //! \returns True if luminance video was requested.
+            bool isLuminanceRequested(int role) const;
+
+            //! Gets whether colourmap video has been requested for one of the agents involved in this mission.
+            //! \param role The agent index. Zero based.
+            //! \returns True if colourmap video was requested.
+            bool isColourMapRequested(int role) const;
+
             //! Returns the width of the requested video for one of the agents involved in this mission.
             //! \param role The agent index. Zero based.
             //! \returns The width of the video in pixels.
@@ -319,20 +352,36 @@ namespace malmo
             //! \returns The list of allowed commands: 'move', 'turn', 'attack' etc.
             std::vector<std::string> getAllowedCommands(int role,const std::string& command_handler) const;
 
+            //! Count the number of children with the given child name or -1 if no such element path is present.
+            //! Useful for quick litmus tests on mission XML documents.
+            //! \param elementPath The element's path.
+            //! \param childName The name of child elements.
+            //! \returns The count of child elements with given name or -1 if no such element path is present.
+            int getChildCount(const std::string& element, const std::string& childName) const;
+
             friend std::ostream& operator<<(std::ostream& os, const MissionSpec& ms);
+            friend class MissionInitSpec;
+
+            static const std::string XMLNS_XSI;
+            static const std::string MALMO_NAMESPACE;
         private:
         
-            static void putVerbOnList( ::xsd::cxx::tree::optional< malmo::schemas::ModifierList >& mlo
-                              , const std::string& verb
-                              , const std::string& on_list
-                              , const std::string& off_list );
-            static std::vector<std::string> getModifiedCommandList(
-                                const std::vector<std::string>& all_commands
-                              , const malmo::schemas::CommandListModifier& modifier_list );
-        
-            friend class MissionInitSpec;
-        
-            boost::shared_ptr<schemas::Mission> mission;
+            boost::optional<int> getRoleValue(int role, std::string videoType, char what) const;
+            void addVerbToCommandType(std::string verb, std::string commandType);
+            void worldGeneratorReset();
+
+            boost::property_tree::ptree& getDrawingDecorator();
+
+            boost::property_tree::ptree mission;
+
+            static const std::vector<std::string> all_continuous_movement_commands;
+            static const std::vector<std::string> all_absolute_movement_commands;
+            static const std::vector<std::string> all_discrete_movement_commands;
+            static const std::vector<std::string> all_inventory_commands;
+            static const std::vector<std::string> all_simplecraft_commands;
+            static const std::vector<std::string> all_chat_commands;
+            static const std::vector<std::string> all_mission_quit_commands;
+            static const std::vector<std::string> all_human_level_commands;
     };
 }
 

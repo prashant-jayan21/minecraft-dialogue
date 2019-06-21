@@ -16,12 +16,12 @@ def get_built_config(observations_dict):
 
     built_config_raw = observations_dict["WorldStates"][-1]["BlocksInGrid"]
 
-    built_config = map(reformat_built_config_block, built_config_raw)
+    built_config = list(map(reformat_built_config_block, built_config_raw))
 
     return built_config
 
 def process_logs_dataset(logs_dataset_dir, gold_configs_dir):
-    all_logs_root_dirs = filter(lambda x: isdir(join(logs_dataset_dir, x)), os.listdir(logs_dataset_dir))
+    all_logs_root_dirs = [x for x in os.listdir(logs_dataset_dir) if isdir(join(logs_dataset_dir, x))]
 
     results = []
 
@@ -32,12 +32,12 @@ def process_logs_dataset(logs_dataset_dir, gold_configs_dir):
     return results
 
 def process_logs_root_dir(logs_root_dir, gold_configs_dir):
-    all_log_dirs = filter(lambda x: isdir(join(logs_root_dir, x)), os.listdir(logs_root_dir))
+    all_log_dirs = [x for x in os.listdir(logs_root_dir) if isdir(join(logs_root_dir, x))]
 
     results = []
 
     for log_dir in all_log_dirs:
-        print "Computing diff for " + logs_root_dir + "/" + log_dir + " ..."
+        print(("Computing diff for " + logs_root_dir + "/" + log_dir + " ..."))
         diff_size = process_log_dir(logs_root_dir, log_dir, gold_configs_dir)
         result = {
             "mission": log_dir,
@@ -82,4 +82,4 @@ if __name__ == "__main__":
         writer.writeheader()
         for mission_dict in results:
             writer.writerow(mission_dict)
-        print "DONE WRITING " + "diffs_db.csv"
+        print(("DONE WRITING " + "diffs_db.csv"))

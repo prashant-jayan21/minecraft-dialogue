@@ -3,7 +3,7 @@ from os.path import join, isdir
 from nltk import word_tokenize
 
 def process_missions(logs_root_dir, legacy):
-    all_log_dirs = filter(lambda x: isdir(join(logs_root_dir, x)), os.listdir(logs_root_dir))
+    all_log_dirs = [x for x in os.listdir(logs_root_dir) if isdir(join(logs_root_dir, x))]
 
     for log_dir in all_log_dirs:
         if legacy:
@@ -12,10 +12,10 @@ def process_missions(logs_root_dir, legacy):
             process_observations(join(logs_root_dir, log_dir))
 
 def process_observations_legacy(logs_dir): # TODO: Phase this out eventually
-    all_sub_dirs = filter(lambda x: isdir(join(logs_dir, x)), os.listdir(logs_dir))
+    all_sub_dirs = [x for x in os.listdir(logs_dir) if isdir(join(logs_dir, x))]
 
     for sub_dir in all_sub_dirs:
-        all_json_filenames = filter(lambda x: x.endswith(".json"), os.listdir(join(logs_dir, sub_dir, "json")))
+        all_json_filenames = [x for x in os.listdir(join(logs_dir, sub_dir, "json")) if x.endswith(".json")]
         for json_filename in all_json_filenames:
             metrics_dict = get_all_metrics(join(logs_dir, sub_dir, "json", json_filename))
             with open(join(logs_dir, sub_dir, "json", json_filename[:-5] + "_metrics.json"), "w") as metrics:
@@ -56,7 +56,7 @@ def get_turn_metrics(chat_history):
                 chat_history_collapsed.append(utterance)
 
     # tokenize utterances
-    chat_history_stripped = list(map(lambda x: re.sub(r"<Builder> |<Architect> ", "", x), chat_history))
+    chat_history_stripped = list([re.sub(r"<Builder> |<Architect> ", "", x) for x in chat_history])
     chat_history_stripped_tokenized = list(map(word_tokenize, chat_history_stripped))
     all_tokens = [item for sublist in chat_history_stripped_tokenized for item in sublist]
 

@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 from subprocess import *
 from enum import Enum
 from cwc_mission_utils import x_min_build, x_max_build, y_min_build, y_max_build, z_min_build, z_max_build
@@ -119,7 +119,7 @@ def convert_response(output):
     planner_output = output[-6:]
     flag = "FAILURE"
     contents = {"Missing": [], "Other": [], "Plan": [], "Constraints": []}
-    print("\nconvert_response::planner output received:", planner_output)
+    print(("\nconvert_response::planner output received:", planner_output))
 
     for line in planner_output:
         if len(line) == 0:
@@ -127,7 +127,7 @@ def convert_response(output):
 
         splitted_line = line.strip().split(": ")
         if len(splitted_line) < 2:
-            print("convert_response::Error: unexpected planner output", line)
+            print(("convert_response::Error: unexpected planner output", line))
             continue
 
         if "[" in splitted_line[1]:
@@ -141,7 +141,7 @@ def convert_response(output):
         elif key in contents:
             contents[key] = res
         else:
-            print("convert_response::Error: unexpected planner output", line)
+            print(("convert_response::Error: unexpected planner output", line))
 
     # print("##parsed outputs##")
     # print(flag, missing, other, plan, constraints)
@@ -204,7 +204,7 @@ def getPlans(human_input="row(a) ^ width(a,5)", existing_blocks=None):
 
     # print(result)
     response = convert_response(result)
-    print("getPlans::response received\n"+str(response))
+    print(("getPlans::response received\n"+str(response)))
     return response
 
 

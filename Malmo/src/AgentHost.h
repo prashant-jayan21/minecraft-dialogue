@@ -31,6 +31,7 @@
 #include "VideoServer.h"
 #include "WorldState.h"
 #include "Logger.h"
+#include "TCPClient.h"
 
 // Boost:
 #include <boost/thread.hpp>
@@ -54,7 +55,9 @@ namespace malmo
             MISSION_SERVER_WARMING_UP,
             MISSION_SERVER_NOT_FOUND,
             MISSION_NO_COMMAND_PORT,
-            MISSION_BAD_INSTALLATION
+            MISSION_BAD_INSTALLATION,
+            MISSION_CAN_NOT_KILL_BUSY_CLIENT,
+            MISSION_CAN_NOT_KILL_IRREPLACEABLE_CLIENT
         };
 
         MissionException(const std::string& message, MissionErrorCode code) : message(message), code(code) {}
@@ -111,6 +114,10 @@ namespace malmo
             //! \param mission The mission specification.
             //! \param mission_record The specification of the mission recording to make.
             void startMission(const MissionSpec& mission, const MissionRecordSpec& mission_record);
+
+            //! Attempts to remotely shut down a Minecraft client - useful in cases when Minecraft has become old and sluggish. Note that the client will refuse
+            //! if it is busy, or if it wasn't run with the "replaceable" flag set.
+            bool killClient(const ClientInfo& client);
 
             //! Gets the latest world state received from the game.
             //! \returns The world state.
@@ -170,7 +177,7 @@ namespace malmo
             bool findServer(const ClientPool& client_pool);
 
             void listenForMissionControlMessages( int port );
-            void listenForVideo( int port, short width, short height, short channels );
+            boost::shared_ptr<VideoServer> listenForVideo(boost::shared_ptr<VideoServer> video_server, int port, short width, short height, short channels, TimestampedVideoFrame::FrameType frametype);
             void listenForRewards( int port );
             void listenForObservations( int port );
             
@@ -182,12 +189,17 @@ namespace malmo
             void openCommandsConnection();
 
             void close();
+            void closeServers();
+            void closeRecording();
             
             void processReceivedReward( TimestampedReward reward );
             
             boost::asio::io_service io_service;
             boost::shared_ptr<StringServer>   mission_control_server;
             boost::shared_ptr<VideoServer>    video_server;
+            boost::shared_ptr<VideoServer>    depth_server;
+            boost::shared_ptr<VideoServer>    luminance_server;
+            boost::shared_ptr<VideoServer>    colourmap_server;
             boost::shared_ptr<StringServer>   rewards_server;
             boost::shared_ptr<StringServer>   observations_server;
             boost::optional<boost::asio::io_service::work> work;
@@ -206,6 +218,8 @@ namespace malmo
             boost::shared_ptr<MissionInitSpec> current_mission_init;
             boost::shared_ptr<MissionRecord> current_mission_record;
             int current_role;
+
+            Rpc rpc;
     };
 
 }

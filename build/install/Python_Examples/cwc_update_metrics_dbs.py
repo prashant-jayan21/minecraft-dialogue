@@ -9,7 +9,7 @@ def merge_into_dialog_metrics_db(metrics_db, metrics_data):
         del r[key]
         return r
 
-    return metrics_db + map(lambda x: f(x,"config"), metrics_data)
+    return metrics_db + [f(x,"config") for x in metrics_data]
 
 def merge_into_config_metrics_db(metrics_db, metrics_data):
     # NOTE: Mutates metrics_db ONLY -- DO NOT CHANGE THIS BEHAVIOR!
@@ -46,7 +46,7 @@ def merge_into_config_metrics_db(metrics_db, metrics_data):
 warmup_configs_blacklist = ["blue-original-L", "C3", "orange-flat-original-L", "C17", "bigger-original-L", "C32", "l-shape", "C38"]
 
 def get_metrics_data(logs_root_dir):
-    all_log_dirs = filter(lambda x: isdir(join(logs_root_dir, x)), os.listdir(logs_root_dir))
+    all_log_dirs = [x for x in os.listdir(logs_root_dir) if isdir(join(logs_root_dir, x))]
 
     metrics_data = []
 
