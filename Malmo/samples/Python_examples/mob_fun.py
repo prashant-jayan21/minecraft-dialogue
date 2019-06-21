@@ -35,10 +35,18 @@ import json
 import random
 import errno
 import math
-import tkinter as tk
+if sys.version_info[0] == 2:
+    # Workaround for https://github.com/PythonCharmers/python-future/issues/262
+    import Tkinter as tk
+else:
+    import tkinter as tk
 from collections import namedtuple
-EntityInfo = namedtuple('EntityInfo', 'x, y, z, yaw, pitch, name, colour, variation, quantity, life')
-EntityInfo.__new__.__defaults__ = (0, 0, 0, 0, 0, "", "", "", 1, "")
+import malmoutils
+
+malmoutils.fix_print()
+
+agent_host = MalmoPython.AgentHost()
+malmoutils.parse_command_line(agent_host)
 
 # Task parameters:
 NUM_GOALS = 20
@@ -135,7 +143,7 @@ def getMissionXML(summary):
                 <ObservationFromFullStats/>
                 <RewardForCollectingItem>
                     <Item type="'''+GOAL_TYPE+'''" reward="'''+str(GOAL_REWARD)+'''"/>
-                </RewardForCollectingItem>
+                </RewardForCollectingItem>''' + malmoutils.get_video_xml(agent_host) + '''
             </AgentHandlers>
         </AgentSection>
 
@@ -163,9 +171,9 @@ root.update()
 
 def findUs(entities):
     for ent in entities:
-        if ent.name == MOB_TYPE:
+        if ent["name"] == MOB_TYPE:
             continue
-        elif ent.name == GOAL_TYPE:
+        elif ent["name"] == GOAL_TYPE:
             continue
         else:
             return ent
@@ -190,19 +198,19 @@ def getBestAngle(entities, current_yaw, current_health):
         score = turncost
 
         # Calculate entity proximity cost for new (x,z):
-        x = us.x + agent_stepsize - math.sin(ang)
-        z = us.z + agent_stepsize * math.cos(ang)
+        x = us["x"] + agent_stepsize - math.sin(ang)
+        z = us["z"] + agent_stepsize * math.cos(ang)
         for ent in entities:
-            dist = (ent.x - x)*(ent.x - x) + (ent.z - z)*(ent.z - z)
+            dist = (ent["x"] - x)*(ent["x"] - x) + (ent["z"] - z)*(ent["z"] - z)
             if (dist == 0):
                 continue
             weight = 0.0
-            if ent.name == MOB_TYPE:
+            if ent["name"] == MOB_TYPE:
                 weight = agent_mob_weight
                 dist -= 1   # assume mobs are moving towards us
                 if dist <= 0:
                     dist = 0.1
-            elif ent.name == GOAL_TYPE:
+            elif ent["name"] == GOAL_TYPE:
                 weight = agent_goal_weight * current_health / 20.0
             score += old_div(weight, float(dist))
 
@@ -234,12 +242,12 @@ def drawMobs(entities, flash):
         canvas.create_rectangle(0,0,CANVAS_WIDTH,CANVAS_HEIGHT,fill="#ff0000") # Pain.
     canvas.create_rectangle(canvasX(old_div(-ARENA_WIDTH,2)), canvasY(old_div(-ARENA_BREADTH,2)), canvasX(old_div(ARENA_WIDTH,2)), canvasY(old_div(ARENA_BREADTH,2)), fill="#888888")
     for ent in entities:
-        if ent.name == MOB_TYPE:
-            canvas.create_oval(canvasX(ent.x)-2, canvasY(ent.z)-2, canvasX(ent.x)+2, canvasY(ent.z)+2, fill="#ff2244")
-        elif ent.name == GOAL_TYPE:
-            canvas.create_oval(canvasX(ent.x)-3, canvasY(ent.z)-3, canvasX(ent.x)+3, canvasY(ent.z)+3, fill="#4422ff")
+        if ent["name"] == MOB_TYPE:
+            canvas.create_oval(canvasX(ent["x"])-2, canvasY(ent["z"])-2, canvasX(ent["x"])+2, canvasY(ent["z"])+2, fill="#ff2244")
+        elif ent["name"] == GOAL_TYPE:
+            canvas.create_oval(canvasX(ent["x"])-3, canvasY(ent["z"])-3, canvasX(ent["x"])+3, canvasY(ent["z"])+3, fill="#4422ff")
         else:
-            canvas.create_oval(canvasX(ent.x)-4, canvasY(ent.z)-4, canvasX(ent.x)+4, canvasY(ent.z)+4, fill="#22ff44")
+            canvas.create_oval(canvasX(ent["x"])-4, canvasY(ent["z"])-4, canvasX(ent["x"])+4, canvasY(ent["z"])+4, fill="#22ff44")
     root.update()
 
 validate = True
@@ -252,17 +260,6 @@ my_client_pool.add(MalmoPython.ClientInfo("127.0.0.1", 10000))
 my_client_pool.add(MalmoPython.ClientInfo("127.0.0.1", 10001))
 my_client_pool.add(MalmoPython.ClientInfo("127.0.0.1", 10002))
 my_client_pool.add(MalmoPython.ClientInfo("127.0.0.1", 10003))
-
-agent_host = MalmoPython.AgentHost()
-try:
-    agent_host.parse( sys.argv )
-except RuntimeError as e:
-    print('ERROR:',e)
-    print(agent_host.getUsage())
-    exit(1)
-if agent_host.receivedArgument("help"):
-    print(agent_host.getUsage())
-    exit(0)
 
 if agent_host.receivedArgument("test"):
     num_reps = 1
@@ -277,11 +274,10 @@ for iRepeat in range(num_reps):
     mission_xml = getMissionXML(MOB_TYPE + " Apocalypse #" + str(iRepeat))
     my_mission = MalmoPython.MissionSpec(mission_xml,validate)
     max_retries = 3
+    # Set up a recording
+    my_mission_record = malmoutils.get_default_recording_object(agent_host, "Mission_" + str(iRepeat))
     for retry in range(max_retries):
         try:
-            # Set up a recording
-            my_mission_record = MalmoPython.MissionRecordSpec(recordingsDirectory + "//" + "Mission_" + str(iRepeat) + ".tgz")
-            my_mission_record.recordRewards()
             # Attempt to start the mission:
             agent_host.startMission( my_mission, my_client_pool, my_mission_record, 0, "predatorExperiment" )
             break
@@ -317,7 +313,7 @@ for iRepeat in range(num_reps):
                     flash = True
                 current_life = life
             if "entities" in ob:
-                entities = [EntityInfo(**k) for k in ob["entities"]]
+                entities = ob["entities"]
                 drawMobs(entities, flash)
                 best_yaw = getBestAngle(entities, current_yaw, current_life)
                 difference = best_yaw - current_yaw;

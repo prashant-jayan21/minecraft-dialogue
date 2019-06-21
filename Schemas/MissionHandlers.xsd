@@ -6,10 +6,10 @@
            xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
            elementFormDefault="qualified"
            jaxb:version="2.1"
-           version="0.31">
+           version="0.35">
 
   <xs:include schemaLocation="Types.xsd" />
-  <xs:include schemaLocation="Mission.xsd" /> 
+  <xs:include schemaLocation="Mission.xsd" />
 
   <xs:complexType name="Pos">
     <xs:annotation>
@@ -143,9 +143,9 @@
     <xs:annotation>
       <xs:documentation>
         Loads a saved world from disk. You can find the saved worlds in "{{{Minecraft\run\saves}}}". Use the full path to one of those folders.
-        
+
         If Minecraft is running on a different machine then copy the folder to a readable network location and update the path accordingly. Example:
-        
+
         {{{&lt;FileWorldGenerator src=&quot;\\\\machine-id\\shared\\ProjectMalmo\\saved_maps\\arena&quot; /&gt;}}}
       </xs:documentation>
     </xs:annotation>
@@ -569,7 +569,31 @@
       </xs:extension>
    </xs:complexContent>
   </xs:complexType>
-  
+
+  <xs:complexType name="DrawSign">
+    <xs:annotation>
+      <xs:documentation>
+        Draw a sign at the required location with the specified text.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="DrawObjectType">
+        <xs:attribute name="x" type="xs:int" use="required" />
+        <xs:attribute name="y" type="xs:int" use="required" />
+        <xs:attribute name="z" type="xs:int" use="required" />
+        <xs:attribute name="type" type="SignType" use="required" />
+        <xs:attribute name="variant" type="Variation" use="optional" />
+        <xs:attribute name="colour" type="Colour" use="optional" />
+        <xs:attribute name="face" type="Facing" use="optional" />
+        <xs:attribute name="line1" type="xs:string" use="optional" />
+        <xs:attribute name="line2" type="xs:string" use="optional" />
+        <xs:attribute name="line3" type="xs:string" use="optional" />
+        <xs:attribute name="line4" type="xs:string" use="optional" />
+        <xs:attribute name="rotation" type="xs:int" use="optional" />
+      </xs:extension>
+   </xs:complexContent>
+  </xs:complexType>
+
   <xs:complexType name="DrawEntity">
     <xs:annotation>
         <xs:documentation>
@@ -652,6 +676,7 @@
   <xs:element name="DrawBlock" type="DrawBlock" substitutionGroup="DrawObjectType"/>
   <xs:element name="DrawCuboid" type="DrawCuboid" substitutionGroup="DrawObjectType"/>
   <xs:element name="DrawContainer" type="DrawContainer" substitutionGroup="DrawObjectType"/>
+  <xs:element name="DrawSign" type="DrawSign" substitutionGroup="DrawObjectType"/>
 
   <xs:element name="ClassroomDecorator">
     <xs:annotation>
@@ -856,7 +881,7 @@
     <xs:annotation>
       <xs:documentation>
         Sets up a build battle area, with a source structure that can't be edited, and a goal structure, with optional recolouring of blocks to indicate correct/incorrect placement.
-        
+
         NOTE: Make sure to add a {{{RewardForStructureCopying}}} handler to the AgentHandlers if you want your agent to be rewarded for contributing to the build.
       </xs:documentation>
     </xs:annotation>
@@ -924,7 +949,64 @@
   <!--=============================================================================================================-->
 
   <!--============================================== VIDEO PRODUCERS ==============================================-->
-  
+
+  <xs:element name="DepthProducer">
+    <xs:annotation>
+      <xs:documentation>
+        Requests that 32bpp depth frames be sent.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Width" type="xs:int" />
+        <xs:element name="Height" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="LuminanceProducer">
+    <xs:annotation>
+      <xs:documentation>
+        Requests an 8bpp grayscale image.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Width" type="xs:int" />
+        <xs:element name="Height" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:simpleType name="HexColour">
+    <xs:restriction base="xs:hexBinary">
+      <xs:length value="3"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="MobWithColour">
+    <xs:attribute name="type" type="MobList" use="required"/>
+    <xs:attribute name="colour" use="required" type="HexColour"/>
+  </xs:complexType>
+
+  <xs:element name="ColourMapProducer">
+    <xs:annotation>
+      <xs:documentation>
+        Requests a 24bpp colour map - each object/entity represented by a solid block of colour.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Width" type="xs:int" />
+        <xs:element name="Height" type="xs:int" />
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element name="ColourSpec" type="MobWithColour"/>
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="skyColour" type="HexColour" default="fbceb1"/>
+    </xs:complexType>
+  </xs:element>
+
   <xs:element name="VideoProducer">
     <xs:annotation>
       <xs:documentation>
@@ -996,22 +1078,22 @@
     <xs:annotation>
       <xs:documentation>
         Commands for smooth movement. Some examples:
-      
+
         "{{{move 0.5}}}" - start moving forward at 50% of the normal walking speed (-ve = backward, +ve = forward).
-        
+
         "{{{strafe -1}}}" - start moving left at 100% of the normal walking speed (-ve = left, +ve = right).
-        
-        "{{{pitch 0.1}}}" - start tilting the agent's head down at 10% of the maximum speed (-ve = up, +ve = down). The maximum speed is set by {{{turnSpeedDegs}}} in {{{ContinuousMovementCommands}}}. 
-        
-        "{{{turn 0.1}}}" - start turning right at 10% of the maximum speed (-ve = anti-clockwise/left, +ve = clockwise/right). The maximum speed is set by {{{turnSpeedDegs}}} in {{{ContinuousMovementCommands}}}. 
-        
+
+        "{{{pitch 0.1}}}" - start tilting the agent's head down at 10% of the maximum speed (-ve = up, +ve = down). The maximum speed is set by {{{turnSpeedDegs}}} in {{{ContinuousMovementCommands}}}.
+
+        "{{{turn 0.1}}}" - start turning right at 10% of the maximum speed (-ve = anti-clockwise/left, +ve = clockwise/right). The maximum speed is set by {{{turnSpeedDegs}}} in {{{ContinuousMovementCommands}}}.
+
         "{{{jump 1}}}" - start jumping (1 = start, 0 = stop).
-        
+
         "{{{crouch 1}}}" - start crouching (1 = start, 0 = stop).
-        
+
         "{{{attack 1}}}" - start attacking (1 = start, 0 = stop). The 'attack' command is for destroying blocks and attacking mobs.
-        
-        "{{{use 1}}}" - start 'use'ing (1 = start, 0 = stop). The 'use' command is for placing blocks and for other things too.        
+
+        "{{{use 1}}}" - start 'use'ing (1 = start, 0 = stop). The 'use' command is for placing blocks and for other things too.
       </xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:string">
@@ -1030,17 +1112,17 @@
     <xs:annotation>
       <xs:documentation>
         Commands to set position and orientation directly. Some examples:
-      
+
         "{{{tp 23.5 1 -34.5}}}" - teleport the agent to the absolute position x y z (space delimited).
-        
+
         "{{{tpx 230}}}" - set the agent's x coordinate, without altering the y and z.
-        
+
         "{{{tpy 103.2}}}" - set the agent's y coordinate, without altering the x and z.
-        
+
         "{{{tpz -32.5}}}" - set the agent's z coordinate, without altering the x and y.
-        
+
         "{{{setYaw 30}}}" - set the agent's body orientation to be 30 degrees clockwise from south.
-        
+
         "{{{setPitch 20}}}" - set the agent's body orientation to be 20 degrees down from horizontal.
       </xs:documentation>
     </xs:annotation>
@@ -1058,41 +1140,41 @@
     <xs:annotation>
       <xs:documentation>
         Commands for moving and turning in discrete increments. Some examples:
-      
+
         "{{{move 1}}}" - move the agent one block forwards (1 = forwards, -1 = backwards).
 
         "{{{jumpmove 1}}}" - move the agent one block up and forwards (1 = forwards, -1 = backwards).
 
         "{{{strafe 1}}}" - move the agent one block sideways (1 = right, -1 = left).
-        
+
         "{{{jumpstrafe 1}}}" - move the agent one block up and sideways (1 = right, -1 = left).
 
         "{{{turn 1}}}" - rotate the agent 90 degrees right (1 = right, -1 = left).
-        
+
         "{{{movenorth 1}}}" - move the agent one block north.
-        
+
         "{{{moveeast 1}}}" - move the agent one block east.
-        
+
         "{{{movesouth 1}}}" - move the agent one block south.
-        
+
         "{{{movewest 1}}}" - move the agent one block west.
-        
+
         "{{{jumpnorth 1}}}" - move the agent one block up and north.
-        
+
         "{{{jumpeast 1}}}" - move the agent one block up and east.
-        
+
         "{{{jumpsouth 1}}}" - move the agent one block up and south.
-        
+
         "{{{jumpwest 1}}}" - move the agent one block up and west.
 
         "{{{jump 1}}}" - move the agent one block up.
-        
+
         "{{{look 1}}}" - look down by 45 degrees (-ve = up, +ve = down).
-        
+
         "{{{attack 1}}}" - destroy the block that has focus.
-        
+
         "{{{use 1}}}" - place the held block item on the block face that has focus.
-        
+
         "{{{jumpuse}}}" - simultaneously jump and place the held block on the block face that has focus.
       </xs:documentation>
     </xs:annotation>
@@ -1122,49 +1204,49 @@
     <xs:annotation>
       <xs:documentation>
         Commands for changing the contents of the inventory and hotbar.
-        
+
         To move items around in the inventory you can use {{{swapInventoryItems}}}. For example, to swap
         the contents of slots 13 and 14, issue this command:
-      
+
         "{{{swapInventoryItems 13 14}}}"
-        
+
         Note that inventory slots are numbered from 0 to 39.
         0-8 are the hotbar slots (which correspond to the hotbar commands hotbar.1-hotbar.9 - _note the offset_)
         9-35 are the rest of the inventory (visible when you press 'E' in the game)
         36-39 are the armour slots.
-        
+
         So to move an item out of the hotbar, say:
-        
+
         "{{{swapInventoryItems 3 30}}}"
 
         Other commands:
-        
+
         "{{{combineInventoryItems x y}}}" - will attempt to combine the stacks in slots x and y, and leave the results in slot x. Eg if there are ten blocks of granite in slot 4, and 57 blocks of granite in slot 12, then {{{combineInventoryItems 4 12}}} will result in 64 (the max) blocks of granite in slot 4, and the remainder in slot 12. If the slots can't be combined (they are different types, or the first slot is full) then nothing will happen.
 
         "{{{discardCurrentItem}}}" - discards the currently held item.
-        
+
         To select a hotbar slot:
-        
-        "{{{hotbar.1 1}}}" 
-        "{{{hotbar.1 0}}}" 
-        
-        Send both commands to select hotbar slot 1 as the currently-held tool. This affects the attack and use commands 
+
+        "{{{hotbar.1 1}}}"
+        "{{{hotbar.1 0}}}"
+
+        Send both commands to select hotbar slot 1 as the currently-held tool. This affects the attack and use commands
         - e.g. if the agent does 'use' while holding a block item it will place the block into the world.
-        
+
         If the agent is currently pointed at a container item - eg a chest, shulker box, dispenser etc - then the swap and combine commands
         can be extended to allow access to the container's inventory. To do this, simply prefix the slot number with the name of the foreign
         inventory (which will be provided by the {{{ObservationFromFullInventory}}} observations).
-        
+
         So to move an item out of the hotbar and into slot 0 of a chest, say:
-        
+
         "{{{swapInventoryItems 3 Chest:0}}}"
-        
-        Note that this is the same as writing 
+
+        Note that this is the same as writing
 
         "{{{swapInventoryItems Inventory:3 Chest:0}}}"
 
         "Inventory" is the name of the player's inventory.
-        
+
         See inventory_test.py for a working example of this.
       </xs:documentation>
     </xs:annotation>
@@ -1198,7 +1280,7 @@
         For more control over colours, types etc, add a Variation or Colour. Eg:
 
         "{{{craft carpet PINK}}}"
-        
+
         etc.
       </xs:documentation>
     </xs:annotation>
@@ -1211,9 +1293,9 @@
     <xs:annotation>
       <xs:documentation>
         A command for broadcasting text messages to the other players. An example:
-      
+
         "{{{chat I have found diamonds!}}}" - broadcasts the string "{{{I have found diamonds!}}}".
-        
+
         Chat messages from other players can be observed using {{{ObservationFromChat}}}.
       </xs:documentation>
     </xs:annotation>
@@ -1235,14 +1317,47 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <xs:simpleType name="HumanLevelCommand">
+    <xs:annotation>
+      <xs:documentation>
+        Commands for controlling Minecraft at the level of keyboard and mouse events.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="forward" />
+      <xs:enumeration value="left" />
+      <xs:enumeration value="back" />
+      <xs:enumeration value="right" />
+      <xs:enumeration value="jump" />
+      <xs:enumeration value="sneak" />
+      <xs:enumeration value="sprint" />
+      <xs:enumeration value="inventory" />
+      <xs:enumeration value="swapHands" />
+      <xs:enumeration value="drop" />
+      <xs:enumeration value="use" />
+      <xs:enumeration value="attack" />
+      <xs:enumeration value="pickItem" />
+      <xs:enumeration value="hotbar.1" />
+      <xs:enumeration value="hotbar.2" />
+      <xs:enumeration value="hotbar.3" />
+      <xs:enumeration value="hotbar.4" />
+      <xs:enumeration value="hotbar.5" />
+      <xs:enumeration value="hotbar.6" />
+      <xs:enumeration value="hotbar.7" />
+      <xs:enumeration value="hotbar.8" />
+      <xs:enumeration value="hotbar.9" />
+      <xs:enumeration value="moveMouse" />
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:simpleType name="Command">
-    <xs:union memberTypes="ContinuousMovementCommand AbsoluteMovementCommand DiscreteMovementCommand InventoryCommand ChatCommand SimpleCraftCommand MissionQuitCommand"/>
+    <xs:union memberTypes="ContinuousMovementCommand AbsoluteMovementCommand DiscreteMovementCommand InventoryCommand ChatCommand SimpleCraftCommand MissionQuitCommand HumanLevelCommand"/>
   </xs:simpleType>
 
   <xs:simpleType name="CommandList">
     <xs:list itemType="Command"/>
   </xs:simpleType>
-  
+
   <xs:complexType name="CommandListModifier">
     <xs:annotation>
       <xs:documentation>
@@ -1290,7 +1405,7 @@
         <xs:annotation>
           <xs:documentation>
             This sets the maximum speed for both turning the agent and adjusting the camera pitch, in degrees per second.
-            
+
             The turn and pitch command values are both scaled by this - eg "{{{turn -0.5}}}" to turn left (anti-clockwise) at half this maximum speed.
           </xs:documentation>
         </xs:annotation>
@@ -1461,6 +1576,29 @@
     </xs:complexType>
   </xs:element>
 
+  <xs:element name="HumanLevelCommands">
+    <xs:annotation>
+      <xs:documentation>
+        When present, the Mod will accept commands on the level of mouse and keyboard events.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:all>
+        <xs:element name="ModifierList" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:complexContent>
+              <xs:restriction base="CommandListModifier">
+                <xs:choice maxOccurs="unbounded">
+                  <xs:element name="command" type="HumanLevelCommand" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:choice>
+              </xs:restriction>
+            </xs:complexContent>
+          </xs:complexType>
+        </xs:element>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
   <!--=========================================== OBSERVATION PRODUCERS ===========================================-->
 
   <xs:element name="ObservationFromRecentCommands">
@@ -1524,6 +1662,24 @@
     <xs:complexType/>
   </xs:element>
 
+  <xs:element name="ObservationFromHuman">
+    <xs:annotation>
+      <xs:documentation>
+        When present, the Mod will return low-level keyboard and mouse events.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType/>
+  </xs:element>
+
+  <xs:element name="ObservationFromSystem">
+    <xs:annotation>
+      <xs:documentation>
+        When present, the Mod will return information on the current performance of the Minecraft system - eg tick speeds, etc.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType/>
+  </xs:element>
+
   <xs:element name="ObservationFromRay">
     <xs:annotation>
       <xs:documentation>
@@ -1533,11 +1689,14 @@
         * Position: {{{x}}}, {{{y}}}, {{{z}}} - in the case of block hits, will be the precise point when the ray intercepts the block. {{{yaw}}}, {{{pitch}}} are also added for entities.
         * Type information: {{{type}}}, {{{colour}}}, {{{variant}}}, {{{facing}}}
         * Extra properties: in the case of block types, any extra properties will be returned by their minecraft name, prefixed with "prop_" (eg, for leaves, "prop_decayable" and "prop_check_decay") - this is the same data as can be seen by exploring Minecraft with the F3 debug information displayed. For floating items, the stack size is returned in {{{stackSize}}}
+        * NBTTagCompound: for tile entity blocks, optionally returns a json object called "NBTTagCompound" which contains the entity's entire NBTTagCompound - eg useful for reading the text off signs, etc. Set {{{includeNBT}}} to true to receive this data.
       </xs:documentation>
     </xs:annotation>
-    <xs:complexType/>
+    <xs:complexType>
+      <xs:attribute name="includeNBT" type="xs:boolean" use="optional" default="false" />
+    </xs:complexType>
   </xs:element>
-  
+
   <xs:element name="ObservationFromFullInventory">
     <xs:annotation>
       <xs:documentation>
@@ -1550,7 +1709,7 @@
         Inventory slots are numbered 0 to 39 inclusive.
         If there is a container item available (eg the player is pointed at a chest), this will be returned in the same way, but "InventorySlot"
         will be replaced by "ContainerNameSlot" - eg {{{ShulkerBoxSlot_0_item}}} etc.
-        
+
         If {{{flat}}} is false (recommended), the data is returned as an array of objects, one for each item in the inventory/inventories.
         The JSON array is called "inventory", and each item in the array will contain:
         * {{{type}}} - the type of the object in that ItemStack
@@ -1561,14 +1720,14 @@
         * {{{inventory}}} - the name of the inventory - will be "Inventory" for the player, or, for example, "ShulkerBox", "Chest" etc, if a container is available.
         This index and inventory information can be used to specify the item in the {{{InventoryCommands}}} - items are specified as inventory:index -
         eg "ShulkerBox:12"
-        
+
         In addition to this information, whether {{{flat}}} is true or false, an array called "inventoriesAvailable" will also be returned.
         This will contain a list of all the inventories available (usually just the player's, but if the player is pointed at a container, this
         will also be available.)
         For each inventory, an object will be returned that specifies:
         * {{{name}}} - the inventory name (same as will be returned in the {{{inventory}}} field for any items in that inventory)
         * {{{size}}} - the number of slots the inventory provides.
-        
+
         For a working example please see inventory_test.py in the Python samples folder.
       </xs:documentation>
     </xs:annotation>
@@ -1619,10 +1778,10 @@
     <xs:annotation>
       <xs:documentation>
         {{{name}}} - Each grid has a text label to identify it.
-        
+
         {{{absoluteCoords}}} - If true, the min and max coordinates of the grid are interpreted as world coordinates. If false (the default)
         then the coordinates are relative to the player.
-        
+
         {{{min}}}, {{{max}}} - The corners of the grid.
       </xs:documentation>
     </xs:annotation>
@@ -1653,7 +1812,7 @@
     <xs:annotation>
       <xs:documentation>
         Used by {{{ObservationFromNearbyEntities}}}. Defines the range within which entities will be returned. Eg a range of 10,1,10 will return all entities within +/-10 blocks of the agent in the x and z axes, and within +/-1 block vertically.
-        
+
         {{{update_frequency}}} is measured in Minecraft world ticks, and allows the user to specify how often they would like to receive each observation. A value of 20, under normal Minecraft running conditions, for example, would return the entity list once per second.
       </xs:documentation>
     </xs:annotation>
@@ -1663,26 +1822,26 @@
     <xs:attribute name="zrange" type="xs:decimal" use="required" />
     <xs:attribute name="update_frequency" type="xs:int" use="optional" default="1"/>
   </xs:complexType>
-  
+
   <xs:element name="ObservationFromNearbyEntities">
     <xs:annotation>
       <xs:documentation>
         When present, the Mod will return observations that list the positions of all entities that fall within the given ranges of the agent.
 
         A JSON array will be returned for each range requested, named using the {{{name}}} attribute of the range. Within the array will be a series of elements, one for each entity, containing the following:
-        
+
         - name: a string describing the entity (eg from Types.xsd)
-        
+
         - x: the x position of the entity
-        
+
         - y: the y position of the entity
-        
+
         - z: the z position of the entity
-        
+
         - quantity: if items have been grouped together by Minecraft, this indicates the number in the stack
-        
+
         - colour: if the item is a tile entity, with a colour, this will be present to describe the colour
-        
+
         - variation: optional string to describe the variation - eg the type of egg, or brick, etc (see Types.xsd)
       </xs:documentation>
     </xs:annotation>
@@ -1697,9 +1856,11 @@
     <xs:annotation>
       <xs:documentation>
         When present, the Mod will return observations that say what chat messages have occurred and from which player.
+        It will also return messages for any title or subtitle change (eg via Minecraft's title command)
 
         A JSON element {{{Chat}}} will be returned, with a list of chat strings.
-        
+        In the same way, title changes and subtitle changes will be returned in {{{Title}}} and {{{Subtitle}}} respectively.
+
         Note that unless the AgentHost ObservationsPolicy is set to KEEP_ALL_OBSERVATIONS it is likely that chat messages will be missed.
         The default policy is LATEST_OBSERVATION_ONLY.
       </xs:documentation>
@@ -1730,7 +1891,7 @@
   </xs:element>
 
   <!--============================================= REWARD PRODUCERS ==============================================-->
-  
+
   <xs:simpleType name="Dimension">
     <xs:annotation>
       <xs:documentation>
@@ -1777,7 +1938,7 @@
       <xs:attributeGroup ref="RewardProducerAttributes"/>
     </xs:complexType>
   </xs:element>
-  
+
   <xs:element name="RewardForReachingPosition">
     <xs:annotation>
       <xs:documentation>
@@ -1941,9 +2102,9 @@
     <xs:annotation>
       <xs:documentation>
         Reward type for {{{RewardForStructureCopying}}}:
-        
+
         - {{{PER_BLOCK}}} - reward will be given whenever a block is placed/destroyed in the goal volume, and will be determined by {{{RewardScale}}}. An additional reward of {{{RewardForCompletion}}} will be added the *first* time the copy is correctly completed.
-        
+
         - {{{MISSION_END}}} - no reward will be given until the mission ends. Reward will be scaled from 0-1, where 0 means "no blocks correct" and 1 means "all blocks correct", and then multipled by {{{RewardScale}}}.
       </xs:documentation>
     </xs:annotation>
@@ -1976,7 +2137,7 @@
     <xs:annotation>
       <xs:documentation>
         Sends a reward when the agent copies blocks from a given structure.
-        
+
         NOTE: This will do nothing unless you have set up a {{{BuildBattleDecorator}}} on the server.
       </xs:documentation>
     </xs:annotation>
@@ -1999,7 +2160,7 @@
           <xs:annotation>
             <xs:documentation>
               This is the reward to be added or deducted for each block event.
-              
+
               The rewards are calculated as follows:
               - For destroying a correct block: -1 * rewardScale
               - For destroying an incorrect block: +1 * rewardScale
@@ -2169,7 +2330,7 @@
     <xs:attribute name="description" type="xs:string" use="optional" default=""/>
     <xs:attribute name="global" type="xs:boolean" use="optional" default="false"/>
   </xs:complexType>
- 
+
   <xs:element name="AgentQuitFromCatchingMob">
     <xs:annotation>
       <xs:documentation>
@@ -2194,7 +2355,7 @@
       <xs:annotation>
         <xs:documentation>
           List of commands, separated by spaces, that will share this quota. Commands must be valid members of {{{ContinuousMovementCommand}}}, {{{AbsoluteMovementCommand}}}, {{{DiscreteMovementCommand}}}, {{{InventoryCommand}}}, or {{{ChatCommand}}}.
-          
+
           For instance, if the command list contains {{{moveeast}}}, {{{movenorth}}}, {{{movesouth}}} and {{{movewest}}}, then the mission will end once the summed total usage of all four commands reaches the quota - even if the agent never used {{{movesouth}}}.
         </xs:documentation>
       </xs:annotation>
@@ -2214,7 +2375,7 @@
       </xs:annotation>
     </xs:attribute>
   </xs:complexType>
-  
+
   <xs:element name="AgentQuitFromReachingCommandQuota">
     <xs:annotation>
       <xs:documentation>
@@ -2231,7 +2392,7 @@
         <xs:annotation>
           <xs:documentation>
             Total number of commands allowed before the mission ends. (Note that a command must be acted on to be counted - sending malformed commands won't affect the total.)
-            
+
             The check for total command use takes precedence over the individual group quotas, if used.
           </xs:documentation>
         </xs:annotation>
@@ -2245,5 +2406,5 @@
       </xs:attribute>
     </xs:complexType>
   </xs:element>
-  
+
 </xs:schema>

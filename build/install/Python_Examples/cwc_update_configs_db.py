@@ -15,7 +15,7 @@ def update_configs_db(configs_db, curriculums, people_pairs):
         Updates configs DB globally
     """
     for (curriculum, people_pair) in zip(curriculums, people_pairs):
-        print "Updating DB for pair", people_pair, "with curriculum", curriculum
+        print(("Updating DB for pair", people_pair, "with curriculum", curriculum))
         update_configs_db_single(configs_db, curriculum, people_pair[0], people_pair[1])
 
 def update_configs_db_single(configs_db, curriculum, person_1, person_2):
@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     # read people specs file
     people_specs = read_people_specs(args.people_specs_csv)
-    people_pairs = map(lambda x: (x["person_1"], x["person_2"]), people_specs)
+    people_pairs = [(x["person_1"], x["person_2"]) for x in people_specs]
 
     # read curriculum files
     curriculums = []

@@ -21,11 +21,11 @@
 #include "AgentHost.h"
 
 // Local:
-#include "FindSchemaFile.h"
 #include "TCPClient.h"
 #include "WorldState.h"
-#include "Init.h"
 #include "Logger.h"
+#include "MissionEndedXML.h"
+#include "FindSchemaFile.h"
 
 // Boost:
 #include <boost/bind.hpp>
@@ -39,15 +39,14 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
 
-// Schemas:
-#include <MissionEnded.h>
-
 // STL:
 #include <exception>
 #include <sstream>
 #include <regex>
 #include <mutex>
 #include <string>
+
+#define LOG_COMPONENT Logger::LOG_AGENTHOST
 
 namespace malmo
 {
@@ -61,8 +60,6 @@ namespace malmo
         , observations_policy(LATEST_OBSERVATION_ONLY)
         , current_role( 0 )
     {
-        initialiser::initXSD();
-
         this->addOptionalFlag("help,h", "show description of allowed options");
         this->addOptionalFlag("test",   "run this as an integration test");
 
@@ -137,6 +134,28 @@ namespace malmo
         startMission(mission, client_pool, mission_record, 0, "");
     }
 
+    bool AgentHost::killClient(const ClientInfo& client)
+    {
+        LOGINFO(LT("Sending kill command to "), client.ip_address, LT(":"), client.control_port);
+        std::string reply;
+        try
+        {
+            reply = rpc.sendStringAndGetShortReply(this->io_service, client.ip_address, client.control_port, "MALMO_KILL_CLIENT\n", false);
+        }
+        catch (std::exception& e)
+        {
+            // This is expected quite often - client is likely not running.
+            LOGINFO(LT("Exception attempting to kill client: "), e.what());
+            return false;
+        }
+        LOGINFO(LT("Killing client, received reply from "), client.ip_address, LT(": "), reply);
+        if (reply == "MALMOBUSY")
+            throw MissionException("Failed to kill Minecraft instance - mod is not dormant (is a mission still running?)", MissionException::MISSION_CAN_NOT_KILL_BUSY_CLIENT);
+        else if (reply == "MALMOERRORNOTKILLABLE")
+            throw MissionException("Failed to kill Minecraft instance - mod must be run with 'replaceable' command-line argument.", MissionException::MISSION_CAN_NOT_KILL_IRREPLACEABLE_CLIENT);
+        return reply == "MALMOOK";
+    }
+
     void AgentHost::startMission(const MissionSpec& mission, const ClientPool& client_pool, const MissionRecordSpec& mission_record, int role, std::string unique_experiment_id)
     {
         std::call_once(test_schemas_flag, testSchemasCompatible);
@@ -162,6 +181,7 @@ namespace malmo
             throw MissionException("A mission is already running.", MissionException::MISSION_ALREADY_RUNNING);
         }
 
+        // Once initializeOurServers has completed, we MUST call AgentHost::close() before bailing out of this method with an exception.
         initializeOurServers( mission, mission_record, role, unique_experiment_id );
 
         ClientPool pool = client_pool;
@@ -174,6 +194,8 @@ namespace malmo
             if (reservedAgents.clients.size() != mission.getNumberOfAgents())
             {
                 // Not enough clients available - go no further.
+                LOGWARNING(LT("Failed to reserve sufficient clients - throwing MissionException."));
+                this->close();
                 if (mission.getNumberOfAgents() == 1)
                     throw MissionException("Failed to find an available client for this mission - tried all the clients in the supplied client pool.", MissionException::MISSION_INSUFFICIENT_CLIENTS_AVAILABLE);
                 else
@@ -211,12 +233,38 @@ namespace malmo
         this->current_role = role;
 
         listenForMissionControlMessages(this->current_mission_init->getAgentMissionControlPort());
-        if (mission.isVideoRequested(this->current_role))
-        {
-            listenForVideo(this->current_mission_init->getAgentVideoPort(),
+        // Video producing handlers.
+        if (mission.isVideoRequested(this->current_role)) {
+            this->video_server = listenForVideo(this->video_server,
+                this->current_mission_init->getAgentVideoPort(),
                 mission.getVideoWidth(this->current_role),
                 mission.getVideoHeight(this->current_role),
-                mission.getVideoChannels(this->current_role));
+                mission.getVideoChannels(this->current_role),
+                TimestampedVideoFrame::VIDEO);
+        }
+        if (mission.isDepthRequested(this->current_role)) {
+            this->depth_server = listenForVideo(this->depth_server,
+                this->current_mission_init->getAgentDepthPort(),
+                mission.getVideoWidth(this->current_role),
+                mission.getVideoHeight(this->current_role),
+                4,
+                TimestampedVideoFrame::DEPTH_MAP);
+        }
+        if (mission.isLuminanceRequested(this->current_role)) {
+            this->luminance_server = listenForVideo(this->luminance_server,
+                this->current_mission_init->getAgentLuminancePort(),
+                mission.getVideoWidth(this->current_role),
+                mission.getVideoHeight(this->current_role),
+                1,
+                TimestampedVideoFrame::LUMINANCE);
+        }
+        if (mission.isColourMapRequested(this->current_role)) {
+            this->colourmap_server = listenForVideo(this->colourmap_server,
+                this->current_mission_init->getAgentColourMapPort(),
+                mission.getVideoWidth(this->current_role),
+                mission.getVideoHeight(this->current_role),
+                3,
+                TimestampedVideoFrame::COLOUR_MAP);
         }
         listenForRewards(this->current_mission_init->getAgentRewardsPort());
         listenForObservations(this->current_mission_init->getAgentObservationsPort());
@@ -232,9 +280,15 @@ namespace malmo
         // if the requested port was zero then the system will assign a free one, so store the resulting value in the MissionInit node for sending to the client
         this->current_mission_init->setAgentMissionControlPort(this->mission_control_server->getPort());
         this->current_mission_init->setAgentObservationsPort(this->observations_server->getPort());
-        if (this->video_server) {
+        if (this->video_server)
             this->current_mission_init->setAgentVideoPort(this->video_server->getPort());
-        }
+        if (this->depth_server)
+            this->current_mission_init->setAgentDepthPort(this->depth_server->getPort());
+        if (this->luminance_server)
+            this->current_mission_init->setAgentLuminancePort(this->luminance_server->getPort());
+        if (this->colourmap_server)
+            this->current_mission_init->setAgentColourMapPort(this->colourmap_server->getPort());
+
         this->current_mission_init->setAgentRewardsPort(this->rewards_server->getPort());
     }
     
@@ -242,17 +296,6 @@ namespace malmo
     {
         const bool prettyPrint = false;
         const std::string generated_xml = this->current_mission_init->getAsXML( prettyPrint );
-
-        try {
-            const bool validate = true;
-            MissionInitSpec test_output(generated_xml,validate);
-        }
-        catch (xml_schema::exception& e)
-        {
-            std::ostringstream oss;
-            oss << "Internal error: the XML we generate does not validate: " << e.what() << "\n" << e << "\n" << generated_xml << std::endl;
-            throw std::runtime_error(oss.str());
-        }
 
         return generated_xml;
     }
@@ -264,25 +307,25 @@ namespace malmo
         std::string reply;
         // TODO - currently reserved for 20 seconds (the 20000 below) - make this configurable.
         std::string request = std::string("MALMO_REQUEST_CLIENT:") + BOOST_PP_STRINGIZE(MALMO_VERSION) + ":20000:" + this->current_mission_init->getExperimentID() + +"\n";
-        for (const ClientInfo& item : client_pool.clients)
+        for (const boost::shared_ptr<ClientInfo> item : client_pool.clients)
         {
-            LOGINFO(LT("Sending reservation request to "), item.ip_address, LT(":"), item.port);
+            LOGINFO(LT("Sending reservation request to "), item->ip_address, LT(":"), item->control_port);
             try
             {
-                reply = SendStringAndGetShortReply(this->io_service, item.ip_address, item.port, request, false);
+                reply = rpc.sendStringAndGetShortReply(this->io_service, item->ip_address, item->control_port, request, false);
             }
             catch (std::exception&)
             {
                 // This is expected quite often - client is likely not running.
                 continue;
             }
-            LOGINFO(LT("Reserving client, received reply from "), item.ip_address, LT(": "), reply);
+            LOGINFO(LT("Reserving client, received reply from "), item->ip_address, LT(": "), reply);
 
             const std::string malmo_reservation_prefix = "MALMOOK";
             if (reply.find(malmo_reservation_prefix) == 0)
             {
                 // Successfully reserved this client.
-                reservedClients.add(item);
+                reservedClients.add(*item);
                 clients_required--;
                 if (clients_required == 0)
                     break;  // We've got all the clients we need.
@@ -292,19 +335,20 @@ namespace malmo
         if (clients_required > 0)
         {
             // No - release the clients we already reserved.
-            for (const ClientInfo& item : reservedClients.clients)
+            for (const boost::shared_ptr<ClientInfo> item : reservedClients.clients)
             {
-                LOGINFO(LT("Cancelling reservation request with "), item.ip_address, LT(":"), item.port);
+                LOGINFO(LT("Cancelling reservation request with "), item->ip_address, LT(":"), item->control_port);
                 try
                 {
-                    reply = SendStringAndGetShortReply(this->io_service, item.ip_address, item.port, "MALMO_CANCEL_REQUEST\n", false);
+                    reply = rpc.sendStringAndGetShortReply(this->io_service, item->ip_address, item->control_port, "MALMO_CANCEL_REQUEST\n", false);
                 }
                 catch (std::exception&)
                 {
                     // This is not expected, and probably means something bad has happened.
+                    LOGERROR(LT("Failed to cancel reservation request with "), item->ip_address, LT(":"), item->control_port);
                     continue;
                 }
-                LOGINFO(LT("Cancelling reservation, received reply from "), item.ip_address, LT(": "), reply);
+                LOGINFO(LT("Cancelling reservation, received reply from "), item->ip_address, LT(": "), reply);
             }
             reservedClients.clients.clear();
         }
@@ -318,19 +362,19 @@ namespace malmo
         std::string request = std::string("MALMO_FIND_SERVER") + this->current_mission_init->getExperimentID() + +"\n";
         bool serverWarmingUp = false;
 
-        for (const ClientInfo& item : client_pool.clients)
+        for (const boost::shared_ptr<ClientInfo> item : client_pool.clients)
         {
-            LOGINFO(LT("Sending find server request to "), item.ip_address, LT(":"), item.port);
+            LOGINFO(LT("Sending find server request to "), item->ip_address, LT(":"), item->control_port);
             try
             {
-                reply = SendStringAndGetShortReply(this->io_service, item.ip_address, item.port, request, false);
+                reply = rpc.sendStringAndGetShortReply(this->io_service, item->ip_address, item->control_port, request, false);
             }
             catch (std::exception&)
             {
                 // This is expected quite often - client is likely not running.
                 continue;
             }
-            LOGINFO(LT("Seeking server, received reply from "), item.ip_address, LT(": "), reply);
+            LOGINFO(LT("Seeking server, received reply from "), item->ip_address, LT(": "), reply);
 
             const std::string malmo_server_prefix = "MALMOS";
             const std::string malmo_server_warming_up = "MALMONOSERVERYET";
@@ -374,21 +418,23 @@ namespace malmo
         int num_clients = (int)client_pool.clients.size();
         for (int i = 0; i < num_clients; i++)
         {
-            const ClientInfo& item = client_pool.clients[(i + this->current_role) % num_clients];
-            this->current_mission_init->setClientAddress( item.ip_address );
-            this->current_mission_init->setClientMissionControlPort( item.port );
+            const boost::shared_ptr<ClientInfo> item = client_pool.clients[(i + this->current_role) % num_clients];
+            this->current_mission_init->setClientAddress( item->ip_address );
+            this->current_mission_init->setClientMissionControlPort( item->control_port );
+            this->current_mission_init->setClientCommandsPort( item->command_port );
             const std::string mission_init_xml = generateMissionInit() + "\n";
-    
-            LOGINFO(LT("Sending MissionInit to "), item.ip_address, LT(":"), item.port);
+
+            LOGINFO(LT("Sending MissionInit to "), item->ip_address, LT(":"), item->control_port);
             try 
             {
-                reply = SendStringAndGetShortReply( this->io_service, item.ip_address, item.port, mission_init_xml, false );
+                reply = rpc.sendStringAndGetShortReply( this->io_service, item->ip_address, item->control_port, mission_init_xml, false );
             }
             catch( std::exception& ) {
+                LOGINFO(LT("No response from "), item->ip_address, LT(":"), item->control_port);
                 // This is expected quite often - client is likely not running.
                 continue;
             }
-            LOGINFO(LT("Looking for client, received reply from "), item.ip_address, LT(": "), reply);
+            LOGINFO(LT("Looking for client, received reply from "), item->ip_address, LT(": "), reply);
             // this is either a) a single agent mission, b) a multi-agent mission but we are role 0, 
             // or c) a multi-agent mission where we have already located the server
             // expected: MALMOBUSY, MALMOOK, MALMOERROR...
@@ -397,6 +443,7 @@ namespace malmo
                 return; // mission was accepted, now wait for the mission to start
         }
 
+        LOGWARNING(LT("Failed to find an available client for this mission - throwing MissionException."));
         this->close();
         throw MissionException( "Failed to find an available client for this mission - tried all the clients in the supplied client pool.", MissionException::MISSION_INSUFFICIENT_CLIENTS_AVAILABLE );
     }
@@ -455,31 +502,60 @@ namespace malmo
         this->mission_control_server->start();
     }
     
-    void AgentHost::listenForVideo( int port, short width, short height, short channels )
+    boost::shared_ptr<VideoServer> AgentHost::listenForVideo(boost::shared_ptr<VideoServer> video_server, int port, short width, short height, short channels, TimestampedVideoFrame::FrameType frametype)
     {
-        if( !this->video_server || 
-            (port != 0 && this->video_server->getPort() != port ) ||
-            this->video_server->getWidth() != width || 
-            this->video_server->getHeight() != height ||
-            this->video_server->getChannels() != channels )
+        boost::shared_ptr<VideoServer> ret_server;
+        std::string path;
+        switch (frametype)
         {
-            this->video_server = boost::make_shared<VideoServer>( this->io_service, port, width, height, channels, boost::bind(&AgentHost::onVideo, this, _1));
+        case TimestampedVideoFrame::COLOUR_MAP:
+            path = this->current_mission_record->getMP4ColourMapPath();
+            break;
+        case TimestampedVideoFrame::DEPTH_MAP:
+            path = this->current_mission_record->getMP4DepthPath();
+            break;
+        case TimestampedVideoFrame::LUMINANCE:
+            path = this->current_mission_record->getMP4LuminancePath();
+            break;
+        case TimestampedVideoFrame::VIDEO:
+        default:
+            path = this->current_mission_record->getMP4Path();
+            break;
+        }
 
-            if (this->current_mission_record->isRecordingMP4()){
-                this->video_server->recordMP4(this->current_mission_record->getMP4Path(), this->current_mission_record->getMP4FramesPerSecond(), this->current_mission_record->getMP4BitRate());
+        if( !video_server || 
+            (port != 0 && video_server->getPort() != port ) ||
+            video_server->getWidth() != width || 
+            video_server->getHeight() != height ||
+            video_server->getChannels() != channels ||
+            video_server->getFrameType() != frametype)
+        {
+            // Can't use the server passed in - create a new one.
+            ret_server = boost::make_shared<VideoServer>( this->io_service, port, width, height, channels, frametype, boost::bind(&AgentHost::onVideo, this, _1));
+
+            if (this->current_mission_record->isRecordingMP4(frametype)){
+                ret_server->recordMP4(path, this->current_mission_record->getMP4FramesPerSecond(frametype), this->current_mission_record->getMP4BitRate(frametype), this->current_mission_record->isDroppingFrames(frametype));
             }
-            
-            this->video_server->start();
+            else if (this->current_mission_record->isRecordingBmps(frametype)){
+                ret_server->recordBmps(this->current_mission_record->getTemporaryDirectory());
+            }
+
+            ret_server->start();
         } 
         else {
             // re-use the existing video_server
             // but now we need to re-create the file writers with the new file names
-            if (this->current_mission_record->isRecordingMP4()){
-                this->video_server->recordMP4(this->current_mission_record->getMP4Path(), this->current_mission_record->getMP4FramesPerSecond(), this->current_mission_record->getMP4BitRate());
+            if (this->current_mission_record->isRecordingMP4(frametype)){
+                video_server->recordMP4(path, this->current_mission_record->getMP4FramesPerSecond(frametype), this->current_mission_record->getMP4BitRate(frametype), this->current_mission_record->isDroppingFrames(frametype));
             }
+            else if (this->current_mission_record->isRecordingBmps(frametype)){
+                video_server->recordBmps(this->current_mission_record->getTemporaryDirectory());
+            }
+            ret_server = video_server;
         }
-        
-        this->video_server->startRecording();
+
+        ret_server->startRecording();
+        return ret_server;
     }
     
     void AgentHost::listenForRewards( int port )
@@ -534,70 +610,72 @@ namespace malmo
         std::string root_node_name(pt.front().first.data());
 
         if( !this->world_state.is_mission_running && root_node_name == "MissionInit" ) {
-            try {
-                const bool validate = true;
-                this->current_mission_init = boost::make_shared<MissionInitSpec>(xml.text,validate);
-                this->world_state.is_mission_running = true;
-                this->world_state.has_mission_begun = true;
-            }
-            catch (const xml_schema::exception& e) {
-                std::ostringstream oss;
-                oss << "Error parsing MissionInit message XML: " << e.what() << " : " << e << ":" << xml.text.substr(0, 20) << "...";
-                TimestampedString error_message(xml);
-                error_message.text = oss.str();
-                this->world_state.errors.push_back( boost::make_shared<TimestampedString>( error_message ) );
-                return;
-            }
+            const bool validate = true;
+            this->current_mission_init = boost::make_shared<MissionInitSpec>(xml.text,validate);
+            this->world_state.is_mission_running = true;
+            this->world_state.has_mission_begun = true;
             this->openCommandsConnection();
         }
         else if( root_node_name == "MissionEnded" ) {
             
             try {
-                const bool validate = true;
-                
-                xml_schema::properties props;
-                props.schema_location(xml_namespace, FindSchemaFile("MissionEnded.xsd"));
+                MissionEndedXML mission_ended(xml.text);
+                const std::string status = mission_ended.getStatus();
 
-                xml_schema::flags flags = xml_schema::flags::dont_initialize;
-                if( !validate )
-                    flags = flags | xml_schema::flags::dont_validate;
-
-                std::istringstream iss(xml.text);
-                std::unique_ptr<malmo::schemas::MissionEnded> mission_ended = malmo::schemas::MissionEnded_(iss, flags, props);
-
-                switch( mission_ended->Status() ) {
-                    case malmo::schemas::MissionResult::ENDED:
-                    case malmo::schemas::MissionResult::PLAYER_DIED:
-                        break;
-                    default: 
-                    {
-                        std::ostringstream oss;
-                        oss << "Mission ended abnormally: " << mission_ended->HumanReadableStatus();
-                        TimestampedString error_message(xml);
-                        error_message.text = oss.str();
-                        this->world_state.errors.push_back( boost::make_shared<TimestampedString>( error_message ) );
-                    }
-                    break;
+                if (status != MissionEndedXML::ENDED && status != MissionEndedXML::PLAYER_DIED) {
+                    std::ostringstream oss;
+                    oss << "Mission ended abnormally: " << mission_ended.getHumanReadableStatus();
+                    TimestampedString error_message(xml);
+                    error_message.text = oss.str();
+                    this->world_state.errors.push_back(boost::make_shared<TimestampedString>(error_message));
                 }
                 
                 if (this->world_state.is_mission_running) {
-                    schemas::MissionEnded::Reward_optional final_reward_optional = mission_ended->Reward();
-                    if( final_reward_optional.present() ) {
-                        TimestampedReward final_reward(xml.timestamp,final_reward_optional.get());
+                    const RewardXML& reward = mission_ended.getReward();
+
+                    if (reward.size() != 0) {
+                        TimestampedReward final_reward(xml.timestamp, reward);
                         this->processReceivedReward(final_reward);
                         this->rewards_server->recordMessage(TimestampedString(xml.timestamp, final_reward.getAsSimpleString()));
                     }
                 }
+
+                // Close our servers now, before we finish writing the MissionEnded message.
+                this->closeServers();
+
+                // Add some diagnostics of our own before this gets to the agent:
+                if (this->video_server || this->luminance_server || this->depth_server || this->colourmap_server) {
+                    for (auto &vd : mission_ended.videoDataAttributes()) {
+                        boost::shared_ptr<VideoServer> vs = 0;
+                        if (vd.frame_type == "VIDEO")
+                            vs = this->video_server;
+                        else if (vd.frame_type == "DEPTH_MAP")
+                            vs = this->depth_server;
+                        else if (vd.frame_type == "LUMINANCE")
+                            vs = this->luminance_server;
+                        else if (vd.frame_type == "COLOUR_MAP")
+                            vs = this->colourmap_server;
+                        if (vs) {
+                            vd.frames_received =  vs->receivedFrames();
+                            vd.frames_written = vs->writtenFrames();
+                        }
+                    }
+
+                    xml.text = mission_ended.toXml();
+                }
             }
-            catch (const xml_schema::exception& e) {
+            catch (const std::exception& e) {
                 std::ostringstream oss;
-                oss << "Error parsing MissionEnded message XML: " << e.what() << " : " << e << ":" << xml.text.substr(0, 20) << "...";
+                oss << "Error processing MissionEnded message XML: " << e.what() << " : " << xml.text.substr(0, 20) << "...";
                 TimestampedString error_message(xml);
                 error_message.text = oss.str();
                 this->world_state.errors.push_back( boost::make_shared<TimestampedString>( error_message ) );
                 return;
             }
-            
+            if (this->current_mission_record->isRecording()){
+                std::ofstream missionEndedXML(this->current_mission_record->getMissionEndedPath());
+                missionEndedXML << xml.text;
+            }
             this->close();
         }
         else if (root_node_name == "ping") {
@@ -627,9 +705,28 @@ namespace malmo
 
     void AgentHost::close()
     {
+        LOGSECTION(LOG_FINE, "Closing AgentHost.");
         this->world_state.is_mission_running = false;
+        closeServers();
+        closeRecording();
+    }
+
+    void AgentHost::closeServers()
+    {
         if (this->video_server) {
             this->video_server->stopRecording();
+        }
+
+        if (this->depth_server) {
+            this->depth_server->stopRecording();
+        }
+
+        if (this->luminance_server) {
+            this->luminance_server->stopRecording();
+        }
+
+        if (this->colourmap_server) {
+            this->colourmap_server->stopRecording();
         }
 
         if (this->observations_server){
@@ -644,9 +741,13 @@ namespace malmo
             this->commands_stream.close();
         }
         
-        if( this->commands_connection ) {
+        if (this->commands_connection) {
             this->commands_connection.reset();
         }
+    }
+
+    void AgentHost::closeRecording()
+    {
         this->current_mission_record.reset();
     }
 
@@ -784,3 +885,5 @@ namespace malmo
         return os;
     }
 }
+
+#undef LOG_COMPONENT

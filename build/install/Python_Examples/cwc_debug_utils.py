@@ -6,28 +6,28 @@ def prettyPrintObservation(observation):
     for element in observation:
         if element == 'BlocksOutside' or element == 'BlocksInside' or element == 'BuilderGridAbsolute' or element == 'BuilderGridRelative':
             sys.stdout.write("\t"+element+": ")
-            print len(observation[element]), "values"
+            print((len(observation[element]), "values"))
         elif element == 'BuilderInventory':
             sys.stdout.write("\t"+element+": ")
             for value in observation[element]:
-                print "\n\t\t", value,
-            print
+                print(("\n\t\t", value))
+            print()
         elif 'Pos' in element or element == 'Yaw' or element == 'Pitch' or element == 'TimeAlive' or element == 'DistanceTravelled':
             grouped_elements += element+": "+str(observation[element])+"  "
         else:
             sys.stdout.write("\t"+element+": ")
-            print observation[element]
+            print((observation[element]))
 
     if len(grouped_elements.strip()) > 0:
-        print grouped_elements
-    print
+        print(grouped_elements)
+    print()
 
 def printObservationElements(observation):
     for element in observation:
-        print element,
+        print(element)
     if observation.get("Chat") is not None:
-        print "\nChat:", observation.get("Chat")
-    print
+        print(("\nChat:", observation.get("Chat")))
+    print()
 
 # Helper method to print a shortened, prettier version of the string to be written
 def prettyPrintString(string_to_write):

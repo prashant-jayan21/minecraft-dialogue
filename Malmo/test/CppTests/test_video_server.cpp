@@ -86,8 +86,8 @@ int main()
 
     try{
         boost::asio::io_service io_service;
-        VideoServer server(io_service, port, width, width, channels, boost::function<void(const TimestampedVideoFrame)>(handleFrame));
-        server.recordMP4(filename, 10, 400000);
+        VideoServer server(io_service, port, width, width, channels, TimestampedVideoFrame::VIDEO, boost::function<void(const TimestampedVideoFrame)>(handleFrame));
+        server.recordMP4(filename, 10, 400000, true);
         server.startRecording();
         server.start();
 
@@ -100,8 +100,8 @@ int main()
         for (int i = 0; i < num_frames; i++){
             uint32_t* ptr = reinterpret_cast<uint32_t*>(&buffer[0]);
             *ptr = hton_float((float)i); ptr++; //xPos
-            *ptr = hton_float(3.1415); ptr++;   //yPos
-            *ptr = hton_float(6.6666); ptr++;   //zPos
+            *ptr = hton_float(3.1415f); ptr++;   //yPos
+            *ptr = hton_float(6.6666f); ptr++;   //zPos
             *ptr = hton_float(0); ptr++;        //yaw
             *ptr = hton_float(90.0f);           //pitch
             for (int r = width - 1, p = TimestampedVideoFrame::FRAME_HEADER_SIZE; r >= 0; r--){

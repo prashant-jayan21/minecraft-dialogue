@@ -32,9 +32,14 @@ import json
 import random
 import errno
 from collections import namedtuple
+import malmoutils
 
-EntityInfo = namedtuple('EntityInfo', 'x, y, z, yaw, pitch, name, colour, variation, quantity, life')
-EntityInfo.__new__.__defaults__ = (0, 0, 0, 0, 0, "", "", "", 1, "")
+malmoutils.fix_print()
+
+agent_host = MalmoPython.AgentHost()
+malmoutils.parse_command_line(agent_host)
+
+EntityInfo = namedtuple('EntityInfo', 'x, y, z, name, quantity')
 
 def GetMissionXML(summary, itemDrawingXML):
     ''' Build an XML mission string that uses the RewardForCollectingItem mission handler.'''
@@ -102,19 +107,6 @@ def SetVelocity(vel):
 def SetTurn(turn):
     agent_host.sendCommand( "turn " + str(turn) )
 
-recordingsDirectory="EatingRecordings"
-try:
-    os.makedirs(recordingsDirectory)
-except OSError as exception:
-    if exception.errno != errno.EEXIST: # ignore error if already existed
-        raise
-
-if sys.version_info[0] == 2:
-    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
-else:
-    import functools
-    print = functools.partial(print, flush=True)
-
 validate = True
 # Create a pool of Minecraft Mod clients.
 # By default, mods will choose consecutive mission control ports, starting at 10000,
@@ -126,17 +118,6 @@ my_client_pool.add(MalmoPython.ClientInfo("127.0.0.1", 10001))
 my_client_pool.add(MalmoPython.ClientInfo("127.0.0.1", 10002))
 my_client_pool.add(MalmoPython.ClientInfo("127.0.0.1", 10003))
 
-agent_host = MalmoPython.AgentHost()
-try:
-    agent_host.parse( sys.argv )
-except RuntimeError as e:
-    print('ERROR:',e)
-    print(agent_host.getUsage())
-    exit(1)
-if agent_host.receivedArgument("help"):
-    print(agent_host.getUsage())
-    exit(0)
-
 itemdrawingxml = GetItemDrawingXML()
 
 if agent_host.receivedArgument("test"):
@@ -147,9 +128,7 @@ else:
 for iRepeat in range(num_reps):
     my_mission = MalmoPython.MissionSpec(GetMissionXML("Nom nom nom run #" + str(iRepeat), itemdrawingxml),validate)
     # Set up a recording
-    my_mission_record = MalmoPython.MissionRecordSpec(recordingsDirectory + "//" + "Mission_" + str(iRepeat) + ".tgz")
-    my_mission_record.recordRewards()
-    my_mission_record.recordMP4(24,400000)
+    my_mission_record = malmoutils.get_default_recording_object(agent_host, "Mission_" + str(iRepeat + 1))
     max_retries = 3
     for retry in range(max_retries):
         try:
@@ -181,12 +160,12 @@ for iRepeat in range(num_reps):
             msg = world_state.observations[-1].text
             ob = json.loads(msg)
             if "close_entities" in ob:
-                entities = [EntityInfo(**k) for k in ob["close_entities"]]
+                entities = [EntityInfo(k["x"], k["y"], k["z"], k["name"], k.get("quantity")) for k in ob["close_entities"]]
                 for ent in entities:
                     print(ent.name, ent.x, ent.z, ent.quantity)
             
             if "far_entities" in ob:
-                far_entities = [EntityInfo(**k) for k in ob["far_entities"]]
+                far_entities = [EntityInfo(k["x"], k["y"], k["z"], k["name"], k.get("quantity")) for k in ob["far_entities"]]
                 for ent in far_entities:
                     print(ent.name, ent.quantity)
                 

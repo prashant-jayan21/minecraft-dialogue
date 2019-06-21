@@ -36,15 +36,17 @@ namespace malmo
         , zPos(0)
         , yaw(0)
         , pitch(0)
+        , frametype(VIDEO)
     {
 
     }
 
-    TimestampedVideoFrame::TimestampedVideoFrame(short width, short height, short channels, TimestampedUnsignedCharVector& message, Transform transform)
+    TimestampedVideoFrame::TimestampedVideoFrame(short width, short height, short channels, TimestampedUnsignedCharVector& message, Transform transform, FrameType frametype)
         : timestamp(message.timestamp)
         , width(width)
         , height(height)
         , channels(channels)
+        , frametype(frametype)
         , xPos(0)
         , yPos(0)
         , zPos(0)
@@ -65,6 +67,18 @@ namespace malmo
             this->pixels = std::vector<unsigned char>(message.data.begin() + FRAME_HEADER_SIZE, message.data.end());
             break;
 
+        case RAW_BMP:
+            this->pixels = std::vector<unsigned char>(message.data.begin() + FRAME_HEADER_SIZE, message.data.end());
+            if (channels == 3){
+                // Swap BGR -> RGB:
+                for (int i = 0; i < this->pixels.size(); i += 3){
+                    char t = this->pixels[i];
+                    this->pixels[i] = this->pixels[i + 2];
+                    this->pixels[i + 2] = t;
+                }
+            }
+            break;
+
         case REVERSE_SCANLINE:
             this->pixels = std::vector<unsigned char>();
             for (int i = 0, offset = (height - 1)*stride; i < height; i++, offset -= stride){
@@ -81,13 +95,31 @@ namespace malmo
 
     bool TimestampedVideoFrame::operator==(const TimestampedVideoFrame& other) const
     {
-        return this->width == other.width && this->height == other.height && this->channels == other.channels && this->timestamp == other.timestamp && this->pixels == other.pixels;
+        return this->frametype == other.frametype && this->width == other.width && this->height == other.height && this->channels == other.channels && this->timestamp == other.timestamp && this->pixels == other.pixels;
         // Not much point in comparing pos, pitch and yaw - covered by the pixel comparison.
     }
 
     std::ostream& operator<<(std::ostream& os, const TimestampedVideoFrame& tsvidframe)
     {
-        os << "TimestampedVideoFrame: " << to_simple_string(tsvidframe.timestamp) << ", " << tsvidframe.width << " x " << tsvidframe.height << " x " << tsvidframe.channels << ", (" << tsvidframe.xPos << "," << tsvidframe.yPos << "," << tsvidframe.zPos << " - yaw:" << tsvidframe.yaw << ", pitch:" << tsvidframe.pitch << ")";
+        os << "TimestampedVideoFrame: " << to_simple_string(tsvidframe.timestamp) << ", type " << tsvidframe.frametype << ", " << tsvidframe.width << " x " << tsvidframe.height << " x " << tsvidframe.channels << ", (" << tsvidframe.xPos << "," << tsvidframe.yPos << "," << tsvidframe.zPos << " - yaw:" << tsvidframe.yaw << ", pitch:" << tsvidframe.pitch << ")";
+        return os;
+    }
+
+    std::ostream& operator<<(std::ostream& os, const TimestampedVideoFrame::FrameType& type)
+    {
+        switch (type)
+        {
+        case TimestampedVideoFrame::VIDEO:
+            os << "video"; break;
+        case TimestampedVideoFrame::DEPTH_MAP:
+            os << "depth"; break;
+        case TimestampedVideoFrame::LUMINANCE:
+            os << "luminance"; break;
+        case TimestampedVideoFrame::COLOUR_MAP:
+            os << "colourmap"; break;
+        default:
+            break;
+        }
         return os;
     }
 

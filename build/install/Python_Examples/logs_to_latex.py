@@ -23,7 +23,7 @@ def generateTexfile(logfiles, output, screenshots_dir, disable_timestamps):
 	outfile = open(output, "w")
 	simplefile = open(output[:-4]+"-simplified.tex","w")
 
-	header = "\documentclass{book}\n\usepackage[utf8]{inputenc}\n\usepackage[margin=1in,headheight=13.6pt]{geometry}\n\usepackage{graphicx}\n\usepackage{subcaption}\n\usepackage{listings}\n\lstset{basicstyle=\large\\ttfamily,columns=fullflexible,breaklines=true}\n\usepackage{hyperref}\n\usepackage{fancyhdr}\n\n\pagestyle{fancy}\n\\fancyhf{}\n\\fancyhead[L]{\\nouppercase\leftmark}\n\n\\begin{document}\n\\tableofcontents\n"
+	header = "\documentclass{book}\n\\usepackage[utf8]{inputenc}\n\\usepackage[margin=1in,headheight=13.6pt]{geometry}\n\\usepackage{graphicx}\n\\usepackage{subcaption}\n\\usepackage{listings}\n\lstset{basicstyle=\large\\ttfamily,columns=fullflexible,breaklines=true}\n\\usepackage{hyperref}\n\\usepackage{fancyhdr}\n\n\pagestyle{fancy}\n\\fancyhf{}\n\\fancyhead[L]{\\nouppercase\leftmark}\n\n\\begin{document}\n\\tableofcontents\n"
 	outfile.write(header)
 	simplefile.write(header)
 
@@ -47,7 +47,7 @@ def generateTexfile(logfiles, output, screenshots_dir, disable_timestamps):
 		final_observation = world_states[-1]
 		chat_history = []
 
-		for i in reversed(range(len(world_states))):
+		for i in reversed(list(range(len(world_states)))):
 			world_state = world_states[i]
 			screenshots = world_state["Screenshots"]
 			builder_no_chat = True if screenshots.get("Builder") is None else "-chat" not in screenshots.get("Builder")
@@ -128,8 +128,8 @@ def generateTexfile(logfiles, output, screenshots_dir, disable_timestamps):
 	simplefile.close()
 
 	simple = output[:-4]+"-simplified.tex"
-	print "Successfully written tex file to", output
-	print "Successfully written simplified tex file to", simple
+	print(("Successfully written tex file to", output))
+	print(("Successfully written simplified tex file to", simple))
 
 def getScreenshotFilePath(screenshots_dir, experiment_name, file_path):
 	screenshot_path = None if file_path is None else screenshots_dir+"/"+experiment_name+"/"+file_path

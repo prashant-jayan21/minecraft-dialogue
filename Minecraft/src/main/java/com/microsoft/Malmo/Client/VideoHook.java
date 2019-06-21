@@ -21,6 +21,7 @@ package com.microsoft.Malmo.Client;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -39,9 +40,13 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 
 import com.microsoft.Malmo.MissionHandlerInterfaces.IVideoProducer;
+import com.microsoft.Malmo.MissionHandlerInterfaces.IVideoProducer.VideoType;
 import com.microsoft.Malmo.Schemas.ClientAgentConnection;
+import com.microsoft.Malmo.Schemas.MissionDiagnostics;
+import com.microsoft.Malmo.Schemas.MissionDiagnostics.VideoData;
 import com.microsoft.Malmo.Schemas.MissionInit;
 import com.microsoft.Malmo.Utils.TCPSocketChannel;
+import com.microsoft.Malmo.Utils.TextureHelper;
 
 /**
  * Register this class on the MinecraftForge.EVENT_BUS to intercept video
@@ -93,6 +98,12 @@ public class VideoHook {
     ByteBuffer buffer = null;
     ByteBuffer headerbuffer = null;
     final int POS_HEADER_SIZE = 20; // 20 bytes for the five floats governing x,y,z,yaw and pitch.
+
+    // For diagnostic purposes:
+    private long timeOfFirstFrame = 0;
+    private long timeOfLastFrame = 0;
+    private long framesSent = 0;
+
     /**
      * Resize the rendering and start sending video over TCP.
      */
@@ -108,8 +119,8 @@ public class VideoHook {
         this.videoProducer = videoProducer;
         this.buffer = BufferUtils.createByteBuffer(this.videoProducer.getRequiredBufferSize());
         this.headerbuffer = ByteBuffer.allocate(20).order(ByteOrder.BIG_ENDIAN);
-        this.renderWidth = videoProducer.getWidth(missionInit);
-        this.renderHeight = videoProducer.getHeight(missionInit);
+        this.renderWidth = videoProducer.getWidth();
+        this.renderHeight = videoProducer.getHeight();
         resizeIfNeeded();
         Display.setResizable(false); // prevent the user from resizing using the window borders
 
@@ -118,7 +129,22 @@ public class VideoHook {
             return;	// Don't start up if we don't have any connection details.
 
         String agentIPAddress = cac.getAgentIPAddress();
-        int agentPort = cac.getAgentVideoPort();
+        int agentPort = 0;
+        switch (videoProducer.getVideoType())
+        {
+        case LUMINANCE:
+            agentPort = cac.getAgentLuminancePort();
+            break;
+        case DEPTH_MAP:
+            agentPort = cac.getAgentDepthPort();
+            break;
+        case VIDEO:
+            agentPort = cac.getAgentVideoPort();
+            break;
+        case COLOUR_MAP:
+            agentPort = cac.getAgentColourMapPort();
+            break;
+        }
 
         this.connection = new TCPSocketChannel(agentIPAddress, agentPort, "vid");
         this.failedTCPSendCount = 0;
@@ -146,6 +172,9 @@ public class VideoHook {
             return;
         
         try {
+            int old_x = Display.getX();
+            int old_y = Display.getY();
+            Display.setLocation(old_x, old_y);
             Display.setDisplayMode(new DisplayMode(this.renderWidth, this.renderHeight));
             System.out.println("Resized the window");
         } catch (LWJGLException e) {
@@ -158,7 +187,7 @@ public class VideoHook {
     /**
      * Stop sending video.
      */
-    public void stop()
+    public void stop(MissionDiagnostics diags)
     {
         if( !this.isRunning )
         {
@@ -182,8 +211,21 @@ public class VideoHook {
 
         // allow the user to resize the window again
         Display.setResizable(true);
+
+        // And fill in some diagnostic data:
+        if (diags != null)
+        {
+            VideoData vd = new VideoData();
+            vd.setFrameType(this.videoProducer.getVideoType().toString());
+            vd.setFramesSent((int) this.framesSent);
+            if (this.timeOfLastFrame == this.timeOfFirstFrame)
+                vd.setAverageFpsSent(new BigDecimal(0));
+            else
+                vd.setAverageFpsSent(new BigDecimal(1000.0 * this.framesSent / (this.timeOfLastFrame - this.timeOfFirstFrame)));
+            diags.getVideoData().add(vd);
+        }
     }
-    
+
     /**
      * Called before and after the rendering of the world.
      * 
@@ -209,6 +251,13 @@ public class VideoHook {
     @SubscribeEvent
     public void postRender(RenderWorldLastEvent event)
     {
+        // Check that the video producer and frame type match - eg if this is a colourmap frame, then
+        // only the colourmap videoproducer needs to do anything.
+        boolean colourmapFrame = TextureHelper.colourmapFrame;
+        boolean colourmapVideoProducer = this.videoProducer.getVideoType() == VideoType.COLOUR_MAP;
+        if (colourmapFrame != colourmapVideoProducer)
+            return;
+
         EntityPlayerSP player = Minecraft.getMinecraft().player;
         float x = (float) (player.lastTickPosX + (player.posX - player.lastTickPosX) * event.getPartialTicks());
         float y = (float) (player.lastTickPosY + (player.posY - player.lastTickPosY) * event.getPartialTicks());
@@ -247,9 +296,15 @@ public class VideoHook {
             float ms_send = (time_after_ns - time_after_render_ns) / 1000000.0f;
             float ms_render = (time_after_render_ns - time_before_ns) / 1000000.0f;
             if (success)
+            {
                 this.failedTCPSendCount = 0;    // Reset count of failed sends.
-            //            System.out.format("Total: %.2fms; collecting took %.2fms; sending %d bytes took %.2fms\n", ms_send + ms_render, ms_render, size, ms_send);
-            //            System.out.println("Collect: " + ms_render + "; Send: " + ms_send);
+                this.timeOfLastFrame = System.currentTimeMillis();
+                if (this.timeOfFirstFrame == 0)
+                	this.timeOfFirstFrame = this.timeOfLastFrame;
+                this.framesSent++;
+	            //            System.out.format("Total: %.2fms; collecting took %.2fms; sending %d bytes took %.2fms\n", ms_send + ms_render, ms_render, size, ms_send);
+	            //            System.out.println("Collect: " + ms_render + "; Send: " + ms_send);
+            }
         }
         catch (Exception e)
         {

@@ -9,11 +9,11 @@ built on top of Minecraft.
 
 ** Disclaimer: these instructions have been tested with OSX + IntelliJ only. **
 
-Follow the instructions to build Malmö from source for your OS (make sure to clone this repository, `https://github.com/CogComp/cwc-minecraft.git`, instead of the original Malmo project): 
+Follow the instructions to build Malmö from source for your OS (make sure to clone this repository, `https://github.com/CogComp/cwc-minecraft.git`, instead of the original Malmo project):
 * [Windows](doc/build_windows.md)
 * [Linux](doc/build_linux.md)
 * [MacOSX](doc/build_macosx.md)
-    
+
 Alternatively, for MacOSX, you can use the instructions are copied below for ease of access.
 
 1. Install Homebrew: http://www.howtogeek.com/211541/homebrew-for-os-x-easily-installs-desktop-apps-and-terminal-utilities/
@@ -66,7 +66,7 @@ cd Minecraft
 There are two ways to do this:
 
 1. On OSX, from terminal:
-``` 
+```
 cd Minecraft
 ./launchClient.sh
 ```
@@ -80,14 +80,14 @@ cd Minecraft
 
 The [Python_Examples directory](https://gitlab-beta.engr.illinois.edu/hockenmaier/cwc-minecraft/tree/master/build/install/Python_Examples) contains sample missions prototyping features required as part of the CWC project.
 These are written in Python using the Malmo API and borrow ideas from the [tutorial examples](https://github.com/Microsoft/malmo/tree/master/Malmo/samples/Python_examples) in the original Malmo project.
-Running a mission involves 2 steps: 
+Running a mission involves 2 steps:
 
 1. Run the Minecraft client as mentioned above. You may need to run another one for 2 agent missions.
 
 2. Run the Python code. As of now we recommend using Python 2 (using Python 3 has some issues which we intend to resolve soon -- follow [this issue](https://gitlab-beta.engr.illinois.edu/hockenmaier/cwc-minecraft/issues/6)).
 
 ## Running a Minecraft Data Collection session ###
-The data collection sessions can either be run locally on a single machine (not recommended outside of development), or across multiple machines via LAN. 
+The data collection sessions can either be run locally on a single machine (not recommended outside of development), or across multiple machines via LAN.
 
 ### Running locally ###
 On a single machine, start up 3 Minecraft clients. Then run the following command:
@@ -137,7 +137,7 @@ Alternatively, you can run a session with "Fixed Viewer" cameras that will take 
 To run with Fixed Viewer clients, a session can be run as follows:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --lan 
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --lan
 ```
 
 ## Data format and postprocessing ##
