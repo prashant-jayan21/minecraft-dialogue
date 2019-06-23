@@ -36,7 +36,7 @@ public class CwCMod {
 
 	public static boolean demoMode = true;
 	public static boolean flipStartingPosition = true;
-	public static boolean disableScreenshots = true;
+	public static boolean disableScreenshots = false;
 
 	public static boolean enableAIToggle = false;		// whether or not the original Malmo AI/Human toggle option is enabled
 	public static final int DEFAULT_STACK_SIZE = 20;	// stack size of blocks in Builder's inventory
