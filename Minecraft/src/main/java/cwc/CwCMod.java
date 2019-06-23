@@ -25,7 +25,7 @@ public class CwCMod {
 
 	@Mod.Instance(CwCMod.MODID)
 	public static CwCMod instance;				 // mod instance
-	
+
 	@SidedProxy(clientSide="cwc.ClientOnlyProxy", serverSide="cwc.DedicatedServerProxy")
 	public static CommonProxy proxy;			 // mod proxy
 
@@ -83,13 +83,13 @@ public class CwCMod {
 
 		proxy.preInit();
 	}
-	
+
 	@EventHandler
 	public void init(FMLInitializationEvent event) { proxy.init(); }
-	
+
 	@EventHandler
 	public void postInit(FMLPostInitializationEvent event) { proxy.postInit(); }
-	
+
 	public static String prependModID(String name) { return MODID+":"+name; }
 
 	/**
