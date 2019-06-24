@@ -30,6 +30,5 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Convert JSON to XML.")
 	parser.add_argument("json_file", help="File path of the observations JSON to be converted")
 	parser.add_argument("--config_name", default=None, help="Name of output configuration")
-	parser.add_argument("--displacement", type=int, default=100, help="Displacement value for X and Z coordinates")
 	args = parser.parse_args()
 	main(args)

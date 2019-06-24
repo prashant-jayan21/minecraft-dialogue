@@ -102,7 +102,7 @@ The data collection sessions can either be run locally on a single machine (not 
 On a single machine, start up 3 Minecraft clients. Then run the following command:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --mode=data_collection
 ```
 
 where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional). `sample_user_info.csv` can be safely ignored.
@@ -110,7 +110,7 @@ where `sample_gold_configs.csv` contains a newline-separated list of target stru
 Although not recommended, you can also run this session with "Fixed Viewer" cameras that will take screenshots periodically from those angles as data is collected. To do so, start up 7 Minecraft clients, then run the following command:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --mode=data_collection
 ```
 
 ### Running via LAN ###
@@ -136,7 +136,7 @@ Edit `sample_user_info.csv` to reflect the correct IP addresses. For each line, 
 A basic session with the above information can be run as follows:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --lan
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --lan --mode=data_collection
 ```
 
 where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional).
@@ -146,7 +146,7 @@ Alternatively, you can run a session with "Fixed Viewer" cameras that will take 
 To run with Fixed Viewer clients, a session can be run as follows:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --lan
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --lan --mode=data_collection
 ```
 
 ## Data format and postprocessing ##
@@ -169,7 +169,7 @@ In this mode, instead of playing games where the target structures are dictated 
 To run:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --create_target_structures
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --mode=create_target_structures
 ```
 
 ## Useful debugging tips ##
@@ -178,6 +178,10 @@ By default, the Minecraft clients take screenshots every time a block is picked 
 
 ## Running the architect demo ##
 
-Run `cwc_run_session.py` with the `--architect_demo` flag. This will basically enable an automated architect with everything else about the session being exactly the same. You just need to play the role of the Builder. In the game, whenever you need the Architect to speak, trigger it by sending a special chat message "xxx" from the Builder's side. The Architect will then generate one utterance.
+Run `cwc_run_session.py` with `--mode=architect_demo`. This will basically enable an automated architect with everything else about the session being exactly the same. You just need to play the role of the Builder. In the game, whenever you need the Architect to speak, trigger it by sending a special chat message "xxx" from the Builder's side. The Architect will then generate one utterance.
+
+## Running the builder demo ##
+
+Run `cwc_run_session.py` with `--mode=builder_demo`. More here... TODO
 
 The log files generated at the end of the game are the same as those in a data collection session.

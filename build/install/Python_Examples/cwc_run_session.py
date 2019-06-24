@@ -13,9 +13,16 @@ if __name__ == "__main__":
     parser.add_argument("--lan", default=False, action="store_true", help="LAN mode")
     parser.add_argument("--draw_inventory_blocks", action="store_true", help="Starts the mission with inventory blocks on the ground")
     parser.add_argument("--existing_is_gold", action="store_true", help="Indicates existing configs are actually gold configs and need to be displaced")
-    parser.add_argument("--architect_demo", default=False, action="store_true", help="whether to run the architect demo")
-    parser.add_argument("--create_target_structures", default=False, action="store_true", help="Create target structures for every completed mission")
+    parser.add_argument("--mode", default="data_collection", help="Type of application to run: data_collection, architect_demo, builder_demo, create_target_structures")
     args = parser.parse_args()
+
+    architect_demo = args.mode == 'architect_demo'
+    create_target_structures = args.mode == 'create_target_structures'
+
+    if args.mode in ['data_collection', 'architect_demo', 'create_target_structures']:
+        from cwc_run_single_mission import cwc_run_mission
+    elif args.mode == 'builder_demo':
+        from cwc_run_builder_demo import cwc_run_mission
 
     # Read user info from spreadsheet
     all_users = []
@@ -84,8 +91,8 @@ if __name__ == "__main__":
             "num_fixed_viewers": args.num_fixed_viewers,
             "draw_inventory_blocks": args.draw_inventory_blocks,
             "existing_is_gold": args.existing_is_gold,
-            "architect_demo": args.architect_demo,
-            "create_target_structures": args.create_target_structures
+            "architect_demo": architect_demo,
+            "create_target_structures": create_target_structures
         }
 
         # submit mission jobs to process pool
