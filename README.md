@@ -61,6 +61,15 @@ cd Minecraft
 
 
 
+## Project structure ##
+
+- Code and data: `build/install/Python_Examples`
+- Screenshots: `Minecraft/run/screenshots`
+
+Within `build/install/Python_Examples`:
+- `gold-configurations`: All target strutures used in data collection -- stored as XML files. If you create new target structues those will be written here as well.
+- `logs`: Any data collection sessions or demos you run will write log files here.
+
 ## Running the Minecraft Client ##
 
 There are two ways to do this:
