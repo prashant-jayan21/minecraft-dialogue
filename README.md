@@ -160,7 +160,4 @@ By default, the Minecraft clients take screenshots every time a block is picked 
 ## Running the architect demo (DO NOT DO THIS YET) ##
 
 ### Requirements: ###
-- UPGRADE TO MALMO 0.35.5 AND PYTHON 3 (instructions at https://github.com/rislam/cwc-minecraft/pull/16#issuecomment-488160813)
-- Switch to the `architect-demo` branches on this repo as well as the models repo (`cwc-minecraft-models`).
-
 Run `cwc_run_session.py` with the `--architect_demo` flag. This will basically enable an automated architect with everything else about the session being exactly the same. You just need to play the role of the Builder. In the game, whenever you need the Architect to speak, trigger it by sending a special chat message "xxx" from the Builder's side. The Architect will then generate one utterance.
