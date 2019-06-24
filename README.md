@@ -141,6 +141,16 @@ To run with Fixed Viewer clients, a session can be run as follows:
 ```
 
 ## Data format and postprocessing ##
+A data collection session for a given target structure will yield game log output in the form of a json file. A new directory will be created within `build/install/Python_Examples/logs` for this run of the game. The name will be a unique identifier for this run. Within it will be a json file called `raw-observations.json`. A subdirectory of the same name will also be created within `Minecraft/run/screenshots`. This will house all the screenshots taken during the game for the Minecraft clients on that machine. So, if you use multiple machines these screenshots will be distributed across machines. You will need to consolidate all of them on to one central machine where you house your data.
+
+The json file will need to further post-processed to yield the final log files we would be interested in. To do this run `cwc_postprocess_observations.py` (remember to gather all screenshots from multiple machines if needed onto the machine which houses all data and where you are going to run the postprocessor). This will generate the following three files:
+- `postprocessed-observations.json` -- Post-processed json log for the game
+- `aligned-observations.json` -- Post-processed json log for the game with screenshot information added to each observation
+- `log.txt` -- A human-readable log
+
+The data format can be found at https://docs.google.com/document/d/1uo8oZbGhOuSfG5p_7rZlHfPwc2WOjIA0hcMzj70Qtoo/edit.
+
+How to get pdf files, etc. -- TODO
 
 ## Creating your own target structures ##
 To create target structures, you only need one open Minecraft client open on your local machine.
