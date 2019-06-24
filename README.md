@@ -172,3 +172,12 @@ By default, the Minecraft clients take screenshots every time a block is picked 
 Run `cwc_run_session.py` with the `--architect_demo` flag. This will basically enable an automated architect with everything else about the session being exactly the same. You just need to play the role of the Builder. In the game, whenever you need the Architect to speak, trigger it by sending a special chat message "xxx" from the Builder's side. The Architect will then generate one utterance.
 
 The log files generated at the end of the game are the same as those in a data collection session.
+
+## Project structure ##
+
+- Code and data: `build/install/Python_Examples`
+- Screenshots: `Minecraft/run/screenshots`
+
+Within `build/install/Python_Examples`:
+- `gold-configurations`: All target strutures used in data collection -- stored as XML files. If you create new target structues those will be written here as well.
+- `logs`: Any data collection sessions or demos you run will write log files here.
