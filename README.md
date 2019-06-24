@@ -141,6 +141,16 @@ To run with Fixed Viewer clients, a session can be run as follows:
 ```
 
 ## Data format and postprocessing ##
+A data collection session for a given target structure will yield game log output in the form of a json file. A new directory will be created within `build/install/Python_Examples/logs` for this run of the game. The name will be a unique identifier for this run. Within it will be a json file called `raw-observations.json`. A subdirectory of the same name will also be created within `Minecraft/run/screenshots`. This will house all the screenshots taken during the game for the Minecraft clients on that machine. So, if you use multiple machines these screenshots will be distributed across machines. You will need to consolidate all of them on to one central machine where you house your data.
+
+The json file will need to further post-processed to yield the final log files we would be interested in. To do this run `cwc_postprocess_observations.py` (remember to gather all screenshots from multiple machines if needed onto the machine which houses all data and where you are going to run the postprocessor). This will generate the following three files:
+- `postprocessed-observations.json` -- Post-processed json log for the game
+- `aligned-observations.json` -- Post-processed json log for the game with screenshot information added to each observation
+- `log.txt` -- A human-readable log
+
+The data format can be found at https://docs.google.com/document/d/1uo8oZbGhOuSfG5p_7rZlHfPwc2WOjIA0hcMzj70Qtoo/edit.
+
+How to get pdf files, etc. -- TODO
 
 ## Creating your own target structures ##
 To create target structures, you only need one open Minecraft client open on your local machine.
@@ -157,10 +167,6 @@ To run:
 ### Disable screenshots ###
 By default, the Minecraft clients take screenshots every time a block is picked up or put down or a chat message is sent/received (saved in `Minecraft/run/screenshots` with the associated experiment ID). This can fill up your disk quickly if you're not careful. If debugging, you can turn off screenshots by setting the `disableScreenshots` static variable found in `Minecraft/src/main/java/cwc/CwCMod.java` to `true` (by default, this is `false`). (This will be made into a more automatic solution in the future.)
 
-## Running the architect demo (DO NOT DO THIS YET) ##
-
-### Requirements: ###
-- UPGRADE TO MALMO 0.35.5 AND PYTHON 3 (instructions at https://github.com/rislam/cwc-minecraft/pull/16#issuecomment-488160813)
-- Switch to the `architect-demo` branches on this repo as well as the models repo (`cwc-minecraft-models`).
+## Running the architect demo ##
 
 Run `cwc_run_session.py` with the `--architect_demo` flag. This will basically enable an automated architect with everything else about the session being exactly the same. You just need to play the role of the Builder. In the game, whenever you need the Architect to speak, trigger it by sending a special chat message "xxx" from the Builder's side. The Architect will then generate one utterance.
