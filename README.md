@@ -174,3 +174,5 @@ Run `cwc_run_session.py` with `--mode=architect_demo`. This will basically enabl
 ## Running the builder demo ##
 
 Run `cwc_run_session.py` with `--mode=builder_demo`. More here... TODO
+
+The log files generated at the end of the game are the same as those in a data collection session.
