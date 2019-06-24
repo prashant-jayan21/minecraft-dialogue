@@ -173,4 +173,4 @@ Run `cwc_run_session.py` with `--mode=architect_demo`. This will basically enabl
 
 ## Running the architect demo ##
 
-Run `cwc_run_session.py` with `--mode=builder_demo`.
+Run `cwc_run_session.py` with `--mode=builder_demo`. More here... TODO
