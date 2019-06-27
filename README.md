@@ -4,6 +4,7 @@ This repository is forked from [Project Malmö](https://github.com/Microsoft/mal
 built on top of Minecraft.
 
 
+
 ## Installation ##
 
 ** Disclaimer: these instructions have been tested with OSX + IntelliJ only. **
@@ -13,15 +14,51 @@ Follow the instructions to build Malmö from source for your OS (make sure to cl
 * [Linux](doc/build_linux.md)
 * [MacOSX](doc/build_macosx.md)
 
-## Setting up your dev env (skip if you are not a developer on this project) ##
-- Set up a workspace in IntelliJ by following [these instructions](https://bedrockminer.jimdo.com/modding-tutorials/set-up-minecraft-forge/set-up-fast-setup/), or by doing the following:
+Alternatively, for MacOSX, you can use the instructions are copied below for ease of access.
+
+1. Install Homebrew: http://www.howtogeek.com/211541/homebrew-for-os-x-easily-installs-desktop-apps-and-terminal-utilities/
+
+2. Install dependencies:
+
+  ```
+  brew update
+  brew upgrade
+  brew install boost --with-python
+  brew install ffmpeg swig boost-python xerces-c doxygen git cmake
+  sudo brew cask install java
+  brew install xsd
+  brew unlink xsd
+  brew install mono
+  brew link --overwrite xsd
+  ```
+
+3. Build Project Malmo:
+    1. `git clone https://github.com/CogComp/cwc-minecraft.git ~/MalmoPlatform`  
+    2. `wget https://raw.githubusercontent.com/bitfehler/xs3p/1b71310dd1e8b9e4087cf6120856c5f701bd336b/xs3p.xsl -P ~/MalmoPlatform/Schemas`
+    3. Add `export MALMO_XSD_PATH=~/MalmoPlatform/Schemas` to your `~/.bashrc` and do `source ~/.bashrc`
+    3. `cd MalmoPlatform`
+    4. `mkdir build`
+    5. `cd build`
+    6. `cmake ..`
+    7. `make install`
+    8. Then you can run the samples that are installed ready-to-run in e.g. `install/Python_Examples`
+
+When running `make install`, you may run into a particular error involving copying the file `libMalmoNETNative.so`. There are a couple of solutions:
+
+1. From the project directory, ``` cp build/Malmo/src/CSharpWrapper/MalmoNETNative.so build/Malmo/src/CSharpWrapper/libMalmoNETNative.so ```
+    The assumption is that the library is the same, but somehow had a slight change of name that the build script wasn't expecting.
+2. Disable the C# part of the build by setting `INCLUDE_CSHARP` to `OFF` in `CMakeLists.txt` as done in https://github.com/CogComp/cwc-minecraft/commit/a02b5722576f9d78f8886ba6ca038e6cb047be57
+
+
+3. Set up a workspace in IntelliJ by following [these instructions](https://bedrockminer.jimdo.com/modding-tutorials/set-up-minecraft-forge/set-up-fast-setup/), or by doing the following:
 ```
 cd Minecraft
 ./gradlew setupDecompWorkspace
 ./gradlew idea
 ```
 
-- Open the ``` Minecraft ``` directory as a project in IntelliJ. IntelliJ should automatically recognize that this is a Gradle project; if it asks if you want to import it as such, follow the directions to do so.
+4. Open the ``` Minecraft ``` directory as a project in IntelliJ. IntelliJ should automatically recognize that this is a Gradle project; if it asks if you want to import it as such, follow the directions to do so.
+
 
 
 ## Project structure ##
@@ -65,7 +102,7 @@ The data collection sessions can either be run locally on a single machine (not 
 On a single machine, start up 3 Minecraft clients. Then run the following command:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --mode=data_collection
 ```
 
 where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional). `sample_user_info.csv` can be safely ignored.
@@ -73,7 +110,7 @@ where `sample_gold_configs.csv` contains a newline-separated list of target stru
 Although not recommended, you can also run this session with "Fixed Viewer" cameras that will take screenshots periodically from those angles as data is collected. To do so, start up 7 Minecraft clients, then run the following command:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --mode=data_collection
 ```
 
 ### Running via LAN ###
@@ -99,7 +136,7 @@ Edit `sample_user_info.csv` to reflect the correct IP addresses. For each line, 
 A basic session with the above information can be run as follows:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --lan
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --lan --mode=data_collection
 ```
 
 where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional).
@@ -109,7 +146,7 @@ Alternatively, you can run a session with "Fixed Viewer" cameras that will take 
 To run with Fixed Viewer clients, a session can be run as follows:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --lan
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --lan --mode=data_collection
 ```
 
 ## Data format and postprocessing ##
@@ -132,7 +169,7 @@ In this mode, instead of playing games where the target structures are dictated 
 To run:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --create_target_structures
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --mode=create_target_structures
 ```
 
 ## Useful debugging tips ##
@@ -141,6 +178,10 @@ By default, the Minecraft clients take screenshots every time a block is picked 
 
 ## Running the architect demo ##
 
-Run `cwc_run_session.py` with the `--architect_demo` flag. This will basically enable an automated architect with everything else about the session being exactly the same. You just need to play the role of the Builder. In the game, whenever you need the Architect to speak, trigger it by sending a special chat message "xxx" from the Builder's side. The Architect will then generate one utterance.
+Run `cwc_run_session.py` with `--mode=architect_demo`. This will basically enable an automated architect with everything else about the session being exactly the same. You just need to play the role of the Builder. In the game, whenever you need the Architect to speak, trigger it by sending a special chat message "xxx" from the Builder's side. The Architect will then generate one utterance.
+
+## Running the builder demo ##
+
+Run `cwc_run_session.py` with `--mode=builder_demo`. More here... TODO
 
 The log files generated at the end of the game are the same as those in a data collection session.
