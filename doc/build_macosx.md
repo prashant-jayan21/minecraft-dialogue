@@ -29,3 +29,9 @@ These instructions were tested on MacOSX 10.13.3 (High Sierra).
 4. Run the tests:
     1. `cd MalmoPlatform/build`
     2. `ctest -VV` to run all the tests
+    
+### Debugging help ###
+When running `make install`, you may run into a particular error involving copying the file `libMalmoNETNative.so`. There are a couple of solutions:
+
+1. From the project directory, run `cp build/Malmo/src/CSharpWrapper/MalmoNETNative.so build/Malmo/src/CSharpWrapper/libMalmoNETNative.so`. The assumption is that the library is the same, but somehow had a slight change of name that the build script wasn't expecting.
+2. Disable the C# part of the build by setting `INCLUDE_CSHARP` to `OFF` in `CMakeLists.txt` as done in https://github.com/CogComp/cwc-minecraft/commit/a02b5722576f9d78f8886ba6ca038e6cb047be57.

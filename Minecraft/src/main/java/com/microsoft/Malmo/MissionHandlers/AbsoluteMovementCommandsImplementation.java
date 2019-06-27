@@ -19,7 +19,6 @@
 
 package com.microsoft.Malmo.MissionHandlers;
 
-import cwc.CwCMod;
 import io.netty.buffer.ByteBuf;
 
 import java.util.EnumSet;
@@ -94,11 +93,6 @@ public class AbsoluteMovementCommandsImplementation extends CommandBase
                 MinecraftForge.EVENT_BUS.post(event);
             }
             this.setX = this.setY = this.setZ = this.setYaw = this.setPitch = false;
-
-            if (CwCMod.demoMode) {
-                player.capabilities.isFlying = true;
-                player.sendPlayerAbilities();
-            }
         }
     }
 
