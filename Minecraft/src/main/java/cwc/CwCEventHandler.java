@@ -202,7 +202,7 @@ public class CwCEventHandler {
                 for (EntityPlayer ep : mc.world.playerEntities)
                     if (playerNameMatches(ep, CwCMod.BUILDER)) builder = ep;
 
-                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(builder.posX, builder.posY, builder.posZ, 0, 0, true, true, true, true, true));
+                CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(builder.posX, builder.posY, builder.posZ, (CwCMod.flipStartingPosition ? 180 : 0), 0, true, true, true, true, true));
                 mc.playerController.attackEntity(Minecraft.getMinecraft().player, builder);
                 mc.displayGuiScreen(new GuiChat());
                 gs.thirdPersonView = 1;
@@ -308,6 +308,7 @@ public class CwCEventHandler {
     @SubscribeEvent
     public void onPlayerUpdate(LivingEvent.LivingUpdateEvent event) {
         EntityPlayer updatedPlayer = (EntityPlayer) event.getEntity();
+        if (CwCMod.demoMode) updatedPlayer.noClip = true;
 
         // prevent noclip through floor
         if (updatedPlayer.posY < 0) {
@@ -323,6 +324,7 @@ public class CwCEventHandler {
         if (updatedPlayer.getEntityWorld().isRemote) {
             Minecraft mc = Minecraft.getMinecraft();
             EntityPlayer player = mc.player;
+            if (CwCMod.demoMode) player.noClip = true;
 
             // Architect sneaking to break mob-view
             if (playerNameMatches(player, CwCMod.ARCHITECT) && sneaking) {
@@ -331,7 +333,7 @@ public class CwCEventHandler {
                 // once the Architect's y-coordinate position differs from the Builder's, teleport him to a neutral position
                 if (player.posY < builderCurrentY - 0.1) {
                     KeyBinding.unPressAllKeys();
-                    CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, 5, -5, 0, 45, true, true, true, true, true));
+                    CwCMod.network.sendToServer(new AbsoluteMovementCommandsImplementation.TeleportMessage(0, (CwCMod.demoMode ? 6 : 5), (CwCMod.demoMode ? -7 : -5)*(CwCMod.flipStartingPosition ? -1 : 1)+(CwCMod.flipStartingPosition ? 1 : 0), (CwCMod.flipStartingPosition ? 180 : 0), 45, true, true, true, true, true));
                     resetArchitectFollowFields();
                 }
             }
