@@ -20,7 +20,8 @@ import java.util.ArrayList;
 @Mod(modid = CwCMod.MODID, name = "CwC Blocks Mod", version = CwCMod.VERSION)
 public class CwCMod {
 	public static final String MODID = "cwcmod"; // mod ID: prepends registry names of mod-specific blocks and items
-	public static final String VERSION = "1.00"; // mod version
+	// public static final String VERSION = "1.00"; // mod version
+	public static final String VERSION = "0.35.5"; // mod version
 	public static SimpleNetworkWrapper network;  // mod network: mod-specific packets sent and received over this channel
 
 	@Mod.Instance(CwCMod.MODID)
