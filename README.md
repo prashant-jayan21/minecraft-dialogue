@@ -65,15 +65,15 @@ The data collection sessions can either be run locally on a single machine (not 
 On a single machine, start up 3 Minecraft clients. Then run the following command:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv
+python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv
 ```
 
-where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional). `sample_user_info.csv` can be safely ignored.
+where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional). `existing_structure_xml` is the xml file path of a structure to be pre-loaded into the build region and is typically not needed. `sample_user_info.csv` can be safely ignored.
 
-Although not recommended, you can also run this session with "Fixed Viewer" cameras that will take screenshots periodically from those angles as data is collected. To do so, start up 7 Minecraft clients, then run the following command:
+Although not recommended (because of the load this will create on a single machine), you can also run this session with up to 4 "Fixed Viewer" cameras that will take screenshots periodically from those angles (from the 4 canonical directions around the build region) as data is collected. To do so with 4 fixed viewers, start up 3 + 4 = 7 Minecraft clients, then run the following command:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv
+python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv
 ```
 
 ### Running via LAN ###
@@ -99,17 +99,17 @@ Edit `sample_user_info.csv` to reflect the correct IP addresses. For each line, 
 A basic session with the above information can be run as follows:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --lan
+python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --lan
 ```
 
-where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional).
+where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional). `existing_structure_xml` is the xml file path of a structure to be pre-loaded into the build region and is typically not needed.
 
-Alternatively, you can run a session with "Fixed Viewer" cameras that will take screenshots periodically from those angles as data is collected. To use these Fixed Viewer clients, launch 4 clients on the desired machine, and edit `sample_fixed_viewer.csv` to reflect the IP address of that machine. The current default uses `127.0.0.1` (localhost), i.e. the machine running the Python session will also act as the machine managing the Fixed Viewer clients.
+Alternatively, you can run a session with up to 4 "Fixed Viewer" cameras that will take screenshots periodically from those angles (from the 4 canonical directions around the build region) as data is collected. To use these Fixed Viewer clients, launch 4 clients on the desired machine, and edit `sample_fixed_viewer.csv` to reflect the IP address of that machine. The current default uses `127.0.0.1` (localhost), i.e. the machine running the Python session will also act as the machine managing the Fixed Viewer clients. Port can remain 10000.
 
 To run with Fixed Viewer clients, a session can be run as follows:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --lan
+python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --lan
 ```
 
 ## Data format and postprocessing ##
