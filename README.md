@@ -122,7 +122,7 @@ The json file will need to further post-processed to yield the final log files w
 
 The data format can be found at https://docs.google.com/document/d/1uo8oZbGhOuSfG5p_7rZlHfPwc2WOjIA0hcMzj70Qtoo/edit.
 
-How to get pdf files, etc. -- TODO
+How to obtain latex/pdf files, dialogue.txt, dialogue-with-actions.txt ... TODO
 
 ## Creating your own target structures ##
 To create target structures, you only need one open Minecraft client open on your local machine.
