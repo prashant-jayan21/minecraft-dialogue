@@ -47,7 +47,6 @@ cd Minecraft
 2. From within IntelliJ: run the `Minecraft Client` run configuration. If the project was imported as a Gradle project successfully, IntelliJ should already have this run configuration available to you.
 
 
-
 ## Running the Python prototype missions ##
 
 The [Python_Examples directory](https://gitlab-beta.engr.illinois.edu/hockenmaier/cwc-minecraft/tree/master/build/install/Python_Examples) contains sample missions prototyping features required as part of the CWC project.
@@ -113,6 +112,7 @@ python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fix
 ```
 
 ## Data format and postprocessing ##
+Mention experiment ID here ... TODO
 A data collection session for a given target structure will yield game log output in the form of a json file. A new directory will be created within `build/install/Python_Examples/logs` for this run of the game. The name will be a unique identifier for this run. Within it will be a json file called `raw-observations.json`. A subdirectory of the same name will also be created within `Minecraft/run/screenshots`. This will house all the screenshots taken during the game for the Minecraft clients on that machine. So, if you use multiple machines these screenshots will be distributed across machines. You will need to consolidate all of them on to one central machine where you house your data.
 
 The json file will need to further post-processed to yield the final log files we would be interested in. To do this run `cwc_postprocess_observations.py` (remember to gather all screenshots from multiple machines if needed onto the machine which houses all data and where you are going to run the postprocessor). This will generate the following three files:
@@ -127,20 +127,20 @@ How to obtain latex/pdf files, dialogue.txt, dialogue-with-actions.txt ... TODO
 ## Creating your own target structures ##
 To create target structures, you only need one open Minecraft client open on your local machine.
 
-In this mode, instead of playing games where the target structures are dictated by the file paths in `sample_gold_configs.csv`, you now need to specify the names of the __new__ target structures to be created in `sample_gold_configs.csv`. Note that if a given name of a new structure conflicts with any existing structures that exist at that file path, the game for that particular structure will fail before you are able to create a structure by that name. Each target structure is automatically saved at the specified file path after you build it as the Builder in Minecraft and end the mission by pressing __Ctrl+C in the Minecraft client__.
+In this mode, instead of playing games where the target structures are dictated by the file paths `sample_gold_configs.csv`, you now need to specify the names of the __new__ target structures to be created in `sample_gold_configs.csv` (in the `target_structure_xml` column, the other one should remain unspecified). Note that if a given name of a new structure conflicts with any existing structures that exist at that file path, the game for that particular structure will fail before you are able to create a structure by that name. Each target structure is automatically saved at the specified file path after you build it as the Builder in Minecraft and end the mission by pressing __Ctrl+C in the Minecraft client__.
 
 To run:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --create_target_structures
+python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --create_target_structures
 ```
-
-## Useful debugging tips ##
-### Disable screenshots ###
-By default, the Minecraft clients take screenshots every time a block is picked up or put down or a chat message is sent/received (saved in `Minecraft/run/screenshots` with the associated experiment ID). This can fill up your disk quickly if you're not careful. If debugging, you can turn off screenshots by setting the `disableScreenshots` static variable found in `Minecraft/src/main/java/cwc/CwCMod.java` to `true` (by default, this is `false`). (This will be made into a more automatic solution in the future.)
 
 ## Running the architect demo ##
 
 Run `cwc_run_session.py` with the `--architect_demo` flag. This will basically enable an automated architect with everything else about the session being exactly the same. You just need to play the role of the Builder. In the game, whenever you need the Architect to speak, trigger it by sending a special chat message "xxx" from the Builder's side. The Architect will then generate one utterance.
 
 The log files generated at the end of the game are the same as those in a data collection session.
+
+## Useful debugging tips ##
+### Disable screenshots ###
+By default, the Minecraft clients take screenshots every time a block is picked up or put down or a chat message is sent/received (saved in `Minecraft/run/screenshots` with the associated experiment ID). This can fill up your disk quickly if you're not careful. If debugging, you can turn off screenshots by setting the `disableScreenshots` static variable found in `Minecraft/src/main/java/cwc/CwCMod.java` to `true` (by default, this is `false`). (This will be made into a more automatic solution in the future.)
