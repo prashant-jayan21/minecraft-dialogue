@@ -2,7 +2,7 @@
 
 This repository is forked from [Project Malmö](https://github.com/Microsoft/malmo), a platform for Artificial Intelligence experimentation and research built on top of Minecraft.
 
-You can find our recently published ACL 2019 paper on this work [here](https://github.com/CogComp/cwc-minecraft/blob/master/Collaborative%20Dialogue%20in%20Minecraft_main.pdf) (supplementary [here](https://github.com/CogComp/cwc-minecraft/blob/master/Collaborative%20Dialogue%20in%20Minecraft_supp.pdf)).
+You can find our recently accepted ACL 2019 paper on this work [here](https://github.com/CogComp/cwc-minecraft/blob/master/Collaborative%20Dialogue%20in%20Minecraft_main.pdf) (supplementary [here](https://github.com/CogComp/cwc-minecraft/blob/master/Collaborative%20Dialogue%20in%20Minecraft_supp.pdf)).
 
 ## Installation ##
 
