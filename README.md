@@ -6,7 +6,8 @@ You can find our recently accepted ACL 2019 paper on this work [here](https://gi
 
 ## Installation ##
 
-** Disclaimer: these instructions have been tested with OSX + IntelliJ only. **
+** Disclaimer: these instructions have been tested with macOS (Sierra and Mojave) + IntelliJ only. **
+Add Windows stuff ... TODO
 
 Follow the instructions to build Malmö from source for your OS (make sure to clone this repository, `https://github.com/CogComp/cwc-minecraft.git`, instead of the original Malmo project):
 * [Windows](doc/build_windows.md)
