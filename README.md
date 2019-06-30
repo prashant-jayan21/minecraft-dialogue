@@ -34,6 +34,12 @@ Within `build/install/Python_Examples`:
 - `gold-configurations`: All target strutures used in data collection -- stored as XML files. If you create new target structues those will be written here as well.
 - `logs`: Any data collection sessions or demos you run will write log files here.
 
+More on target strctures:
+- [This](build/install/Python_Examples/configs_db.csv) contains a list of all target structures we used in data collection labeled as warmup, simple or complex (in increasing order of complexity). This was hand-labeled by us based on intuition -- factoring for things like number of blocks used, number of colors used, inherent structural complexity, number of floating blocks, etc. Hence, this is not a gold standard of labeling in any way. But it can still be a helpful guide when you are trying to pick out which target structures to try.
+- [This](https://github.com/CogComp/cwc-minecraft-models/blob/master/data/logs/splits.json) (in our models repo) contains the data splits we used for modeling purposes. These splits were done across target structures. There are three sets in it: `train` (target structures used in training data), `test` (target structures used in test data) and `val` (target structures used in validation data). When testing the architect demo for example, you might want to avoid using target structures that have been used in training data.
+- To see what a certain target stucture looks like, you can search within the folder housing our data on [Google Drive](https://drive.google.com/drive/folders/1zYXAO95f9qCyuUUd20OVkWOCcCOQ5uUp?usp=sharing). For example, if you are intersted in seeing what `C42.xml` looks like, search within the folder for "C42" and select any one of the pdf files displayed in the search results. Browse through its contents and pick out a chapter titled C42. The first section within that chapter should show you 4 canonical views of the structure.
+
+
 ## Running the Minecraft Client ##
 
 There are two ways to do this:
