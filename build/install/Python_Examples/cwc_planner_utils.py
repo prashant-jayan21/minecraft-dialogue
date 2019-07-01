@@ -24,7 +24,8 @@ class Response(object):
 
     """
 
-    def __init__(self, responseFlag, missing=None, other=None, plan=None, constraints=None):
+    def __init__(self, responseFlag, missing=None,
+                 other=None, plan=None, constraints=None):
         self.responseFlag = responseFlag
         self.missing = list()
         self.other = list()
@@ -49,10 +50,14 @@ class Response(object):
 
             for item in plan:
                 instruction = item.replace("[", "").replace("]", "")
-                instruction = instruction.replace(",", "").replace("(", "").replace(")", "")
+                instruction = instruction.replace(
+                    ",", "").replace(
+                    "(", "").replace(
+                    ")", "")
                 action = "putdown"
 
-                if any(substring in instruction.strip() for substring in ["stack", "unstack"]): 
+                if any(substring in instruction.strip()
+                       for substring in ["stack", "unstack"]):
                     _, block_id, reference_block_id, x, y, z, color = instruction.strip().split()
                     if "unstack" in instruction.strip():
                         action = "remove"
@@ -61,10 +66,11 @@ class Response(object):
                     if "attach" in instruction.strip():
                         action = "putdown"
 
-                x, y, z = float(x)+x_min_build+temp_x_delta, float(y)+y_min_build, float(z)+z_min_build+temp_z_delta
+                x, y, z = float(x) + x_min_build + temp_x_delta, float(y) + \
+                    y_min_build, float(z) + z_min_build + temp_z_delta
                 if x > x_max_build or x < x_min_build or y > y_max_build or y < y_min_build or z > z_max_build or z < z_min_build:
                     self.responseFlag = "FAILURE"
-                    
+
                 instruction = [action, block_id, x, y, z, color]
                 instruction_list.append(instruction)
 
@@ -98,7 +104,9 @@ class Response(object):
         return return_str
 
     def as_json(self):
-        return {"Flag": self.responseFlag, "Plan": self.plan, "Missing": self.missing}
+        return {"Flag": self.responseFlag,
+                "Plan": self.plan, "Missing": self.missing}
+
 
 def convert_response(output):
     """
@@ -115,7 +123,7 @@ def convert_response(output):
     if len(output) < 5:
         print("convert_response::Error: not enough information from the planner")
         return None
-    
+
     planner_output = output[-6:]
     flag = "FAILURE"
     contents = {"Missing": [], "Other": [], "Plan": [], "Constraints": []}
@@ -123,6 +131,8 @@ def convert_response(output):
 
     for line in planner_output:
         if len(line) == 0:
+            continue
+        if ":" not in line:
             continue
 
         splitted_line = line.strip().split(": ")
@@ -145,7 +155,12 @@ def convert_response(output):
 
     # print("##parsed outputs##")
     # print(flag, missing, other, plan, constraints)
-    response = Response(flag, contents["Missing"], contents["Other"], contents["Plan"], contents["Constraints"])
+    response = Response(
+        flag,
+        contents["Missing"],
+        contents["Other"],
+        contents["Plan"],
+        contents["Constraints"])
     # print(response)
     # print(response.responseFlag)
     # response.add_constraints('hellow')
@@ -168,19 +183,22 @@ def jarWrapper(*args):
     process = Popen(['java', '-jar'] + list(args), stdout=PIPE, stderr=PIPE)
 
     ret = []
-    while process.poll() is None:
-        line = str(process.stdout.readline())
-        if line != '' and line.endswith('\n'):
-            ret.append(line[:-1])
+    ret = str(process.communicate()[0])
+    ret = ret.split("\\n")
 
-    stdout, stderr = process.communicate()
-    ret += str(stdout).split('\n')
+    # while process.poll() is None:
+    #     line = str(process.stdout.readline())
+    #     if line != '' and line.endswith('\n'):
+    #         ret.append(line[:-1])
 
-    if stderr != '':
-        ret += (str(stderr)).split('\n')
+    # stdout, stderr = process.communicate()
+    # ret += str(stdout).split('\n')
 
-    if '' in ret:
-        ret.remove('')
+    # if stderr != '':
+    #     ret += (str(stderr)).split('\n')
+
+    # if '' in ret:
+    #     ret.remove('')
 
     return ret
 
@@ -204,7 +222,7 @@ def getPlans(human_input="row(a) ^ width(a,5)", existing_blocks=None):
 
     # print(result)
     response = convert_response(result)
-    print(("getPlans::response received\n"+str(response)))
+    print(("getPlans::response received\n" + str(response)))
     return response
 
 
@@ -219,7 +237,7 @@ if __name__ == '__main__':
     getPlans(human_input="rectangle(a) ^ height(a, 2) ^ length(a,4)")
 
     print("3D Planning problem")
-    
+
     getPlans(human_input="tower(a)^height(a,4)^square(b)^size(b,2)^right(b,a)^block(c)^location(w1)^block-location(c,w1)^left_end(b,c)^block(d)^location(w2)^block-location(d,w2)^front_bottom_left(a,d)^spatial-rel(top,0,w1,w2)")
 
     print("3D Planning problem missing multiple dimensions")
