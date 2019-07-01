@@ -151,3 +151,9 @@ Run `cwc_run_session.py` with `--mode=builder_demo`. More specifically, it will 
 This command will enable the architect to provide natural language instructions to the builder. i.e. `build a blue row of size 3`. Then the builder will take this natural language uttarnce into a logical form. They will the inputs for the planner. Finally, the planner will generate the instructions the will be executed by the builder.
 
 The log files generated at the end of the game are the same as those in a data collection session.
+
+## required packages
+The following packages will be required to run the agents
+
+- pytorch
+- nltk (`pip install -U nltk`)
