@@ -241,7 +241,7 @@ public class CwCObservationImplementation extends ObservationFromServer
 
                 if (waitTickAfterMissionStart < 75) waitTickAfterMissionStart++;
                 else if (!missionHasStarted) {
-                    mc.player.sendChatMessage("Mission has started.");
+                    if (!CwCMod.demoMode) mc.player.sendChatMessage("Mission has started.");
                     missionHasStarted = true;
                 }
             }

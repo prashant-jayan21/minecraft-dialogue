@@ -2,7 +2,7 @@
 import time, MalmoPython
 
 SHOW_COMMANDS = False
-verbose = False
+verbose = True
 
 # map of colors to corresponding hotbar IDs
 color_map = {
@@ -129,11 +129,11 @@ def setPitchYaw(ah, pitch=None, yaw=None):
     """ Sets the pitch and yaw of the agent. For efficiency, only set pitch/yaw to non-None values if they differ from the agent's current pitch/yaw values. """
     if yaw is not None:
         sendCommand(ah, "setYaw "+str(yaw))
-        time.sleep(1)
+        time.sleep(0.2)
 
     if pitch is not None:
         sendCommand(ah, "setPitch "+str(pitch))
-        time.sleep(1)
+        time.sleep(0.2)
 
 def chooseInventorySlot(ah, index):
     """ Selects the given block color from the hotbar. """
@@ -147,7 +147,7 @@ def performAction(ah, action):
     sendCommand(ah, action_type+' 1')
     time.sleep(0.1)
     sendCommand(ah, action_type+' 0')
-    time.sleep(0.2)
+    time.sleep(0.25)
 
 def sendCommand(ah, command):
     """ Use this method to send all commands to the agent. """
@@ -258,13 +258,16 @@ def location_is_empty(blocks_in_grid, x, y, z):
     blocks_list = blocks_in_grid.get(x, {}).get(z, {})
     return y not in blocks_list and y > 0
 
-def execute_action(ah, action, tx, ty, tz, t_pitch, t_yaw, color):
+def execute_action(ah, action, color, tx=None, ty=None, tz=None, t_pitch=None, t_yaw=None, teleport=True):
     """ Executes an action using the agent. """
     if verbose:
         print(("execute_plan::teleporting to:", tx, ty, tz, t_pitch, t_yaw, "to", action, color))
 
     # teleport the agent
-    teleportMovement(ah, teleport_x=tx, teleport_y=ty, teleport_z=tz)
+    if teleport:
+	    if verbose:
+	        print("execute_action::teleporting to:", tx, ty, tz, t_pitch, t_yaw)
+	    teleportMovement(ah, teleport_x=tx, teleport_y=ty, teleport_z=tz)
 
     # choose block color to be placed (if putdown)
     if action == 'putdown':

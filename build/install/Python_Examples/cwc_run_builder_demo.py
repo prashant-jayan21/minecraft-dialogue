@@ -477,7 +477,7 @@ class DialogueManager:
                 last_valid_pitch, last_valid_yaw = None, None
 
                 while not updated and num_attempts < ATTEMPT_LIMIT:
-                    execute_action(ah=self.agent_host, action=action, tx=tx, ty=ty, tz=tz, t_pitch=t_pitch if t_pitch != last_pitch else None, t_yaw=t_yaw if t_yaw != last_yaw else None, color=color)
+                    execute_action(ah=self.agent_host, action=action, color=color, tx=tx, ty=ty, tz=tz, t_pitch=t_pitch if t_pitch != last_pitch else None, t_yaw=t_yaw if t_yaw != last_yaw else None)
                     pitch_new, yaw_new, updated = self.update_blocks_in_grid(all_observations)
                     last_valid_pitch = pitch_new if pitch_new is not None else last_valid_pitch
                     last_valid_yaw = yaw_new if yaw_new is not None else last_valid_yaw

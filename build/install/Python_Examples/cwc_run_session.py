@@ -13,7 +13,20 @@ if __name__ == "__main__":
     parser.add_argument("--lan", default=False, action="store_true", help="LAN mode")
     parser.add_argument("--draw_inventory_blocks", action="store_true", help="Starts the mission with inventory blocks on the ground")
     parser.add_argument("--existing_is_gold", action="store_true", help="Indicates existing configs are actually gold configs and need to be displaced")
-    parser.add_argument("--mode", default="data_collection", help="Type of application to run: data_collection, architect_demo, builder_demo, create_target_structures")
+    parser.add_argument("--mode", default="data_collection", choices=['data_collection', 'architect_demo', 'builder_demo', 'create_target_structures', 'replay'], help="Type of application to run: data_collection, architect_demo, builder_demo, create_target_structures, replay")
+    parser.add_argument("--generated_sentences_dir", default="generated_sentences/")
+    parser.add_argument("--generated_sentences_sources", default=["seq2seq_attn", "acl-model", "emnlp-model"], nargs='+', help="model types to be evaluated, in the order that their generated sentences jsons are loaded")
+    parser.add_argument("--split", default="val")
+    parser.add_argument("--replay_gold", default=False, action='store_true', help="Use ground truth utterances in the replay tool, instead of generated utterances")
+    parser.add_argument("--shuffle", default=False, action='store_true', help='shuffle sentences to be evaluated')
+    parser.add_argument("--num_samples_to_replay", default=1000, type=int, help="Number of samples to view in replay tool")
+    parser.add_argument("--jsons_dir", default="jsons/")
+    parser.add_argument("--sampled_sentences_dir", default="sampled_sentences/")
+    parser.add_argument("--sample_sentences", default=False, action='store_true')
+    parser.add_argument("--num_sentences", default=100)
+    parser.add_argument("--ignore_ids", default=[1, 2, 39], nargs='+', help='player IDs to be ignored when sampling examples to be evaluated')
+    parser.add_argument("--evaluator_id", default=1, help="ID of human evaluator")
+    parser.add_argument("--resume_evaluation", default=False, action='store_true', help='resumes evaluation of given player ID by playing examples unseen by that player')
     args = parser.parse_args()
 
     architect_demo = args.mode == 'architect_demo'
@@ -23,6 +36,8 @@ if __name__ == "__main__":
         from cwc_run_single_mission import cwc_run_mission
     elif args.mode == 'builder_demo':
         from cwc_run_builder_demo import cwc_run_mission
+    elif args.mode == 'replay':
+        from cwc_replay_mission import cwc_run_mission
 
     # Read user info from spreadsheet
     all_users = []
@@ -94,6 +109,21 @@ if __name__ == "__main__":
             "architect_demo": architect_demo,
             "create_target_structures": create_target_structures
         }
+
+        if args.mode == 'replay':
+            mission_args["generated_sentences_dir"] = args.generated_sentences_dir
+            mission_args["generated_sentences_sources"] = args.generated_sentences_sources
+            mission_args["shuffle"] = args.shuffle
+            mission_args["jsons_dir"] = args.jsons_dir
+            mission_args["sampled_sentences_dir"] = args.sampled_sentences_dir
+            mission_args["num_samples_to_replay"] = args.num_samples_to_replay
+            mission_args["replay_gold"] = args.replay_gold
+            mission_args["sample_sentences"] = args.sample_sentences
+            mission_args["num_sentences"] = args.num_sentences
+            mission_args["ignore_ids"] = args.ignore_ids
+            mission_args["evaluator_id"] = args.evaluator_id
+            mission_args["resume_evaluation"] = args.resume_evaluation
+            mission_args["split"] = args.split
 
         # submit mission jobs to process pool
         print("\nMISSIONS RUNNING...")
