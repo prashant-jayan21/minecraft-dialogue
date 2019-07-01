@@ -225,11 +225,11 @@ def cwc_run_mission(args):
     # model and gold config xml loading
     if architect_demo:
         args2 = Namespace(
-            model_dir = '/Users/prashant/Work/cwc-minecraft-models/models_remote/utterances_and_block_region_counters/20190227/utterances_and_block_region_counters_trainer-1551313181240/1551313181248/',
-            data_dir = '/Users/prashant/Work/cwc-minecraft-models/data/logs/',
-            gold_configs_dir = '/Users/prashant/Work/cwc-minecraft-models/data/gold-configurations/',
+            model_dir = '../../../../cwc-minecraft-models/models_remote/utterances_and_block_region_counters/20190505-finetuned/utterances_and_block_region_counters_trainer-1557116167126/1557116167131/',
+            data_dir = '../../../../cwc-minecraft-models/data/logs/',
+            gold_configs_dir = '../../../../cwc-minecraft-models/data/gold-configurations/',
             saved_dataset_dir = None,
-            vocab_dir = "/Users/prashant/Work/cwc-minecraft-models/vocabulary/",
+            vocab_dir = "../../../../cwc-minecraft-models/vocabulary/",
             output_path = None,
             num_workers = 0,
             seed = 1234,
