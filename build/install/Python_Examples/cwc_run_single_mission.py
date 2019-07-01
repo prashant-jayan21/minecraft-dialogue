@@ -225,7 +225,7 @@ def cwc_run_mission(args):
     # model and gold config xml loading
     if architect_demo:
         args2 = Namespace(
-            model_dir = '../../../../cwc-minecraft-models/models_remote/utterances_and_block_region_counters/20190505-finetuned/utterances_and_block_region_counters_trainer-1557116167126/1557116167131/',
+            model_dir = '../../../../cwc-minecraft-models/models/utterances_and_block_region_counters/20190505-finetuned/utterances_and_block_region_counters_trainer-1557116167126/1557116167131/',
             data_dir = '../../../../cwc-minecraft-models/data/logs/',
             gold_configs_dir = '../../../../cwc-minecraft-models/data/gold-configurations/',
             saved_dataset_dir = None,
