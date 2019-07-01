@@ -66,16 +66,6 @@ cd Minecraft
 2. From within IntelliJ: run the `Minecraft Client` run configuration. If the project was imported as a Gradle project successfully, IntelliJ should already have this run configuration available to you.
 
 
-## Running the Python prototype missions ##
-
-The [Python_Examples directory](https://gitlab-beta.engr.illinois.edu/hockenmaier/cwc-minecraft/tree/master/build/install/Python_Examples) contains sample missions prototyping features required as part of the CWC project.
-These are written in Python using the Malmo API and borrow ideas from the [tutorial examples](https://github.com/Microsoft/malmo/tree/master/Malmo/samples/Python_examples) in the original Malmo project.
-Running a mission involves 2 steps:
-
-1. Run the Minecraft client as mentioned above. You may need to run another one for 2 agent missions.
-
-2. Run the Python code. As of now we recommend using Python 2 (using Python 3 has some issues which we intend to resolve soon -- follow [this issue](https://gitlab-beta.engr.illinois.edu/hockenmaier/cwc-minecraft/issues/6)).
-
 ## Running a Minecraft Data Collection session ###
 The data collection sessions can either be run locally on a single machine (not recommended outside of development), or across multiple machines via LAN.
 
