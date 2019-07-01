@@ -9,6 +9,8 @@ You can find our recently accepted ACL 2019 paper on this work [here](https://gi
 ** Disclaimer: these instructions have been tested with macOS (Sierra and Mojave) + IntelliJ only. **
 Add Windows stuff ... TODO
 
+You can either install our Malmo fork using our pre-built version or build from source.
+
 ### Using our pre-built version ###
 TODO ...
 1. Download our pre-built version, for Windows or macOS.
@@ -20,6 +22,9 @@ Follow the instructions to build Malmö from source for your OS (make sure to cl
 * [Windows](doc/build_windows.md)
 * [Linux](doc/build_linux.md)
 * [MacOSX](doc/build_macosx.md)
+
+## Python dependencies ##
+Install PyTorch (recommended `v0.4.1` or `v1.0.1` -- these are the ones we have tried out).
 
 ## Setting up your dev env (skip if you are not a developer on this project) ##
 - Set up a workspace in IntelliJ by following [these instructions](https://bedrockminer.jimdo.com/modding-tutorials/set-up-minecraft-forge/set-up-fast-setup/), or by doing the following:
