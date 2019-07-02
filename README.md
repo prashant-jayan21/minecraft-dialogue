@@ -6,14 +6,15 @@ You can find our recently accepted ACL 2019 paper on this work [here](https://gi
 ## Collaborative Building Task ##
 We define the Collaborative Building Task as a two-player game between an Architect (**A**) and a Builder (**B**). **A** is given a target structure (_Target_) and has to instruct **B** via a text chat interface to build a copy of _Target_ on a given build region. **A** and **B** can communicate back and forth via chat throughout the game (e.g. to resolve confusions or to correct **B**'s mistakes). **B** is given access to an inventory of 120 blocks of six given colors that it can place and remove. **A** can observe **B** and move around in its world, allowing it to provide instructions from varying perspectives. But **A** cannot move blocks, and remains invisible to **B**. The task is complete when the structure built by **B** (_Built_) matches _Target_, invariant to translations within the horizontal plane and rotations about the vertical axis. _Built_ also needs to lie completely within the boundaries of the predefined build region.
 
+## Data recorded ##
+As part of the task, we record the game log as well as screenshots (more [here](https://docs.google.com/document/d/1uo8oZbGhOuSfG5p_7rZlHfPwc2WOjIA0hcMzj70Qtoo/edit#)).
+
 # Installation #
-** Disclaimer: these instructions have been tested with macOS (Sierra and Mojave) + IntelliJ only. **
-Add Windows stuff ... TODO
+**Disclaimer: these instructions have been tested with macOS (Sierra and Mojave) + IntelliJ only.**
 
 You can either install our Malmo fork using our pre-built version or build from source.
 
 ## Using our pre-built version ##
-TODO ...
 1. Download our pre-built version, for Windows or macOS.
 2. Install the dependencies for your OS: [Windows](doc/install_windows.md), [macOS](doc/install_macosx.md)
 
@@ -39,14 +40,15 @@ cd Minecraft
 - Open the ``` Minecraft ``` directory as a project in IntelliJ. IntelliJ should automatically recognize that this is a Gradle project; if it asks if you want to import it as such, follow the directions to do so.
 
 # Project structure #
-- Code and data: `build/install/Python_Examples`
-- Screenshots: `Minecraft/run/screenshots`
+At a high-level, the data written by our systems is structured in the project as follows: 
+- Within `build/install/Python_Examples`:
+  - `gold-configurations`: All target strutures used in data collection -- stored as XML files. If you create new target structues those will be written here as well.
+  - `logs`: Any data collection sessions or demos you run will write log files here.
+- The screenshots will be written to `Minecraft/run/screenshots`.
 
-Within `build/install/Python_Examples`:
-- `gold-configurations`: All target strutures used in data collection -- stored as XML files. If you create new target structues those will be written here as well.
-- `logs`: Any data collection sessions or demos you run will write log files here.
+All of our code also resides in `build/install/Python_Examples`. 
 
-More on target strctures:
+More on target structures:
 - [This](build/install/Python_Examples/configs_db.csv) contains a list of all target structures we used in data collection labeled as warmup, simple or complex (in increasing order of complexity). This was hand-labeled by us based on intuition -- factoring for things like number of blocks used, number of colors used, inherent structural complexity, number of floating blocks, etc. Hence, this is not a gold standard of labeling in any way. But it can still be a helpful guide when you are trying to pick out which target structures to try.
 - [This](https://github.com/CogComp/cwc-minecraft-models/blob/master/data/logs/splits.json) (in our models repo) contains the data splits we used for modeling purposes. These splits were done across target structures. There are three sets in it: `train` (target structures used in training data), `test` (target structures used in test data) and `val` (target structures used in validation data). When testing the architect demo for example, you might want to avoid using target structures that have been used in training data.
 - To see what a certain target stucture looks like, you can search within the folder housing our data on [Google Drive](https://drive.google.com/drive/folders/1zYXAO95f9qCyuUUd20OVkWOCcCOQ5uUp?usp=sharing). For example, if you are intersted in seeing what `C42.xml` looks like, search within the folder for "C42" and select any one of the pdf files displayed in the search results. Browse through its contents and pick out a chapter titled C42. The first section within that chapter should show you 4 canonical views of the structure.
@@ -65,7 +67,10 @@ cd Minecraft
 
 
 # Running a Minecraft Data Collection session #
-The data collection sessions can either be run locally on a single machine (not recommended outside of development), or across multiple machines via LAN.
+The data collection sessions can either be run locally on a single machine (not recommended outside of development), or across multiple machines via LAN. We would need the following:
+- Two Minecraft clients for the Architect -- one to view the build region and Builder and one to view the target structure
+- One Minecraft client for the Builder
+- Up to 4 optional Minecraft clients for the 4 "Fixed Viewers" -- these are basically clients containing cameras that will take screenshots periodically from the 4 canonical directions around the build region -- one camera per client
 
 ## Running locally ##
 On a single machine, start up 3 Minecraft clients. Then run the following command:
@@ -76,7 +81,7 @@ python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv
 
 where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional). `existing_structure_xml` is the xml file path of a structure to be pre-loaded into the build region and is typically not needed. `sample_user_info.csv` can be safely ignored.
 
-Although not recommended (because of the load this will create on a single machine), you can also run this session with up to 4 "Fixed Viewer" cameras that will take screenshots periodically from those angles (from the 4 canonical directions around the build region) as data is collected. To do so with 4 fixed viewers, start up 3 + 4 = 7 Minecraft clients, then run the following command:
+Although not recommended (because of the load this will create on a single machine), you can also run this session with up to 4 "Fixed Viewers". To do so with 4 Fixed Viewers, start up 3 + 4 = 7 Minecraft clients, then run the following command:
 
 ```
 python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv
@@ -87,7 +92,7 @@ You will need:
 * 1 machine for the Architect (requiring two Minecraft clients)
 * 1 machine for the Builder (requiring one Minecraft client)
 * 1 machine to run the Python session (requiring no clients)
-* optionally, 1 machine to run 4 Fixed Viewer cameras (requires 4 Minecraft clients; this can be the same machine that runs the Python session)
+* optionally, 1 machine to run up to 4 Fixed Viewer cameras (requires 4 Minecraft clients; this can be the same machine that runs the Python session)
 
 The machines must be on the same local area network and reachable via ping (some networks don't allow for this).
 
@@ -110,7 +115,7 @@ python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --lan
 
 where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional). `existing_structure_xml` is the xml file path of a structure to be pre-loaded into the build region and is typically not needed.
 
-Alternatively, you can run a session with up to 4 "Fixed Viewer" cameras that will take screenshots periodically from those angles (from the 4 canonical directions around the build region) as data is collected. To use these Fixed Viewer clients, launch 4 clients on the desired machine, and edit `sample_fixed_viewer.csv` to reflect the IP address of that machine. The current default uses `127.0.0.1` (localhost), i.e. the machine running the Python session will also act as the machine managing the Fixed Viewer clients. Port can remain 10000.
+Alternatively, you can run a session with up to 4 "Fixed Viewer" cameras as well. To use these Fixed Viewer clients, launch 4 clients on the desired machine, and edit `sample_fixed_viewer.csv` to reflect the IP address of that machine. The current default uses `127.0.0.1` (localhost), i.e. the machine running the Python session will also act as the machine managing the Fixed Viewer clients. Port can remain 10000.
 
 To run with Fixed Viewer clients, a session can be run as follows:
 
@@ -119,15 +124,19 @@ python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fix
 ```
 
 # Data format and postprocessing #
-Mention experiment ID here ... TODO
-A data collection session for a given target structure will yield game log output in the form of a json file. A new directory will be created within `build/install/Python_Examples/logs` for this run of the game. The name will be a unique identifier for this run. Within it will be a json file called `raw-observations.json`. A subdirectory of the same name will also be created within `Minecraft/run/screenshots`. This will house all the screenshots taken during the game for the Minecraft clients on that machine. So, if you use multiple machines these screenshots will be distributed across machines. You will need to consolidate all of them on to one central machine where you house your data.
+A data collection session (or any of our demos for that matter) for a given target structure will yield game log output in the form of a json file. A new directory will be created within `build/install/Python_Examples/logs` for this run of the game. The name will be a unique identifier for this run denoting the experiment/game ID. Within it will be a json file called `raw-observations.json`. A subdirectory of the same name will also be created within `Minecraft/run/screenshots`. This will house all the screenshots taken during the game for the Minecraft clients on that machine. So, if you use multiple machines these screenshots will be distributed across machines. You will need to gather all of them on to one central machine where you house your data. These can all be gathered into the `Minecraft/run/screenshots/<experiment-ID>` subdirectory on that machine.
 
-The json file will need to further post-processed to yield the final log files we would be interested in. To do this run `cwc_postprocess_observations.py` (remember to gather all screenshots from multiple machines if needed onto the machine which houses all data and where you are going to run the postprocessor). This will generate the following three files:
+The json file will need to further post-processed to yield the final log files we would be interested in. To do this run `cwc_postprocess_observations.py` (remember to gather all screenshots from multiple machines if needed onto the machine which houses all data and where you are going to run the postprocessor). More specifically, run:
+```
+python cwc_postprocess_observations.py logs/<experiment-ID> --screenshots_dir=../../../Minecraft/run/screenshots/<experiment-ID>
+```
+
+This will generate the following three files in `build/install/Python_Examples/logs/<experiment-ID>`:
 - `postprocessed-observations.json` -- Post-processed json log for the game
 - `aligned-observations.json` -- Post-processed json log for the game with screenshot information added to each observation
 - `log.txt` -- A human-readable log
 
-The data format can be found at https://docs.google.com/document/d/1uo8oZbGhOuSfG5p_7rZlHfPwc2WOjIA0hcMzj70Qtoo/edit.
+The data format can be found [here](https://docs.google.com/document/d/1uo8oZbGhOuSfG5p_7rZlHfPwc2WOjIA0hcMzj70Qtoo/edit).
 
 How to obtain latex/pdf files, dialogue.txt, dialogue-with-actions.txt ... TODO
 
