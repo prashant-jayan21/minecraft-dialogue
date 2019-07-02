@@ -153,7 +153,7 @@ python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --mode=ar
 
 This will basically enable an automated architect with everything else about the session being exactly the same as data collection. You just need to play the role of the Builder. In the game, whenever you need the Architect to speak, trigger it by sending a special chat message "xxx" from the Builder's side. The Architect will then generate one utterance.
 
-The log files generated at the end of the game are the same as those in a data collection session.
+The log files generated at the end of the game are the same as those in a data collection session. You'll need to post-process them further as mentioned above.
 
 # Running the builder demo #
 To run:
