@@ -1,23 +1,20 @@
-# cwc-minecraft #
-
+# Intro #
 This repository is forked from [Project Malmö](https://github.com/Microsoft/malmo), a platform for Artificial Intelligence experimentation and research built on top of Minecraft.
 
 You can find our recently accepted ACL 2019 paper on this work [here](https://github.com/CogComp/cwc-minecraft/blob/master/Collaborative%20Dialogue%20in%20Minecraft_main.pdf) (supplementary [here](https://github.com/CogComp/cwc-minecraft/blob/master/Collaborative%20Dialogue%20in%20Minecraft_supp.pdf)).
 
-## Installation ##
-
+# Installation #
 ** Disclaimer: these instructions have been tested with macOS (Sierra and Mojave) + IntelliJ only. **
 Add Windows stuff ... TODO
 
 You can either install our Malmo fork using our pre-built version or build from source.
 
-### Using our pre-built version ###
+## Using our pre-built version ##
 TODO ...
 1. Download our pre-built version, for Windows or macOS.
 2. Install the dependencies for your OS: [Windows](doc/install_windows.md), [macOS](doc/install_macosx.md)
 
-### Building from source (skip if you are not a developer on this project) ###
-
+## Building from source (skip if you are not a developer on this project) ##
 Follow the instructions to build Malmö from source for your OS (make sure to clone this repository, `https://github.com/CogComp/cwc-minecraft.git`, instead of the original Malmo project):
 * [Windows](doc/build_windows.md)
 * [Linux](doc/build_linux.md)
@@ -38,9 +35,7 @@ cd Minecraft
 
 - Open the ``` Minecraft ``` directory as a project in IntelliJ. IntelliJ should automatically recognize that this is a Gradle project; if it asks if you want to import it as such, follow the directions to do so.
 
-
-## Project structure ##
-
+# Project structure #
 - Code and data: `build/install/Python_Examples`
 - Screenshots: `Minecraft/run/screenshots`
 
@@ -53,9 +48,7 @@ More on target strctures:
 - [This](https://github.com/CogComp/cwc-minecraft-models/blob/master/data/logs/splits.json) (in our models repo) contains the data splits we used for modeling purposes. These splits were done across target structures. There are three sets in it: `train` (target structures used in training data), `test` (target structures used in test data) and `val` (target structures used in validation data). When testing the architect demo for example, you might want to avoid using target structures that have been used in training data.
 - To see what a certain target stucture looks like, you can search within the folder housing our data on [Google Drive](https://drive.google.com/drive/folders/1zYXAO95f9qCyuUUd20OVkWOCcCOQ5uUp?usp=sharing). For example, if you are intersted in seeing what `C42.xml` looks like, search within the folder for "C42" and select any one of the pdf files displayed in the search results. Browse through its contents and pick out a chapter titled C42. The first section within that chapter should show you 4 canonical views of the structure.
 
-
-## Running the Minecraft Client ##
-
+# Running the Minecraft Client #
 There are two ways to do this:
 
 1. On OSX, from terminal:
@@ -68,10 +61,10 @@ cd Minecraft
 2. From within IntelliJ: run the `Minecraft Client` run configuration. If the project was imported as a Gradle project successfully, IntelliJ should already have this run configuration available to you.
 
 
-## Running a Minecraft Data Collection session ###
+# Running a Minecraft Data Collection session #
 The data collection sessions can either be run locally on a single machine (not recommended outside of development), or across multiple machines via LAN.
 
-### Running locally ###
+## Running locally ##
 On a single machine, start up 3 Minecraft clients. Then run the following command:
 
 ```
@@ -86,7 +79,7 @@ Although not recommended (because of the load this will create on a single machi
 python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv
 ```
 
-### Running via LAN ###
+## Running via LAN ##
 You will need:
 * 1 machine for the Architect (requiring two Minecraft clients)
 * 1 machine for the Builder (requiring one Minecraft client)
@@ -122,7 +115,7 @@ To run with Fixed Viewer clients, a session can be run as follows:
 python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --lan
 ```
 
-## Data format and postprocessing ##
+# Data format and postprocessing #
 Mention experiment ID here ... TODO
 A data collection session for a given target structure will yield game log output in the form of a json file. A new directory will be created within `build/install/Python_Examples/logs` for this run of the game. The name will be a unique identifier for this run. Within it will be a json file called `raw-observations.json`. A subdirectory of the same name will also be created within `Minecraft/run/screenshots`. This will house all the screenshots taken during the game for the Minecraft clients on that machine. So, if you use multiple machines these screenshots will be distributed across machines. You will need to consolidate all of them on to one central machine where you house your data.
 
@@ -135,7 +128,7 @@ The data format can be found at https://docs.google.com/document/d/1uo8oZbGhOuSf
 
 How to obtain latex/pdf files, dialogue.txt, dialogue-with-actions.txt ... TODO
 
-## Creating your own target structures ##
+# Creating your own target structures #
 To create target structures, you only need one open Minecraft client open on your local machine.
 
 In this mode, instead of playing games where the target structures are dictated by the file paths `sample_gold_configs.csv`, you now need to specify the names of the __new__ target structures to be created in `sample_gold_configs.csv` (in the `target_structure_xml` column, the other one should remain unspecified). Note that if a given name of a new structure conflicts with any existing structures that exist at that file path, the game for that particular structure will fail before you are able to create a structure by that name. Each target structure is automatically saved at the specified file path after you build it as the Builder in Minecraft and end the mission by pressing __Ctrl+C in the Minecraft client__.
@@ -146,8 +139,7 @@ To run:
 python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --create_target_structures
 ```
 
-## Running the architect demo ##
-
+# Running the architect demo #
 To run: 
 ```
 python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --architect_demo
@@ -157,6 +149,6 @@ This will basically enable an automated architect with everything else about the
 
 The log files generated at the end of the game are the same as those in a data collection session.
 
-## Useful debugging tips ##
-### Disable screenshots ###
+# Useful debugging tips #
+## Disable screenshots ##
 By default, the Minecraft clients take screenshots every time a block is picked up or put down or a chat message is sent/received (saved in `Minecraft/run/screenshots` with the associated experiment ID). This can fill up your disk quickly if you're not careful. If debugging, you can turn off screenshots by setting the `disableScreenshots` static variable found in `Minecraft/src/main/java/cwc/CwCMod.java` to `true` (by default, this is `false`). (This will be made into a more automatic solution in the future.)
