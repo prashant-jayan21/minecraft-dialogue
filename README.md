@@ -1,17 +1,32 @@
 # cwc-minecraft #
 
-This repository is forked from [Project Malmö](https://github.com/Microsoft/malmo), a platform for Artificial Intelligence experimentation and research
-built on top of Minecraft.
+This repository is forked from [Project Malmö](https://github.com/Microsoft/malmo), a platform for Artificial Intelligence experimentation and research built on top of Minecraft.
 
+You can find our recently accepted ACL 2019 paper on this work [here](https://github.com/CogComp/cwc-minecraft/blob/master/Collaborative%20Dialogue%20in%20Minecraft_main.pdf) (supplementary [here](https://github.com/CogComp/cwc-minecraft/blob/master/Collaborative%20Dialogue%20in%20Minecraft_supp.pdf)).
 
 ## Installation ##
 
-** Disclaimer: these instructions have been tested with OSX + IntelliJ only. **
+** Disclaimer: these instructions have been tested with macOS (Sierra and Mojave) + IntelliJ only. **
+Add Windows stuff ... TODO
+
+You can either install our Malmo fork using our pre-built version or build from source.
+
+### Using our pre-built version ###
+TODO ...
+1. Download our pre-built version, for Windows or macOS.
+2. Install the dependencies for your OS: [Windows](doc/install_windows.md), [macOS](doc/install_macosx.md)
+
+### Building from source (skip if you are not a developer on this project) ###
 
 Follow the instructions to build Malmö from source for your OS (make sure to clone this repository, `https://github.com/CogComp/cwc-minecraft.git`, instead of the original Malmo project):
 * [Windows](doc/build_windows.md)
 * [Linux](doc/build_linux.md)
 * [MacOSX](doc/build_macosx.md)
+
+## Python dependencies ##
+Install the following:
+- PyTorch (recommended `v0.4.1` or `v1.0.1` -- these are the ones we have tried out)
+- NLTK
 
 ## Setting up your dev env (skip if you are not a developer on this project) ##
 - Set up a workspace in IntelliJ by following [these instructions](https://bedrockminer.jimdo.com/modding-tutorials/set-up-minecraft-forge/set-up-fast-setup/), or by doing the following:
@@ -33,6 +48,12 @@ Within `build/install/Python_Examples`:
 - `gold-configurations`: All target strutures used in data collection -- stored as XML files. If you create new target structues those will be written here as well.
 - `logs`: Any data collection sessions or demos you run will write log files here.
 
+More on target strctures:
+- [This](build/install/Python_Examples/configs_db.csv) contains a list of all target structures we used in data collection labeled as warmup, simple or complex (in increasing order of complexity). This was hand-labeled by us based on intuition -- factoring for things like number of blocks used, number of colors used, inherent structural complexity, number of floating blocks, etc. Hence, this is not a gold standard of labeling in any way. But it can still be a helpful guide when you are trying to pick out which target structures to try.
+- [This](https://github.com/CogComp/cwc-minecraft-models/blob/master/data/logs/splits.json) (in our models repo) contains the data splits we used for modeling purposes. These splits were done across target structures. There are three sets in it: `train` (target structures used in training data), `test` (target structures used in test data) and `val` (target structures used in validation data). When testing the architect demo for example, you might want to avoid using target structures that have been used in training data.
+- To see what a certain target stucture looks like, you can search within the folder housing our data on [Google Drive](https://drive.google.com/drive/folders/1zYXAO95f9qCyuUUd20OVkWOCcCOQ5uUp?usp=sharing). For example, if you are intersted in seeing what `C42.xml` looks like, search within the folder for "C42" and select any one of the pdf files displayed in the search results. Browse through its contents and pick out a chapter titled C42. The first section within that chapter should show you 4 canonical views of the structure.
+
+
 ## Running the Minecraft Client ##
 
 There are two ways to do this:
@@ -47,17 +68,6 @@ cd Minecraft
 2. From within IntelliJ: run the `Minecraft Client` run configuration. If the project was imported as a Gradle project successfully, IntelliJ should already have this run configuration available to you.
 
 
-
-## Running the Python prototype missions ##
-
-The [Python_Examples directory](https://gitlab-beta.engr.illinois.edu/hockenmaier/cwc-minecraft/tree/master/build/install/Python_Examples) contains sample missions prototyping features required as part of the CWC project.
-These are written in Python using the Malmo API and borrow ideas from the [tutorial examples](https://github.com/Microsoft/malmo/tree/master/Malmo/samples/Python_examples) in the original Malmo project.
-Running a mission involves 2 steps:
-
-1. Run the Minecraft client as mentioned above. You may need to run another one for 2 agent missions.
-
-2. Run the Python code. As of now we recommend using Python 2 (using Python 3 has some issues which we intend to resolve soon -- follow [this issue](https://gitlab-beta.engr.illinois.edu/hockenmaier/cwc-minecraft/issues/6)).
-
 ## Running a Minecraft Data Collection session ###
 The data collection sessions can either be run locally on a single machine (not recommended outside of development), or across multiple machines via LAN.
 
@@ -65,15 +75,15 @@ The data collection sessions can either be run locally on a single machine (not 
 On a single machine, start up 3 Minecraft clients. Then run the following command:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --mode=data_collection
+python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --mode=data_collection
 ```
 
-where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional). `sample_user_info.csv` can be safely ignored.
+where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional). `existing_structure_xml` is the xml file path of a structure to be pre-loaded into the build region and is typically not needed. `sample_user_info.csv` can be safely ignored.
 
-Although not recommended, you can also run this session with "Fixed Viewer" cameras that will take screenshots periodically from those angles as data is collected. To do so, start up 7 Minecraft clients, then run the following command:
+Although not recommended (because of the load this will create on a single machine), you can also run this session with up to 4 "Fixed Viewer" cameras that will take screenshots periodically from those angles (from the 4 canonical directions around the build region) as data is collected. To do so with 4 fixed viewers, start up 3 + 4 = 7 Minecraft clients, then run the following command:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --mode=data_collection
+python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --mode=data_collection
 ```
 
 ### Running via LAN ###
@@ -99,20 +109,21 @@ Edit `sample_user_info.csv` to reflect the correct IP addresses. For each line, 
 A basic session with the above information can be run as follows:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --lan --mode=data_collection
+python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --lan --mode=data_collection
 ```
 
-where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional).
+where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional). `existing_structure_xml` is the xml file path of a structure to be pre-loaded into the build region and is typically not needed.
 
-Alternatively, you can run a session with "Fixed Viewer" cameras that will take screenshots periodically from those angles as data is collected. To use these Fixed Viewer clients, launch 4 clients on the desired machine, and edit `sample_fixed_viewer.csv` to reflect the IP address of that machine. The current default uses `127.0.0.1` (localhost), i.e. the machine running the Python session will also act as the machine managing the Fixed Viewer clients.
+Alternatively, you can run a session with up to 4 "Fixed Viewer" cameras that will take screenshots periodically from those angles (from the 4 canonical directions around the build region) as data is collected. To use these Fixed Viewer clients, launch 4 clients on the desired machine, and edit `sample_fixed_viewer.csv` to reflect the IP address of that machine. The current default uses `127.0.0.1` (localhost), i.e. the machine running the Python session will also act as the machine managing the Fixed Viewer clients. Port can remain 10000.
 
 To run with Fixed Viewer clients, a session can be run as follows:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --lan --mode=data_collection
+python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --lan --mode=data_collection
 ```
 
 ## Data format and postprocessing ##
+Mention experiment ID here ... TODO
 A data collection session for a given target structure will yield game log output in the form of a json file. A new directory will be created within `build/install/Python_Examples/logs` for this run of the game. The name will be a unique identifier for this run. Within it will be a json file called `raw-observations.json`. A subdirectory of the same name will also be created within `Minecraft/run/screenshots`. This will house all the screenshots taken during the game for the Minecraft clients on that machine. So, if you use multiple machines these screenshots will be distributed across machines. You will need to consolidate all of them on to one central machine where you house your data.
 
 The json file will need to further post-processed to yield the final log files we would be interested in. To do this run `cwc_postprocess_observations.py` (remember to gather all screenshots from multiple machines if needed onto the machine which houses all data and where you are going to run the postprocessor). This will generate the following three files:
@@ -122,30 +133,33 @@ The json file will need to further post-processed to yield the final log files w
 
 The data format can be found at https://docs.google.com/document/d/1uo8oZbGhOuSfG5p_7rZlHfPwc2WOjIA0hcMzj70Qtoo/edit.
 
-How to get pdf files, etc. -- TODO
+How to obtain latex/pdf files, dialogue.txt, dialogue-with-actions.txt ... TODO
 
 ## Creating your own target structures ##
 To create target structures, you only need one open Minecraft client open on your local machine.
 
-In this mode, instead of playing games where the target structures are dictated by the file paths in `sample_gold_configs.csv`, you now need to specify the names of the __new__ target structures to be created in `sample_gold_configs.csv`. Note that if a given name of a new structure conflicts with any existing structures that exist at that file path, the game for that particular structure will fail before you are able to create a structure by that name. Each target structure is automatically saved at the specified file path after you build it as the Builder in Minecraft and end the mission by pressing __Ctrl+C in the Minecraft client__.
+In this mode, instead of playing games where the target structures are dictated by the file paths `sample_gold_configs.csv`, you now need to specify the names of the __new__ target structures to be created in `sample_gold_configs.csv` (in the `target_structure_xml` column, the other one should remain unspecified). Note that if a given name of a new structure conflicts with any existing structures that exist at that file path, the game for that particular structure will fail before you are able to create a structure by that name. Each target structure is automatically saved at the specified file path after you build it as the Builder in Minecraft and end the mission by pressing __Ctrl+C in the Minecraft client__.
 
 To run:
 
 ```
-/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --mode=create_target_structures
+python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --mode=create_target_structures
 ```
-
-## Useful debugging tips ##
-### Disable screenshots ###
-By default, the Minecraft clients take screenshots every time a block is picked up or put down or a chat message is sent/received (saved in `Minecraft/run/screenshots` with the associated experiment ID). This can fill up your disk quickly if you're not careful. If debugging, you can turn off screenshots by setting the `disableScreenshots` static variable found in `Minecraft/src/main/java/cwc/CwCMod.java` to `true` (by default, this is `false`). (This will be made into a more automatic solution in the future.)
 
 ## Running the architect demo ##
 
-Run `cwc_run_session.py` with `--mode=architect_demo`. This will basically enable an automated architect with everything else about the session being exactly the same. You just need to play the role of the Builder. In the game, whenever you need the Architect to speak, trigger it by sending a special chat message "xxx" from the Builder's side. The Architect will then generate one utterance.
+To run:
+```
+python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --mode=architect_demo
+```
+
+This will basically enable an automated architect with everything else about the session being exactly the same. You just need to play the role of the Builder. In the game, whenever you need the Architect to speak, trigger it by sending a special chat message "xxx" from the Builder's side. The Architect will then generate one utterance.
+
+The log files generated at the end of the game are the same as those in a data collection session.
 
 ## Running the builder demo ##
 
-To run: 
+To run:
 ```
 /usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --mode=builder_demo
 ```
@@ -153,3 +167,7 @@ To run:
 This will enable the architect to provide natural language instructions to the builder (e.g. `build a blue row of size 3`). The builder will then convert this natural language utterance into a logical form. This will be the input for the planner. Finally, the planner will generate instructions which will be executed by the builder in Minecraft.
 
 The log files generated at the end of the game are the same as those in a data collection session.
+
+## Useful debugging tips ##
+### Disable screenshots ###
+By default, the Minecraft clients take screenshots every time a block is picked up or put down or a chat message is sent/received (saved in `Minecraft/run/screenshots` with the associated experiment ID). This can fill up your disk quickly if you're not careful. If debugging, you can turn off screenshots by setting the `disableScreenshots` static variable found in `Minecraft/src/main/java/cwc/CwCMod.java` to `true` (by default, this is `false`). (This will be made into a more automatic solution in the future.)
