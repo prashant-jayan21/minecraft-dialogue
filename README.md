@@ -145,15 +145,12 @@ Run `cwc_run_session.py` with `--mode=architect_demo`. This will basically enabl
 
 ## Running the builder demo ##
 
-Run `cwc_run_session.py` with `--mode=builder_demo`. More specifically, it will be 
-`python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=0 --mode=builder_demo`
+Run 
+```
+/usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --mode=builder_demo
+```
+.
 
-This command will enable the architect to provide natural language instructions to the builder. i.e. `build a blue row of size 3`. Then the builder will take this natural language uttarnce into a logical form. They will the inputs for the planner. Finally, the planner will generate instructions which will be executed by the builder.
+This will enable the architect to provide natural language instructions to the builder (e.g. `build a blue row of size 3`). The builder will then convert this natural language utterance into a logical form. This will be the input for the planner. Finally, the planner will generate instructions which will be executed by the builder in Minecraft.
 
 The log files generated at the end of the game are the same as those in a data collection session.
-
-## required packages
-The following packages will be required to run the agents
-
-- pytorch
-- nltk (`pip install -U nltk`)
