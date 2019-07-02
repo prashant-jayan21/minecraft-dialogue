@@ -3,12 +3,6 @@ This repository is forked from [Project Malmö](https://github.com/Microsoft/mal
 
 You can find our recently accepted ACL 2019 paper on this work [here](https://github.com/CogComp/cwc-minecraft/blob/master/Collaborative%20Dialogue%20in%20Minecraft_main.pdf) (supplementary [here](https://github.com/CogComp/cwc-minecraft/blob/master/Collaborative%20Dialogue%20in%20Minecraft_supp.pdf)).
 
-## Collaborative Building Task ##
-We define the Collaborative Building Task as a two-player game between an Architect (**A**) and a Builder (**B**). **A** is given a target structure (_Target_) and has to instruct **B** via a text chat interface to build a copy of _Target_ on a given build region. **A** and **B** can communicate back and forth via chat throughout the game (e.g. to resolve confusions or to correct **B**'s mistakes). **B** is given access to an inventory of 120 blocks of six given colors that it can place and remove. **A** can observe **B** and move around in its world, allowing it to provide instructions from varying perspectives. But **A** cannot move blocks, and remains invisible to **B**. The task is complete when the structure built by **B** (_Built_) matches _Target_, invariant to translations within the horizontal plane and rotations about the vertical axis. _Built_ also needs to lie completely within the boundaries of the predefined build region.
-
-## Data recorded ##
-As part of the task, we record the game log as well as screenshots (more [here](https://docs.google.com/document/d/1uo8oZbGhOuSfG5p_7rZlHfPwc2WOjIA0hcMzj70Qtoo/edit#)).
-
 # Installation #
 **Disclaimer: these instructions have been tested with macOS (Sierra and Mojave) + IntelliJ only.**
 
