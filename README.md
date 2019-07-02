@@ -163,7 +163,7 @@ To run:
 
 This will enable the architect to provide natural language instructions to the builder (e.g. `build a blue row of size 3`). The builder will then convert this natural language utterance into a logical form. This will be the input for the planner. Finally, the planner will generate instructions which will be executed by the builder in Minecraft.
 
-The log files generated at the end of the game are the same as those in a data collection session.
+The log files generated at the end of the game are the same as those in a data collection session. You'll need to post-process them further as mentioned above.
 
 # Useful debugging tips #
 ## Disable screenshots ##
