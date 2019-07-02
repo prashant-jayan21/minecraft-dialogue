@@ -24,7 +24,9 @@ Follow the instructions to build Malmö from source for your OS (make sure to cl
 * [MacOSX](doc/build_macosx.md)
 
 ## Python dependencies ##
-Install PyTorch (recommended `v0.4.1` or `v1.0.1` -- these are the ones we have tried out).
+Install the following:
+- PyTorch (recommended `v0.4.1` or `v1.0.1` -- these are the ones we have tried out)
+- NLTK
 
 ## Setting up your dev env (skip if you are not a developer on this project) ##
 - Set up a workspace in IntelliJ by following [these instructions](https://bedrockminer.jimdo.com/modding-tutorials/set-up-minecraft-forge/set-up-fast-setup/), or by doing the following:
