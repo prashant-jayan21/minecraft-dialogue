@@ -1,4 +1,3 @@
-
 ## Build on MacOSX ##
 
 These instructions were tested on MacOSX 10.13.3 (High Sierra).
@@ -6,6 +5,8 @@ These instructions were tested on MacOSX 10.13.3 (High Sierra).
 1. Install Homebrew: http://www.howtogeek.com/211541/homebrew-for-os-x-easily-installs-desktop-apps-and-terminal-utilities/
 
 2. Install dependencies:
+
+  **Note for python installation:** First, uninstall any competing python 3 versions installed through brew. Then, `brew install python3` -- to obtain v3.7 (this version is important for installing `boost-python3` later). Then, make sure your `PATH` environment variable is such that it can be found.
 
   ```
   brew update
@@ -26,7 +27,7 @@ These instructions were tested on MacOSX 10.13.3 (High Sierra).
     7. `make install`
     8. Then you can run the samples that are installed ready-to-run in e.g. `install/Python_Examples`
 
-4. Run the tests:
+4. Run the tests (optional):
     1. `cd MalmoPlatform/build`
     2. `ctest -VV` to run all the tests
     
