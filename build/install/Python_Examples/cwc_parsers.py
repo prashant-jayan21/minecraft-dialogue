@@ -67,8 +67,8 @@ class RuleBasedParser:
                 self.increment_var()
 
             # general spatial relation
-            elif any_exist(primitives_map["spatial_rel"], instr) and any_exist(primitives_map["shape"], instr):
-                to_add = self.parse_general_spatial_rel(instr)
+            #elif any_exist(primitives_map["spatial_rel"], instr) and any_exist(primitives_map["shape"], instr):
+             #   to_add = self.parse_general_spatial_rel(instr)
 
             # isolated shape definition
             elif any_exist(primitives_map["shape"], instr):
@@ -205,6 +205,10 @@ class RuleBasedParser:
         b1, id1 = self.allocate_block_var(ordinal=block_locations[0][0], var=referent_vars[0])
         b2, id2 = self.allocate_block_var(ordinal=block_locations[1][0], var=referent_vars[1])
 
+        if spatial_rel_primitive=="behind":
+            spatial_rel_primitive="north"
+        if spatial_rel_primitive=="front":
+            spatial_rel_primitive="south"
         # append the general spatial relation and return
         logical_form = b1+"^"+b2+"^spatial-rel("+spatial_rel_primitive+",0,w"+str(id2)+",w"+str(id1)+")"
         print(("parse_fine_grained_spatial_rel::parsed instruction:", instruction, "->", logical_form))
@@ -312,7 +316,7 @@ def separate(response, substring_list, separator):
 
 def preprocess(text):
     text = text.lower()
-
+    text=text.replace("bottom-most","bottom-end").replace("top-most","top-end")
     # find %dx%d values and separate
     for i in range(2):
         matches = re.findall('[0-9]+x[0-9]+', text)  
@@ -339,7 +343,8 @@ def preprocess(text):
 if __name__ == '__main__':
     parser = RuleBasedParser()
     argparser = argparse.ArgumentParser()
-    argparser.add_argument('--text', default="Build a red cuboid of size 4 by 3 by 5. Build a second blue square of size 4 above the cuboid such that the 4th block of the square is above the right back corner block of the cuboid")
+    argparser.add_argument('--text', default="Place a blue tower of height 4. Now place a blue row of length 3 such that the left-end of the row is to the right of the top-end of the tower.  Place another blue row of length 3 such that the left-end of the row is to the right of the bottom-end of the tower.")
+#"Build a red row of size 4. Then build a red tower of height 3 such that the bottom-most block of the tower is on top of the left-end of the row.")
     args = argparser.parse_args()
     lf = parser.parse(args.text)
     print(lf)
