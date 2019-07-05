@@ -7,7 +7,7 @@ You can find our recently accepted ACL 2019 paper on this work [here](https://gi
 ## macOS (using our pre-built version) ##
 **Disclaimer: These instructions have been tested with macOS (Sierra and Mojave) only.**
 
-1. Download a pre-built version of our Malmö fork.
+1. Download a pre-built version of our Malmö fork (apart from cloning this repo as well).
 2. Install dependencies as documented [here](doc/install_macosx.md).
 
 ## Windows (building from source) ##
