@@ -7,7 +7,7 @@ You can find our recently accepted ACL 2019 paper on this work [here](https://gi
 ## macOS (using our pre-built version) ##
 **Disclaimer: These instructions have been tested with macOS (Sierra and Mojave) only.**
 
-1. Download the following two pre-built versions of our Malmö fork from https://github.com/rislam/cwc-minecraft/releases/tag/mitre-clients:
+1. Download the following two pre-built versions of our Malmö fork from https://github.com/rislam/cwc-minecraft/releases/tag/mitre-clients (apart from cloning this repo as well):
 - `main-client.zip` -- Minecraft client for running the Architect agent, data collection or creating target structures
 - `builder-client.zip` -- Minecraft client for running the Builder agent
 
