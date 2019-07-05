@@ -161,7 +161,7 @@ To run:
 /usr/bin/python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --mode=builder_demo
 ```
 
-This will enable the architect to provide natural language instructions to the builder (e.g. `build a blue row of size 3`). The builder will then convert this natural language utterance into a logical form. This will be the input for the planner. Finally, the planner will generate instructions which will be executed by the builder in Minecraft.
+This will enable the architect to provide natural language instructions to the builder (e.g. `build a blue row of size 3`). The builder will then convert this natural language utterance into a logical form. This will be the input for the planner. Finally, the planner will generate instructions which will be executed by the builder in Minecraft. More detailed examples can be found [here](https://docs.google.com/document/d/1uCVR-zRsxMJFgY7a8DvNvOtSz5J4IYUwRsxv1qUbBJQ/edit?usp=sharing)
 
 The log files generated at the end of the game are the same as those in a data collection session. You'll need to post-process them further as mentioned above.
 
