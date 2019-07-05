@@ -4,9 +4,9 @@ This repository is forked from [Project Malmö](https://github.com/Microsoft/mal
 You can find our recently accepted ACL 2019 paper on this work [here](https://github.com/CogComp/cwc-minecraft/blob/master/Collaborative%20Dialogue%20in%20Minecraft_main.pdf) (supplementary [here](https://github.com/CogComp/cwc-minecraft/blob/master/Collaborative%20Dialogue%20in%20Minecraft_supp.pdf)).
 
 # Installation #
-**Disclaimer: these instructions have been tested with macOS (Sierra and Mojave) + IntelliJ only.**
-
 ## macOS (using our pre-built version) ##
+**Disclaimer: These instructions have been tested with macOS (Sierra and Mojave) only.**
+
 1. Download a pre-built version of our Malmö fork.
 2. Install dependencies as documented [here](doc/install_macosx.md).
 
