@@ -16,7 +16,7 @@ Each zip file contains a slightly different Minecraft client as mentioned above.
 2. Install dependencies as documented [here](doc/install_macosx.md).
 
 ## Windows (building from source) ##
-Follow the instructions [here](doc/build_windows.md) to build our Malmö fork from source (make sure to clone this repository, `https://github.com/CogComp/cwc-minecraft.git`, instead of the original Malmo project).
+Follow the instructions [here](doc/build_windows.md) to build our Malmö fork from source (make sure to clone this repository, instead of the original Malmo project).
 
 ## Python dependencies ##
 Install the following:
@@ -40,15 +40,14 @@ More on target structures:
 # Running the Minecraft Client #
 There are two ways to do this:
 
-1. On OSX, from terminal:
+1. If building from source, from the project root:
 ```
 cd Minecraft
 ./launchClient.sh
 ```
 (If using a different operating system, run the appropriate `launchClient` script.)
 
-2. From within IntelliJ: run the `Minecraft Client` run configuration. If the project was imported as a Gradle project successfully, IntelliJ should already have this run configuration available to you.
-
+2. If using our pre-built versions, do the same, but from within the previously mentioned unzipped folders -- make sure to use the right one for the right use case.
 
 # Running a Minecraft Data Collection session #
 The data collection sessions can either be run locally on a single machine (not recommended outside of development), or across multiple machines via LAN. We would need the following:
