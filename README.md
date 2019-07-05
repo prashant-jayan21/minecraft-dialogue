@@ -40,12 +40,7 @@ More on target structures:
 # Running the Minecraft Client #
 There are two ways to do this:
 
-1. If building from source, from the project root:
-```
-cd Minecraft
-./launchClient.sh
-```
-(If using a different operating system, run the appropriate `launchClient` script.)
+1. If building from source, from the project root, go to the `Minecraft` directory. Run the `launchClient` script (`./launchClient.sh` for macOS, `launchClient.bat` for Windows, etc.). 
 
 2. If using our pre-built versions, do the same, but from within the previously mentioned unzipped folders -- make sure to use the right one for the right use case.
 
