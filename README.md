@@ -6,32 +6,17 @@ You can find our recently accepted ACL 2019 paper on this work [here](https://gi
 # Installation #
 **Disclaimer: these instructions have been tested with macOS (Sierra and Mojave) + IntelliJ only.**
 
-You can either install our Malmo fork using our pre-built version or build from source.
+## macOS (using our pre-built version) ##
+1. Download a pre-built version of our Malmö fork.
+2. Install dependencies as documented [here](doc/install_macosx.md).
 
-## Using our pre-built version ##
-1. Download our pre-built version, for Windows or macOS.
-2. Install the dependencies for your OS: [Windows](doc/install_windows.md), [macOS](doc/install_macosx.md)
-
-## Building from source (skip if you are not a developer on this project) ##
-Follow the instructions to build Malmö from source for your OS (make sure to clone this repository, `https://github.com/CogComp/cwc-minecraft.git`, instead of the original Malmo project):
-* [Windows](doc/build_windows.md)
-* [Linux](doc/build_linux.md)
-* [MacOSX](doc/build_macosx.md)
+## Windows (building from source) ##
+Follow the instructions [here](doc/build_windows.md) to build our Malmö fork from source (make sure to clone this repository, `https://github.com/CogComp/cwc-minecraft.git`, instead of the original Malmo project).
 
 ## Python dependencies ##
 Install the following:
 - PyTorch (recommended `v0.4.1` or `v1.0.1` -- these are the ones we have tried out)
 - NLTK
-
-## Setting up your dev env (skip if you are not a developer on this project) ##
-- Set up a workspace in IntelliJ by following [these instructions](https://bedrockminer.jimdo.com/modding-tutorials/set-up-minecraft-forge/set-up-fast-setup/), or by doing the following:
-```
-cd Minecraft
-./gradlew setupDecompWorkspace
-./gradlew idea
-```
-
-- Open the ``` Minecraft ``` directory as a project in IntelliJ. IntelliJ should automatically recognize that this is a Gradle project; if it asks if you want to import it as such, follow the directions to do so.
 
 # Project structure #
 At a high-level, the data written by our systems is structured in the project as follows:
