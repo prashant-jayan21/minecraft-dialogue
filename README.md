@@ -132,7 +132,23 @@ This will generate the following three files in `build/install/Python_Examples/l
 
 The data format can be found [here](https://docs.google.com/document/d/1uo8oZbGhOuSfG5p_7rZlHfPwc2WOjIA0hcMzj70Qtoo/edit).
 
-How to obtain latex/pdf files, dialogue.txt, dialogue-with-actions.txt ... TODO
+## Producing LaTeX files with dialogues + screenshots ##
+From a given directory of JSON logfiles, you can produce LaTeX files that, when compiled, produce PDF files containing all dialogues within that directory in a graphical format (e.g., [this PDF](https://drive.google.com/open?id=10AUrzjHHO5tSNeVmTayWowYN8DvBOQsL)). The script produces both simple PDF files (which contain only a screenshot of the final game state as well as the full dialogue) as well as more complete PDFs (containing the former as well as a step-by-step view of each dialogue as it is played out).
+
+To obtain these LaTeX files, run:
+```
+python3 logs_to_latex.py -l /path/to/jsons/dir -s /path/to/screenshots/dir -o output_file_name.tex
+```
+
+It is recommended to only run this on a small subset of JSON logs (as opposed to the entire dataset), as the resulting LaTeX files can become quite large. The resulting LaTeX files (`output_file_name.tex` and `output_file_name-simplified.tex`) are stored in a `tex/` directory that lives within the directory from which the script was run.
+
+## Producing text-only dialogue files ##
+A simpler way of producing human-readable dialogues is to run the following:
+```
+python3 get_text_dialogues.py -l /path/to/jsons/dir -s /path/to/screenshots/dir -o output_file_name.txt
+```
+
+This script produces simple text files of full dialogues indexed by their dialogue ID. The resulting files (`output_file_name-dialogue.txt`, for only text chat; and `output_file_name-dialogue_with_actions.txt`, for the chat interleaved with the Builder's actions) are saved inn a `dialogues/` directory that lives within the directory from which the script was run.
 
 # Creating your own target structures #
 To create target structures, you only need one open Minecraft client open on your local machine.
