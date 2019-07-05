@@ -18,16 +18,6 @@ Install the following:
 - PyTorch (recommended `v0.4.1` or `v1.0.1` -- these are the ones we have tried out)
 - NLTK
 
-## Setting up your dev env (skip if you are not a developer on this project) ##
-- Set up a workspace in IntelliJ by following [these instructions](https://bedrockminer.jimdo.com/modding-tutorials/set-up-minecraft-forge/set-up-fast-setup/), or by doing the following:
-```
-cd Minecraft
-./gradlew setupDecompWorkspace
-./gradlew idea
-```
-
-- Open the ``` Minecraft ``` directory as a project in IntelliJ. IntelliJ should automatically recognize that this is a Gradle project; if it asks if you want to import it as such, follow the directions to do so.
-
 # Project structure #
 At a high-level, the data written by our systems is structured in the project as follows: 
 - Within `build/install/Python_Examples`:
