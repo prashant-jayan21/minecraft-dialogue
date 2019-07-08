@@ -52,7 +52,7 @@ There are two ways to do this:
 The data collection sessions can either be run locally on a single machine (not recommended outside of development), or across multiple machines via LAN. We would need the following:
 - Two Minecraft clients for the Architect -- one to view the build region and Builder and one to view the target structure
 - One Minecraft client for the Builder
-- Up to 4 optional Minecraft clients for the 4 "Fixed Viewers" -- these are basically clients containing cameras that will take screenshots periodically from the 4 canonical directions around the build region -- one camera per client
+- Up to 4 optional Minecraft clients for the 4 "Fixed Viewers" -- these are clients containing cameras that will take screenshots periodically from the 4 canonical directions around the build region -- one camera per client
 
 ## Running locally ##
 On a single machine, start up 3 Minecraft clients. Then run the following command:
@@ -155,7 +155,7 @@ To run:
 python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --mode=architect_demo
 ```
 
-This will basically enable an automated architect with everything else about the session being exactly the same as data collection. You just need to play the role of the Builder. In the game, whenever you need the Architect to speak, trigger it by sending a special chat message "xxx" from the Builder's side. The Architect will then generate one utterance.
+This will enable an automated architect with everything else about the session being exactly the same as data collection. You just need to play the role of the Builder. In the game, whenever you need the Architect to speak, trigger it by sending a special chat message "xxx" from the Builder's side. The Architect will then generate one utterance.
 
 The log files generated at the end of the game are the same as those in a data collection session. You'll need to post-process them further as mentioned above.
 
