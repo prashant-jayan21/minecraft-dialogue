@@ -40,9 +40,13 @@ More on target structures:
 # Running the Minecraft Client #
 There are two ways to do this:
 
-1. If building from source, from the project root, go to the `Minecraft` directory. Run the `launchClient` script (`./launchClient.sh` for macOS, `launchClient.bat` for Windows, etc.). 
+1. If building from source:
+- To run the Architect agent, data collection or creating target structures, switch to branch `main-client` on the repo. To run the Builder agent, switch to branch `master`.
+- From the project root, go to the `Minecraft` directory. Run the `launchClient` script (`./launchClient.sh` for macOS, `launchClient.bat` for Windows, etc.). 
 
-2. If using our pre-built versions, do the same, but from within the previously mentioned unzipped folders -- make sure to use the right one for the right use case.
+2. If using our pre-built versions:
+- To run the Architect agent, data collection or creating target structures, switch to the unzipped folder extracted from `main-client.zip`. To run the Builder agent, switch to the one extracted from `builder-client.zip`.
+- Go to the `Minecraft` directory. Run the `launchClient` script (`./launchClient.sh` for macOS, `launchClient.bat` for Windows, etc.). 
 
 # Running a Minecraft Data Collection session #
 The data collection sessions can either be run locally on a single machine (not recommended outside of development), or across multiple machines via LAN. We would need the following:
