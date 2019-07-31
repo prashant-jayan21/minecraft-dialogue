@@ -1,7 +1,7 @@
 # Intro #
 This repository is forked from [Project Malmö](https://github.com/Microsoft/malmo), a platform for Artificial Intelligence experimentation and research built on top of Minecraft.
 
-You can find our recently accepted ACL 2019 paper on this work [here](https://github.com/CogComp/cwc-minecraft/blob/master/Collaborative%20Dialogue%20in%20Minecraft_main.pdf) (supplementary [here](https://github.com/CogComp/cwc-minecraft/blob/master/Collaborative%20Dialogue%20in%20Minecraft_supp.pdf)).
+You can find our recently accepted ACL 2019 paper on this work [here](https://github.com/prashant-jayan21/minecraft-dialogue/blob/master/Collaborative%20Dialogue%20in%20Minecraft_main.pdf) (supplementary [here](https://github.com/prashant-jayan21/minecraft-dialogue/blob/master/Collaborative%20Dialogue%20in%20Minecraft_supp.pdf)).
 
 # Installation #
 ## macOS (using our pre-built version) ##
@@ -29,7 +29,7 @@ All of our code also resides in `build/install/Python_Examples`.
 
 More on target structures:
 - [This](build/install/Python_Examples/configs_db.csv) contains a list of all target structures we used in data collection labeled as warmup, simple or complex (in increasing order of complexity). This was hand-labeled by us based on intuition -- factoring for things like number of blocks used, number of colors used, inherent structural complexity, number of floating blocks, etc. Hence, this is not a gold standard of labeling in any way. But it can still be a helpful guide when you are trying to pick out which target structures to try.
-- [This](https://github.com/CogComp/cwc-minecraft-models/blob/master/data/logs/splits.json) (in our models repo) contains the data splits we used for modeling purposes. These splits were done across target structures. There are three sets in it: `train` (target structures used in training data), `test` (target structures used in test data) and `val` (target structures used in validation data). When testing the architect demo for example, you might want to avoid using target structures that have been used in training data.
+- [This](https://github.com/prashant-jayan21/minecraft-dialogue-models/blob/master/data/logs/splits.json) (in our models repo) contains the data splits we used for modeling purposes. These splits were done across target structures. There are three sets in it: `train` (target structures used in training data), `test` (target structures used in test data) and `val` (target structures used in validation data). When testing the architect demo for example, you might want to avoid using target structures that have been used in training data.
 - To see what a certain target stucture looks like, you can search within the folder housing our data on [Google Drive](https://drive.google.com/drive/folders/1zYXAO95f9qCyuUUd20OVkWOCcCOQ5uUp?usp=sharing). For example, if you are intersted in seeing what `C42.xml` looks like, search within the folder for "C42" and select any one of the pdf files displayed in the search results. Browse through its contents and pick out a chapter titled C42. The first section within that chapter should show you 4 canonical views of the structure.
 
 # Running the Minecraft Client #
@@ -109,7 +109,7 @@ This will generate the following three files in `build/install/Python_Examples/l
 - `aligned-observations.json` -- Post-processed json log for the game with screenshot information added to each observation
 - `log.txt` -- A human-readable log
 
-The data format can be found [here](https://docs.google.com/document/d/1uo8oZbGhOuSfG5p_7rZlHfPwc2WOjIA0hcMzj70Qtoo/edit).
+The data format can be found [here](https://drive.google.com/open?id=1-__GYErq0uKiO3n_3jlfY9NtJ_Eu1KLh).
 
 ## Producing LaTeX files with dialogues + screenshots ##
 From a given directory of JSON logfiles, you can produce LaTeX files that, when compiled, produce PDF files containing all dialogues within that directory in a graphical format (e.g., [this PDF](https://drive.google.com/open?id=10AUrzjHHO5tSNeVmTayWowYN8DvBOQsL)). The script produces both simple PDF files (which contain only a screenshot of the final game state as well as the full dialogue) as well as more complete PDFs (containing the former as well as a step-by-step view of each dialogue as it is played out).
