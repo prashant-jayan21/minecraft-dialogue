@@ -116,7 +116,7 @@ This will generate the following three files in `build/install/Python_Examples/l
 - `aligned-observations.json` -- Post-processed json log for the game with screenshot information added to each observation
 - `log.txt` -- A human-readable log
 
-The data format can be found [here](https://drive.google.com/open?id=1-__GYErq0uKiO3n_3jlfY9NtJ_Eu1KLh).
+The data format can be found [here](https://docs.google.com/document/d/17F8LlQvxdKK3ggMNzLbJmwcW8mM5elxAAMYK6mDxH5I/edit?usp=sharing).
 
 ## Producing LaTeX files with dialogues + screenshots ##
 From a given directory of JSON logfiles, you can produce LaTeX files that, when compiled, produce PDF files containing all dialogues within that directory in a graphical format (e.g., [this PDF](https://drive.google.com/open?id=10AUrzjHHO5tSNeVmTayWowYN8DvBOQsL)). The script produces both simple PDF files (which contain only a screenshot of the final game state as well as the full dialogue) as well as more complete PDFs (containing the former as well as a step-by-step view of each dialogue as it is played out).
