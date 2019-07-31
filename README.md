@@ -5,9 +5,13 @@ You can find our recently accepted ACL 2019 paper on this work [here](https://gi
 
 # Installation #
 ## macOS (using our pre-built version) ##
-**Disclaimer: These instructions have been tested with macOS (Sierra and Mojave) only.**
+**Disclaimer: These instructions have been tested with Sierra and Mojave only.**
 
-1. Download a pre-built version of our Malmö fork (apart from cloning this repo as well).
+1. Download the pre-built version of our Malmö fork from https://github.com/prashant-jayan21/minecraft-dialogue/releases/tag/minecraft-client (apart from cloning this repo as well):
+- `main-client.zip` -- Minecraft client for running the Architect agent, data collection or creating target structures
+
+You'll then need to run the Minecraft client from the unzipped folder.
+
 2. Install dependencies as documented [here](doc/install_macosx.md).
 
 ## Windows (building from source) ##
@@ -15,17 +19,17 @@ Follow the instructions [here](doc/build_windows.md) to build our Malmö fork fr
 
 ## Python dependencies ##
 Install the following:
-- PyTorch (recommended `v0.4.1` or `v1.0.1` -- these are the ones we have tried out)
-- NLTK
+- [PyTorch](https://pytorch.org/get-started/locally/) (we recommend `v0.4.1` or `v1.0.1` -- these are the ones we have tried out)
+- [NLTK](https://www.nltk.org/install.html)
 
 # Project structure #
-At a high-level, the data written by our systems is structured in the project as follows: 
+At a high-level, the data written by our systems is structured in the project as follows:
 - Within `build/install/Python_Examples`:
   - `gold-configurations`: All target strutures used in data collection -- stored as XML files. If you create new target structues those will be written here as well.
   - `logs`: Any data collection sessions or demos you run will write log files here.
 - The screenshots will be written to `Minecraft/run/screenshots`.
 
-All of our code also resides in `build/install/Python_Examples`. 
+All of our code also resides in `build/install/Python_Examples`.
 
 More on target structures:
 - [This](build/install/Python_Examples/configs_db.csv) contains a list of all target structures we used in data collection labeled as warmup, simple or complex (in increasing order of complexity). This was hand-labeled by us based on intuition -- factoring for things like number of blocks used, number of colors used, inherent structural complexity, number of floating blocks, etc. Hence, this is not a gold standard of labeling in any way. But it can still be a helpful guide when you are trying to pick out which target structures to try.
@@ -35,15 +39,18 @@ More on target structures:
 # Running the Minecraft Client #
 There are two ways to do this:
 
-1. If building from source, from the project root, go to the `Minecraft` directory. Run the `launchClient` script (`./launchClient.sh` for macOS, `launchClient.bat` for Windows, etc.). 
+1. If building from source:
+- From the project root, go to the `Minecraft` directory. Run the `launchClient` script (`./launchClient.sh` for macOS, `launchClient.bat` for Windows, etc.). 
 
-2. If using our pre-built versions, do the same, but from within the previously mentioned unzipped folders -- make sure to use the right one for the right use case.
+2. If using our pre-built versions:
+- Switch to the unzipped folder extracted from `main-client.zip`.
+- Go to the `Minecraft` directory. Run the `launchClient` script (`./launchClient.sh` for macOS, `launchClient.bat` for Windows, etc.). 
 
 # Running a Minecraft Data Collection session #
 The data collection sessions can either be run locally on a single machine (not recommended outside of development), or across multiple machines via LAN. We would need the following:
 - Two Minecraft clients for the Architect -- one to view the build region and Builder and one to view the target structure
 - One Minecraft client for the Builder
-- Up to 4 optional Minecraft clients for the 4 "Fixed Viewers" -- these are basically clients containing cameras that will take screenshots periodically from the 4 canonical directions around the build region -- one camera per client
+- Up to 4 optional Minecraft clients for the 4 "Fixed Viewers" -- these are clients containing cameras that will take screenshots periodically from the 4 canonical directions around the build region -- one camera per client
 
 ## Running locally ##
 On a single machine, start up 3 Minecraft clients. Then run the following command:
@@ -139,16 +146,6 @@ To run:
 ```
 python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --create_target_structures
 ```
-
-# Running the architect demo #
-To run: 
-```
-python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --architect_demo
-```
-
-This will basically enable an automated architect with everything else about the session being exactly the same as data collection. You just need to play the role of the Builder. In the game, whenever you need the Architect to speak, trigger it by sending a special chat message "xxx" from the Builder's side. The Architect will then generate one utterance.
-
-The log files generated at the end of the game are the same as those in a data collection session. You'll need to post-process them further as mentioned above.
 
 # Useful debugging tips #
 ## Disable screenshots ##
