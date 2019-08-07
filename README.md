@@ -1,7 +1,26 @@
-# Intro #
-This repository is forked from [Project Malmö](https://github.com/Microsoft/malmo), a platform for Artificial Intelligence experimentation and research built on top of Minecraft.
+# Introduction #
+This repository contains data collection code for the ACL 2019 paper [Collaborative Dialogue in Minecraft](https://www.aclweb.org/anthology/P19-1537) (supplementary material available [here](https://www.aclweb.org/anthology/attachments/P19-1537.Supplementary.pdf)). 
 
-You can find our recently accepted ACL 2019 paper on this work [here](https://github.com/prashant-jayan21/minecraft-dialogue/blob/master/Collaborative%20Dialogue%20in%20Minecraft_main.pdf) (supplementary [here](https://github.com/prashant-jayan21/minecraft-dialogue/blob/master/Collaborative%20Dialogue%20in%20Minecraft_supp.pdf)).
+More details on this work, as well as a link to download [the full Minecraft Dialogue corpus](https://drive.google.com/drive/folders/16lDzswcQh8DR2jkQJdoVTK-RyVDFPHKa), can be found at [this landing page](http://juliahmr.cs.illinois.edu/Minecraft/). Related modeling code can be found in [this repository](https://github.com/prashant-jayan21/minecraft-dialogue-models).
+
+If you use this work, please cite:
+```
+@inproceedings{narayan-chen-etal-2019-collaborative,
+    title = "Collaborative Dialogue in {M}inecraft",
+    author = "Narayan-Chen, Anjali  and
+      Jayannavar, Prashant  and
+      Hockenmaier, Julia",
+    booktitle = "Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics",
+    month = jul,
+    year = "2019",
+    address = "Florence, Italy",
+    publisher = "Association for Computational Linguistics",
+    url = "https://www.aclweb.org/anthology/P19-1537",
+    pages = "5405--5415",
+}
+```
+
+This repository is forked from [Project Malmö](https://github.com/Microsoft/malmo) (Johnson et al., 2016), a platform for Artificial Intelligence experimentation and research built on top of Minecraft.
 
 # Installation #
 ## macOS (using our pre-built version) ##
