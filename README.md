@@ -21,6 +21,7 @@ Follow the instructions [here](doc/build_windows.md) to build our Malmö fork fr
 ## Python dependencies ##
 Install the following:
 - [PyTorch](https://pytorch.org/get-started/locally/) (we recommend `v0.4.1` or `v1.0.1` -- these are the ones we have tried out)
+  - You might need to refer to https://pytorch.org/get-started/previous-versions/ for installing previous versions
 - [NLTK](https://www.nltk.org/install.html)
 
 # Project structure #
