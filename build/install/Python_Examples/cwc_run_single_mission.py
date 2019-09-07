@@ -253,6 +253,7 @@ def cwc_run_mission(args):
     # poll for observations
     timed_out = False
     all_observations = []
+    time_at_last_state = time.time()
     while not timed_out:
         for i in range((3+num_fixed_viewers) if not create_target_structures else 1):
             ah = agent_hosts[i]
@@ -274,6 +275,7 @@ def cwc_run_mission(args):
                         debug_utils.printObservationElements(json.loads(observation.text))
                         pprint.PrettyPrinter(indent=4).pprint(json.loads(observation.text))
                     all_observations.append(observation)
+                    time_at_last_state = time.time()
 
                 if architect_demo:
                     for observation in world_state.observations:
@@ -307,6 +309,38 @@ def cwc_run_mission(args):
                             all_observations = all_observations[:-1 * len(world_state.observations)]
 
                 print("-----")
+
+            if architect_demo and i == builder_idx:
+                time_since_last_state = time.time()-time_at_last_state
+
+                if time_since_last_state > 10:
+                    print("Speak Architect")
+
+                    def f(all_observations):
+                        all_world_states = []
+
+                        for observation in all_observations:
+                            world_state = json.loads(observation.text)
+                            world_state["Timestamp"] = observation.timestamp.replace(microsecond=0).isoformat(' ')
+                            # debug_utils.prettyPrintObservation(world_state)
+                            all_world_states.append(world_state)
+
+                        return all_world_states
+
+                    all_world_states = f(all_observations)
+
+                    reformatted = reformatObservations(all_world_states)
+                    all_world_states_merged = mergeObservations(reformatted)
+                    string_to_write = postprocess(all_world_states_merged, False)
+
+                    log = {}
+                    log["WorldStates"] = all_world_states_merged
+
+                    # pprint.PrettyPrinter(indent=4).pprint(log)
+                    gen_architect_utterance = generate_seq2seq_online.predict(args2, config_name, config_structure, log, config_params, models, encoder_vocab, decoder_vocab)
+                    agent_hosts[2].sendCommand("chat " + gen_architect_utterance)
+
+                    # all_observations = all_observations[:-1 * len(world_state.observations)]
 
         time.sleep(1)
 
