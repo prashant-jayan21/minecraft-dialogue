@@ -277,37 +277,6 @@ def cwc_run_mission(args):
                     all_observations.append(observation)
                     time_at_last_state = time.time()
 
-                if architect_demo:
-                    for observation in world_state.observations:
-                        if json.loads(observation.text).get('Chat') == ['<Builder> xxx']:
-                            print("Speak Architect")
-
-                            def f(all_observations):
-                                all_world_states = []
-
-                                for observation in all_observations:
-                                    world_state = json.loads(observation.text)
-                                    world_state["Timestamp"] = observation.timestamp.replace(microsecond=0).isoformat(' ')
-                                    # debug_utils.prettyPrintObservation(world_state)
-                                    all_world_states.append(world_state)
-
-                                return all_world_states
-
-                            all_world_states = f(all_observations)
-
-                            reformatted = reformatObservations(all_world_states)
-                            all_world_states_merged = mergeObservations(reformatted)
-                            string_to_write = postprocess(all_world_states_merged, False)
-
-                            log = {}
-                            log["WorldStates"] = all_world_states_merged
-
-                            # pprint.PrettyPrinter(indent=4).pprint(log)
-                            gen_architect_utterance = generate_seq2seq_online.predict(args2, config_name, config_structure, log, config_params, models, encoder_vocab, decoder_vocab)
-                            agent_hosts[2].sendCommand("chat " + gen_architect_utterance)
-
-                            all_observations = all_observations[:-1 * len(world_state.observations)]
-
                 print("-----")
 
             if architect_demo and i == builder_idx:
