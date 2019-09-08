@@ -8,10 +8,11 @@ from argparse import Namespace
 import MalmoPython, numpy as np
 import cwc_mission_utils as mission_utils, cwc_debug_utils as debug_utils, cwc_io_utils as io_utils
 from cwc_postprocess_observations import reformatObservations, mergeObservations, postprocess
+from config_diff_tool.diff import get_diff
 
 sys.path.append('../../../../cwc-minecraft-models/python')
 import generate_seq2seq_online
-from utils import get_gold_config
+from utils import get_gold_config, get_built_config
 from json_to_xml import to_xml
 
 def addFixedViewers(n):
@@ -254,6 +255,9 @@ def cwc_run_mission(args):
     timed_out = False
     all_observations = []
     time_at_last_state = time.time()
+    prev_minimal_diff, _ = get_diff(config_structure, [])
+    prev_diff_size = len(prev_minimal_diff["gold_minus_built"]) + len(prev_minimal_diff["built_minus_gold"])
+
     while not timed_out:
         for i in range((3+num_fixed_viewers) if not create_target_structures else 1):
             ah = agent_hosts[i]
@@ -276,6 +280,62 @@ def cwc_run_mission(args):
                         pprint.PrettyPrinter(indent=4).pprint(json.loads(observation.text))
                     all_observations.append(observation)
                     time_at_last_state = time.time()
+
+                def f(all_observations):
+                    all_world_states = []
+
+                    for observation in all_observations:
+                        world_state = json.loads(observation.text)
+                        world_state["Timestamp"] = observation.timestamp.replace(microsecond=0).isoformat(' ')
+                        # debug_utils.prettyPrintObservation(world_state)
+                        all_world_states.append(world_state)
+
+                    return all_world_states
+
+                all_world_states = f(all_observations)
+
+                reformatted = reformatObservations(all_world_states)
+                all_world_states_merged = mergeObservations(reformatted)
+                string_to_write = postprocess(all_world_states_merged, False)
+
+                log = {}
+                log["WorldStates"] = all_world_states_merged
+
+                minimal_diff, _ = get_diff(config_structure, get_built_config(log["WorldStates"][-1]))
+                diff_size = len(minimal_diff["gold_minus_built"]) + len(minimal_diff["built_minus_gold"])
+                print(diff_size)
+
+                if diff_size > prev_diff_size:
+                    print("Architect needs to interrupt")
+                    print("Speak Architect")
+
+                    def f(all_observations):
+                        all_world_states = []
+
+                        for observation in all_observations:
+                            world_state = json.loads(observation.text)
+                            world_state["Timestamp"] = observation.timestamp.replace(microsecond=0).isoformat(' ')
+                            # debug_utils.prettyPrintObservation(world_state)
+                            all_world_states.append(world_state)
+
+                        return all_world_states
+
+                    all_world_states = f(all_observations)
+
+                    reformatted = reformatObservations(all_world_states)
+                    all_world_states_merged = mergeObservations(reformatted)
+                    string_to_write = postprocess(all_world_states_merged, False)
+
+                    log = {}
+                    log["WorldStates"] = all_world_states_merged
+
+                    # pprint.PrettyPrinter(indent=4).pprint(log)
+                    gen_architect_utterance = "please undo that action"
+                    agent_hosts[2].sendCommand("chat " + gen_architect_utterance)
+
+                    # all_observations = all_observations[:-1 * len(world_state.observations)]
+
+                prev_diff_size = diff_size
 
                 print("-----")
 
