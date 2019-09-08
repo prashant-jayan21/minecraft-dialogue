@@ -362,6 +362,10 @@ def cwc_run_mission(args):
                     all_world_states_merged = mergeObservations(reformatted)
                     string_to_write = postprocess(all_world_states_merged, False)
 
+                    extra_dummy_world_state = copy.deepcopy(all_world_states_merged[-1])
+                    extra_dummy_world_state["ChatHistory"].append("<Builder> xxx")
+                    all_world_states_merged.append(extra_dummy_world_state)
+
                     log = {}
                     log["WorldStates"] = all_world_states_merged
 
