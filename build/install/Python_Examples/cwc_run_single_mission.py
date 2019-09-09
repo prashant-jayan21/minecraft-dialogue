@@ -331,7 +331,7 @@ def cwc_run_mission(args):
                     log["WorldStates"] = all_world_states_merged
 
                     # pprint.PrettyPrinter(indent=4).pprint(log)
-                    gen_architect_utterance = "please undo that action"
+                    gen_architect_utterance = "sorry, please undo that action"
                     agent_hosts[2].sendCommand("chat " + gen_architect_utterance)
 
                     # all_observations = all_observations[:-1 * len(world_state.observations)]
@@ -343,7 +343,7 @@ def cwc_run_mission(args):
             if architect_demo and i == builder_idx:
                 time_since_last_state = time.time()-time_at_last_state
 
-                if time_since_last_state > 7:
+                if time_since_last_state > 10:
                     print("Speak Architect")
 
                     def f(all_observations):
