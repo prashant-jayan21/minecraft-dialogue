@@ -343,7 +343,7 @@ def cwc_run_mission(args):
             if architect_demo and i == builder_idx:
                 time_since_last_state = time.time()-time_at_last_state
 
-                if time_since_last_state > 10:
+                if time_since_last_state > 7:
                     print("Speak Architect")
 
                     def f(all_observations):
