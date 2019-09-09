@@ -257,6 +257,7 @@ def cwc_run_mission(args):
     time_at_last_state = time.time()
     prev_minimal_diff, _ = get_diff(config_structure, [])
     prev_diff_size = len(prev_minimal_diff["gold_minus_built"]) + len(prev_minimal_diff["built_minus_gold"])
+    prev_gen_architect_utterance = ""
 
     while not timed_out:
         for i in range((3+num_fixed_viewers) if not create_target_structures else 1):
@@ -370,10 +371,12 @@ def cwc_run_mission(args):
                     log["WorldStates"] = all_world_states_merged
 
                     # pprint.PrettyPrinter(indent=4).pprint(log)
-                    gen_architect_utterance = generate_seq2seq_online.predict(args2, config_name, config_structure, log, config_params, models, encoder_vocab, decoder_vocab)
+                    gen_architect_utterance = generate_seq2seq_online.predict(args2, config_name, config_structure, log, config_params, models, encoder_vocab, decoder_vocab, prev_gen_architect_utterance)
                     agent_hosts[2].sendCommand("chat " + gen_architect_utterance)
 
                     # all_observations = all_observations[:-1 * len(world_state.observations)]
+
+                    prev_gen_architect_utterance = gen_architect_utterance
 
         time.sleep(1)
 
