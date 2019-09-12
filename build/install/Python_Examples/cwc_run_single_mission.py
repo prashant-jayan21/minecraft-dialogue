@@ -258,6 +258,7 @@ def cwc_run_mission(args):
     prev_minimal_diff, _ = get_diff(config_structure, [])
     prev_diff_size = len(prev_minimal_diff["gold_minus_built"]) + len(prev_minimal_diff["built_minus_gold"])
     prev_gen_architect_utterance = ""
+    threshold = 10
 
     while not timed_out:
         for i in range((3+num_fixed_viewers) if not create_target_structures else 1):
@@ -302,6 +303,33 @@ def cwc_run_mission(args):
                 log = {}
                 log["WorldStates"] = all_world_states_merged
 
+                def get_last_state_type(last_state, penultimate_state):
+                    if last_state["ChatHistory"] == penultimate_state["ChatHistory"]:
+                        return "builder_action"
+
+                    last_utterance = last_state["ChatHistory"][-1]
+                    last_speaker = "Architect" if "Architect" in last_utterance.split()[0] else "Builder"
+                    if last_speaker == "Architect":
+                        return "architect_speaks"
+                    else:
+                        return "builder_speaks"
+
+                if len(log["WorldStates"]) < 2:
+                    penultimate_state = {
+                        "ChatHistory": []
+                    }
+                else:
+                    penultimate_state = log["WorldStates"][-2]
+
+                last_state_type = get_last_state_type(log["WorldStates"][-1], penultimate_state)
+
+                if last_state_type == "builder_action":
+                    threshold = 5
+                elif last_state_type == "architect_speaks":
+                    threshold = 10
+                else:
+                    threshold = 2
+
                 minimal_diff, _ = get_diff(config_structure, get_built_config(log["WorldStates"][-1]))
                 diff_size = len(minimal_diff["gold_minus_built"]) + len(minimal_diff["built_minus_gold"])
                 print(diff_size)
@@ -343,7 +371,8 @@ def cwc_run_mission(args):
             if architect_demo and i == builder_idx:
                 time_since_last_state = time.time()-time_at_last_state
 
-                if time_since_last_state > 10:
+                if time_since_last_state > threshold:
+                    print(threshold)
                     print("Speak Architect")
 
                     def f(all_observations):
