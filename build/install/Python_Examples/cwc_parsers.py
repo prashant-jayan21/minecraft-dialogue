@@ -1,19 +1,46 @@
 
 import re, string, argparse
 
-ordinal_map = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6, "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10,"1st":1, "2nd":2, "3rd":3, "4th":4, "5th":5, "6th":6, "7th":7, "8th":8, "9th":9, "10th":10}
-primitives_map = {"shape": ["row", "column", "tower", "square", "rectangle","cube","cuboid", "it"],                         # FIXME: is just "it" dangerous for regex split?
-                           "color": ["red", "blue", "green", "purple", "orange", "yellow"],
-                           "number": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
-                                      "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"],      # FIXME: handle sizes of "x by y", "x x y", etc
-                           "spatial_rel": ["north", "south", "east", "west", "top", "bottom"]} # FIXME: "the bottom block of the tower" is troublesome
-numbers_map = {"one": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10"}
-dirs_map = {"north": ["back", "behind"], "south": ["front"], "east": ["right"], "west": ["left"], "top": ["above"], "bottom": ["below", "under", "underneath", "beneath"]}
+ordinal_map = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, 
+               "sixth": 6, "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10,
+               "1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5, 
+               "6th": 6, "7th": 7, "8th": 8, "9th": 9, "10th": 10}
+
+ordinals = ordinal_map.keys()
+
+primitives_map = \
+    {"shape": ["row", "column", "tower", "square", "rectangle","cube","cuboid", "it"],          # FIXME: is just "it" dangerous for regex split?
+     "color": ["red", "blue", "green", "purple", "orange", "yellow"],
+     "number": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+                "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"], # FIXME: handle sizes of "x by y", "x x y", etc
+     "spatial_rel": ["north", "south", "east", "west", "top", "bottom"]}                        # FIXME: "the bottom block of the tower" is troublesome
+
+numbers_map = {"one": "1", "two": "2", "three": "3", "four": "4", "five": "5", 
+               "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10"}
+
+dirs_map = {"north": ["back", "behind"], 
+            "south": ["front"], 
+            "east": ["right"], 
+            "west": ["left"], 
+            "top": ["above"], 
+            "bottom": ["below", "under", "underneath", "beneath"]}
+
 general_dirs_map = {"north": "behind", "south": "front", "east": "right", "west": "left", "top": "top", "bottom": "bottom"}
+
 dims = {"row": ["width"], "tower": ["height"], "column": ["length"], "square": ["size"],"cube": ["size"] ,"rectangle":["length","width"],"cuboid":["length","width","height"]}
-ordinals = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth",
-            "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th"]
-location_predicates = ['top-behind-left', 'top-left-behind', 'behind-top-left', 'behind-left-top', 'left-behind-top', 'left-top-behind', 'top-behind-right', 'top-right-behind', 'behind-top-right', 'behind-right-top', 'right-behind-top', 'right-top-behind', 'top-front-left', 'top-left-front', 'front-top-left', 'front-left-top', 'left-front-top', 'left-top-front', 'top-front-right', 'top-right-front', 'front-top-right', 'front-right-top', 'right-front-top', 'right-top-front', 'bottom-behind-left', 'bottom-left-behind', 'behind-bottom-left', 'behind-left-bottom', 'left-behind-bottom', 'left-bottom-behind', 'bottom-behind-right', 'bottom-right-behind', 'behind-bottom-right', 'behind-right-bottom', 'right-behind-bottom', 'right-bottom-behind', 'bottom-front-left', 'bottom-left-front', 'front-bottom-left', 'front-left-bottom', 'left-front-bottom', 'left-bottom-front', 'bottom-front-right', 'bottom-right-front', 'front-bottom-right', 'front-right-bottom', 'right-front-bottom', 'right-bottom-front','behind-left', 'left-behind', 'behind-right', 'right-behind', 'front-left', 'left-front', 'front-right', 'right-front','left-end','right-end','front-end','behind-end','top-end','bottom-end']
+
+location_predicates = \
+    ['top-behind-left', 'top-left-behind', 'behind-top-left', 'behind-left-top', 'left-behind-top', 'left-top-behind', 
+     'top-behind-right', 'top-right-behind', 'behind-top-right', 'behind-right-top', 'right-behind-top', 'right-top-behind', 
+     'top-front-left', 'top-left-front', 'front-top-left', 'front-left-top', 'left-front-top', 'left-top-front', 
+     'top-front-right', 'top-right-front', 'front-top-right', 'front-right-top', 'right-front-top', 'right-top-front', 
+     'bottom-behind-left', 'bottom-left-behind', 'behind-bottom-left', 'behind-left-bottom', 'left-behind-bottom', 'left-bottom-behind', 
+     'bottom-behind-right', 'bottom-right-behind', 'behind-bottom-right', 'behind-right-bottom', 'right-behind-bottom', 'right-bottom-behind', 
+     'bottom-front-left', 'bottom-left-front', 'front-bottom-left', 'front-left-bottom', 'left-front-bottom', 'left-bottom-front', 
+     'bottom-front-right', 'bottom-right-front', 'front-bottom-right', 'front-right-bottom', 'right-front-bottom', 'right-bottom-front',
+     'behind-left', 'left-behind', 'behind-right', 'right-behind', 
+     'front-left', 'left-front', 'front-right', 'right-front',
+     'left-end', 'right-end', 'front-end', 'behind-end', 'back-end', 'top-end', 'bottom-end']
 
 class DummyParser:
     """ Dummy parser that provides a hard-coded logical form as output parse, or passes through the input text directly to the planner.  """
@@ -47,12 +74,12 @@ class RuleBasedParser:
 
         self.reset()
 
-        print(("parse::received instructions:", instruction))
+        print("parse::received instructions:", instruction)
         instruction = preprocess(instruction)
 
         # split the utterance by delimiters '.' and 'such that'
         instructions = [instr.strip() for instr in re.split(r'\.| such that', instruction) if len(instr.strip()) > 0]
-        print(("parse::parsing instructions:", instructions, "\n"))
+        print("parse::parsing instructions:", instructions, "\n")
 
         # parse the utterances
         logical_form = []
@@ -60,7 +87,10 @@ class RuleBasedParser:
             to_add = None
 
             # fine-grained spatial relation
-            if any_exist(['corner','block','-end'],instr) and  any_exist(primitives_map["spatial_rel"], instr) and any_exist(primitives_map["shape"], instr) and (any_exist(ordinals,instr) or any_exist(location_predicates, instr)):
+            if any_exist(['corner', 'block', '-end'], instr) and \
+                any_exist(primitives_map["spatial_rel"], instr) and \
+                any_exist(primitives_map["shape"], instr) and \
+                (any_exist(ordinals, instr) or any_exist(location_predicates, instr)):
 
             #if "block" in instr and any_exist(primitives_map["spatial_rel"], instr) and any_exist(primitives_map["shape"], instr):
                 to_add = self.parse_fine_grained_spatial_rel(instr)
@@ -81,28 +111,28 @@ class RuleBasedParser:
                 return None, None, None
 
             logical_form.append(to_add)
-            print(("parse::current_shapes:", self.current_shapes, "\n"))
+            print("parse::current_shapes:", self.current_shapes, "\n")
 
-        print(("\nparse::parse result:", "^".join(logical_form)))
+        print("\nparse::parse result:", "^".join(logical_form))
         return "^".join(logical_form), self.current_shapes, logical_form
 
     def parse_isolated_shape(self, instruction): 
         """ Parses an instruction that defines a shape in isolation. """
-        print(("parse_isolated_shape::parsing instruction:", instruction, "..."))
+        print("parse_isolated_shape::parsing instruction:", instruction, "...")
         # get relevant values
         primitive_values = {}
         for token in instruction.split():
             for primitive_type in primitives_map:
                 if token in primitives_map[primitive_type]:
                     if primitive_type in primitive_values:
-                        print(("parse_isolated_shape::Warning: type", primitive_type, "("+primitive_values[primitive_type][0]+") already processed for instruction", instruction))
+                        print("parse_isolated_shape::Warning: type", primitive_type, "("+primitive_values[primitive_type][0]+") already processed for instruction", instruction)
                     elif primitive_type not in primitive_values:
                         primitive_values[primitive_type]=[]
                     primitive_values[primitive_type].append(token)
 
         # missing information?
         if not set(primitive_values.keys()).issuperset(set(['shape', 'number'])):
-            print(("parse_isolated_shape::Warning: instruction", instruction, "is missing information."))
+            print("parse_isolated_shape::Warning: instruction", instruction, "is missing information.")
 
         # string together logical form fragments
         logical_form = []
@@ -111,22 +141,22 @@ class RuleBasedParser:
             if lf is not None:
                 logical_form.append(lf)
             elif primitive_type != 'color':
-                print(('parse_isolated_shape::Warning: missing type', primitive_type))
+                print('parse_isolated_shape::Warning: missing type', primitive_type)
 
         if primitive_values.get("shape") is None:
-            print(("parse_isolated_shape::Error: no shape found in instruction:", instruction))
+            print("parse_isolated_shape::Error: no shape found in instruction:", instruction)
             return None
 
         # add this shape to list of processed shapes
         self.current_shapes.append([primitive_values["shape"][0], self.get_var()])
 
         # join and return full logical form
-        print(("parse_isolated_shape::parsed instruction:", instruction, "->", "^".join(logical_form)))
+        print("parse_isolated_shape::parsed instruction:", instruction, "->", "^".join(logical_form))
         return "^".join(logical_form)
 
     def parse_general_spatial_rel(self, instruction):
         """ Parses an instruction that defines a shape with a general spatial relation. """
-        print(("parse_general_spatial_rel::parsing instruction:", instruction, "..."))
+        print("parse_general_spatial_rel::parsing instruction:", instruction, "...")
 
         # find the general spatial relation
         instr_split = regex_split(instruction, "spatial_rel")
@@ -150,12 +180,12 @@ class RuleBasedParser:
         # construct the logical form
         var = self.get_var()
         logical_form = self.parse_isolated_shape(instr_split[0])+"^"+spatial_rel_primitive+'('+var+','+referent_var+')'
-        print(("parse_general_spatial_rel::parsed instruction:", instruction, "->", logical_form))
+        print("parse_general_spatial_rel::parsed instruction:", instruction, "->", logical_form)
         return logical_form
 
     def parse_fine_grained_spatial_rel(self, instruction):
         """ Parses an instruction that defines a fine-grained spatial relation between two existing shapes. """
-        print(("parse_fine_grained_spatial_rel::parsing instruction:", instruction, "..."))
+        print("parse_fine_grained_spatial_rel::parsing instruction:", instruction, "...")
 
         # find the general spatial relation
         instr_split = regex_split(instruction, "spatial_rel")
@@ -211,7 +241,7 @@ class RuleBasedParser:
             spatial_rel_primitive="south"
         # append the general spatial relation and return
         logical_form = b1+"^"+b2+"^spatial-rel("+spatial_rel_primitive+",0,w"+str(id2)+",w"+str(id1)+")"
-        print(("parse_fine_grained_spatial_rel::parsed instruction:", instruction, "->", logical_form))
+        print("parse_fine_grained_spatial_rel::parsed instruction:", instruction, "->", logical_form)
         return logical_form
 
     def allocate_block_var(self, ordinal, var):
@@ -248,12 +278,12 @@ def get_regex(primitive_type):
 
 def regex_split(instruction, primitive_type):
     instr_split = re.split(get_regex(primitive_type), instruction)
-    # print("regex_split::", instruction, ", regex:", get_regex(primitive_type))
+    print("regex_split::", instruction+", regex:", get_regex(primitive_type), "->", instr_split)
 
     # unhandled
     if len(instr_split) != 3:
         if primitive_type != "ordinals" and primitive_type != "location_predicates":
-            print(("parse_general_spatial_rel::Warning: unhandled number of", primitive_type+"s found in instruction:", instruction))
+            print("parse_general_spatial_rel::Warning: unhandled number of", primitive_type+"s found in instruction:", instruction)
         return None
 
     return [instr.strip() for instr in instr_split]
@@ -283,7 +313,7 @@ def format_lf(primitive_type, primitive_values, var):
         
         return s[:-1]
 
-    print(("format_lf::Error: no format found for type:", primitive_type))
+    print("format_lf::Error: no format found for type:", primitive_type)
     return None
 
 def define_block(block_id_counter, ordinal, var):
@@ -316,15 +346,16 @@ def separate(response, substring_list, separator):
 
 def preprocess(text):
     text = text.lower()
-    text=text.replace("bottom-most","bottom-end").replace("top-most","top-end")
+    text = text.replace("bottom-most", "bottom-end").replace("top-most", "top-end")
+
     # find %dx%d values and separate
     for i in range(2):
         matches = re.findall('[0-9]+x[0-9]+', text)  
         text = separate(text, matches, 'x')
 
     for lp in location_predicates:
-        l = lp.replace("-"," ")
-        text = text.replace(l,lp)
+        l = lp.replace("-", " ")
+        text = text.replace(l, lp)
 
     for key in dirs_map:
         tokens = text.split()
@@ -344,7 +375,7 @@ if __name__ == '__main__':
     parser = RuleBasedParser()
     argparser = argparse.ArgumentParser()
     argparser.add_argument('--text', default="Place a blue tower of height 4. Now place a blue row of length 3 such that the left-end of the row is to the right of the top-end of the tower.  Place another blue row of length 3 such that the left-end of the row is to the right of the bottom-end of the tower.")
-#"Build a red row of size 4. Then build a red tower of height 3 such that the bottom-most block of the tower is on top of the left-end of the row.")
+    #"Build a red row of size 4. Then build a red tower of height 3 such that the bottom-most block of the tower is on top of the left-end of the row.")
     args = argparser.parse_args()
     lf = parser.parse(args.text)
     print(lf)

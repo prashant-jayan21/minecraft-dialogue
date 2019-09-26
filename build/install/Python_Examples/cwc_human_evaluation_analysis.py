@@ -431,10 +431,10 @@ def print_micro_statistics(metric_by_source, metric, terms):
 		ignore_fail = np.mean([x for x in values_arr if x != 'FAIL'])
 		fail_0 = np.mean([x if x != 'FAIL' else 0.0 for x in values_arr])
 		fail_1 = np.mean([x if x != 'FAIL' else 1.0 for x in values_arr])
-		print((source+", ignoring FAIL: ").ljust(30), "{:.2f}".format(ignore_fail)) # should this be normalized by utterance length?
-		print((source+", FAIL=0.0: ").ljust(30), "{:.2f}".format(fail_0))
-		print((source+", FAIL=1.0: ").ljust(30), "{:.2f}".format(fail_1))
-		print((source+"  FAIL %:").ljust(30), "{:.2f}".format(percent_failed))
+		print(source+", ignoring FAIL: ").ljust(30), "{:.2f}".format(ignore_fail) # should this be normalized by utterance length?
+		print(source+", FAIL=0.0: ").ljust(30), "{:.2f}".format(fail_0)
+		print(source+", FAIL=1.0: ").ljust(30), "{:.2f}".format(fail_1)
+		print(source+"  FAIL %:").ljust(30), "{:.2f}".format(percent_failed)
 		print()
 
 	print('\nPer-token micro', metric, 'statistics (modified):')

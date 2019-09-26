@@ -81,7 +81,7 @@ def align(all_screenshot_filenames, num_fixed_viewers):
 
     all_aligned_filenames = [item for t in aligned_tuples for item in t]
     all_unaligned_filenames = set(all_screenshot_filenames) - set(all_aligned_filenames)
-    print(("UNALIGNED SCREENSHOTS: " + str(all_unaligned_filenames) + "\n"))
+    print("UNALIGNED SCREENSHOTS: " + str(all_unaligned_filenames) + "\n")
 
     return aligned_tuples
 
