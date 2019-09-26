@@ -35,8 +35,8 @@ public class CwCMod {
 	public static final String ORACLE = "Oracle";
 	public static String[] FIXED_VIEWERS;
 
-	public static boolean demoMode = true;
-	public static boolean flipStartingPosition = true;
+	public static boolean demoMode = false;
+	public static boolean flipStartingPosition = false;
 	public static boolean disableScreenshots = false;
 
 	public static boolean enableAIToggle = false;		// whether or not the original Malmo AI/Human toggle option is enabled
