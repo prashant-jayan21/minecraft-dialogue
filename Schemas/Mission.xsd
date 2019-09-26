@@ -6,10 +6,10 @@
            xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
            elementFormDefault="qualified"
            jaxb:version="2.1"
-           version="0.35">
+           version="0.37">
 
-    <xs:include schemaLocation="Types.xsd" />
-    <xs:include schemaLocation="MissionHandlers.xsd" />
+    <xs:include schemaLocation="Types.xsd" /> 
+    <xs:include schemaLocation="MissionHandlers.xsd" /> 
 
     <xs:element name="Mission">
         <xs:annotation>
@@ -31,7 +31,7 @@
     <xs:element name="ModSettings">
         <xs:annotation>
             <xs:documentation>
-              Settings here are independent of the mission but affect how it is run.
+              Settings here are independent of the mission but affect how it is run. 
             </xs:documentation>
         </xs:annotation>
         <xs:complexType>
@@ -40,9 +40,9 @@
                     <xs:annotation>
                         <xs:documentation>
                             Use this to overclock Minecraft - to make Minecraft time run faster than normal.
-
+                        
                             This sets the delay that Minecraft uses between world ticks, in milliseconds. The default is 50ms per tick (20Hz).
-                            Double-speed would be 25ms/tick (40Hz). For best results, stick to reasonable values (that the server
+                            Double-speed would be 25ms/tick (40Hz). For best results, stick to reasonable values (that the server 
                             might be able to cope with), which also result in a whole number of ticks per second.
                         </xs:documentation>
                     </xs:annotation>
@@ -63,13 +63,13 @@
             </xs:all>
         </xs:complexType>
     </xs:element>
-
+    
     <xs:element name="ServerSection">
         <xs:annotation>
             <xs:documentation>
               The Minecraft server stores the world and keeps track of the blocks that have changed. Each Minecraft client connects to the server when it needs to
               change blocks or ask what blocks are present, for example. With multi-agent missions there may be many clients, all connected to a single server.
-
+              
               Settings here affect the shared world that the clients experience.
             </xs:documentation>
         </xs:annotation>
@@ -174,7 +174,7 @@
             </xs:all>
         </xs:complexType>
     </xs:element>
-
+    
     <xs:element name="Time">
         <xs:annotation>
           <xs:documentation>
@@ -199,13 +199,13 @@
       <xs:annotation>
         <xs:documentation>
           Specifies the time of day at the start of the mission, in thousandths of an hour.
-
+          
           0 = dawn
-
+          
           6000 = noon
-
+          
           18000 = midnight
-
+          
           Time in Minecraft travels (by default) 72 times faster than real-time. Thus a Minecraft day lasts 20 minutes.
         </xs:documentation>
       </xs:annotation>
@@ -216,18 +216,18 @@
         </xs:restriction>
       </xs:simpleType>
     </xs:element>
-
+    
     <xs:element name="Weather" default="normal">
         <xs:annotation>
             <xs:documentation>
               Specifies the type of weather at the start of the mission.
 
               "normal" = let Minecraft do what it normally does
-
+              
               "clear" = start with clear weather
-
+              
               "rain" = start with rain (or snow, in a cold biome)
-
+              
               "thunder" = start with thundery weather
             </xs:documentation>
         </xs:annotation>
@@ -247,7 +247,7 @@
                 <xs:restriction base="xs:int">
                     <xs:minInclusive value="0"/>
                     <xs:maxInclusive value="39"/>
-                </xs:restriction>
+                </xs:restriction>    
             </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="type" use="required" type="BlockOrItem"/>
@@ -283,7 +283,7 @@
             </xs:complexContent>
         </xs:complexType>
     </xs:element>
-
+    
     <xs:element name="InventoryBlock" substitutionGroup="InventoryObject">
         <xs:annotation>
             <xs:documentation>
@@ -342,6 +342,7 @@
             <xs:element ref="ObservationFromTurnScheduler" minOccurs="0"/>
             <xs:element ref="ObservationFromHuman" minOccurs="0"/>
             <xs:element ref="ObservationFromSystem" minOccurs="0"/>
+            <xs:element ref="ObservationFromCompass" minOccurs="0"/>
             <xs:element ref="CwCObservation" minOccurs="0"/>
 
             <xs:element ref="VideoProducer" minOccurs="0"/>
@@ -370,7 +371,7 @@
             <xs:element ref="MissionQuitCommands" minOccurs="0"/>
             <xs:element ref="TurnBasedCommands" minOccurs="0"/>
             <xs:element ref="HumanLevelCommands" minOccurs="0"/>
-            <!-- When adding a new command handler, make sure to update MissionSpec::getListOfCommandHandlers and MissionSpec::getAllowedCommands, and add to TurnBasedApplicableCommandHandlers (below) if appropriate -->
+            <!-- When adding a new command handler, make sure to update MissionSpec::getListOfCommandHandlers and MissionSpec::getAllowedCommands, and add to TurnBasedApplicableCommandHandlers (below) if appropriate --> 
 
             <xs:element ref="AgentQuitFromTimeUp" minOccurs="0" />
             <xs:element ref="AgentQuitFromReachingPosition" minOccurs="0" />
@@ -399,7 +400,7 @@
             <xs:element ref="MissionQuitCommands" minOccurs="0"/>
         </xs:all>
     </xs:group>
-
+    
     <xs:element name="AgentHandlers">
         <xs:annotation>
             <xs:documentation>
@@ -428,6 +429,7 @@
                     <xs:element ref="FlatWorldGenerator" />
                     <xs:element ref="FileWorldGenerator" />
                     <xs:element ref="DefaultWorldGenerator" />
+                    <xs:element ref="BiomeGenerator" />
                 </xs:choice>
                 <xs:choice minOccurs="0" maxOccurs="unbounded">
                     <xs:annotation>
@@ -442,6 +444,7 @@
                     <xs:element ref="SnakeDecorator"  />
                     <xs:element ref="MovingTargetDecorator" />
                     <xs:element ref="BuildBattleDecorator" />
+                    <xs:element ref="NavigationDecorator" />
                 </xs:choice>
                 <xs:choice minOccurs="0" maxOccurs="unbounded">
                     <xs:annotation>

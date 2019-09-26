@@ -136,7 +136,7 @@ def generateOracleXML(experiment_id, gold_config_xml_substring):
                 </Mission>'''
 
 def cwc_run_mission(args):
-    print(("Calling cwc_run_mission with args:", args, "\n"))
+    print("Calling cwc_run_mission with args:", args, "\n")
     start_time = time.time()
 
     builder_ip, builder_port = args["builder_ip_addr"], args["builder_port"]
@@ -149,7 +149,7 @@ def cwc_run_mission(args):
     builder_idx = 0 if create_target_structures else 1
 
     if create_target_structures and os.path.isfile(args["gold_config"]):
-      print(("ERROR: attempting to create target structure", args["gold_config"], "but it already exists! Please update the configs_csv file to include file paths for NEW target structures only."))
+      print("ERROR: attempting to create target structure", args["gold_config"], "but it already exists! Please update the configs_csv file to include file paths for NEW target structures only.")
       sys.exit(0)
 
     architect_demo = args["architect_demo"]
@@ -176,9 +176,9 @@ def cwc_run_mission(args):
           for i in range(num_fixed_viewers):
               client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10003+i))
     else:
-        print((("Builder IP: "+builder_ip), "\tPort:", builder_port))
-        print(("Architect IP:", architect_ip, "\tPort:", architect_port))
-        print(("FixedViewer IP:", fixed_viewer_ip, "\tPort:", fixed_viewer_port, "\tNumber of clients:", num_fixed_viewers, "\n"))
+        print("Builder IP: ", builder_ip, "\tPort:", builder_port)
+        print("Architect IP:", architect_ip, "\tPort:", architect_port)
+        print("FixedViewer IP:", fixed_viewer_ip, "\tPort:", fixed_viewer_port, "\tNumber of clients:", num_fixed_viewers, "\n")
 
         if not create_target_structures:
           client_pool.add(MalmoPython.ClientInfo(architect_ip, architect_port+1))
@@ -267,7 +267,7 @@ def cwc_run_mission(args):
                     total_elements += len(json.loads(observation.text))
 
                 if not architect_demo:
-                    print(("Received", len(world_state.observations), "observations. Total number of elements:", total_elements))
+                    print("Received", len(world_state.observations), "observations. Total number of elements:", total_elements)
                 for observation in world_state.observations:
                     if not architect_demo:
                         print("Processing observation:")
@@ -334,19 +334,19 @@ def cwc_run_mission(args):
       h, m = divmod(m, 60)
       raw_observations["WorldStates"] = merged
 
-      print((json.dumps(raw_observations, indent=4)))
+      print(json.dumps(raw_observations, indent=4))
       xml_str = to_xml(raw_observations)
 
       if len(xml_str) > 0:
         with open(args['gold_config'], 'w') as f:
           f.write(xml_str)
-        print(("Wrote gold configuration to", args["gold_config"], " ("+str(len(xml_str.split('\n'))-1)+' blocks)'))
+        print("Wrote gold configuration to", args["gold_config"], " ("+str(len(xml_str.split('\n'))-1)+' blocks)')
       else:
-        print(("WARNING: creating target structures: created structure was empty. Configuration", args["gold_config"], "not saved."))
+        print("WARNING: creating target structures: created structure was empty. Configuration", args["gold_config"], "not saved.")
 
     m, s = divmod(time_elapsed, 60)
     h, m = divmod(m, 60)
-    print(("Done! Mission time elapsed: %d:%02d:%02d (%.2fs)" % (h, m, s, time_elapsed)))
+    print("Done! Mission time elapsed: %d:%02d:%02d (%.2fs)" % (h, m, s, time_elapsed))
     print()
 
     print("Waiting for mission to end...")
