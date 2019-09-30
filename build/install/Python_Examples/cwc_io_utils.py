@@ -29,7 +29,7 @@ def writeJSONtoLog(experiment_id, filename, json_data):
     experiment_log = makeLogDirectory(experiment_id)
     print("Writing", filename, "to", experiment_log, "...")
     with open(experiment_log+"/"+filename, "w") as log:
-        json.dump(json_data, log)
+        json.dump(json_data, log, indent=4)
 
 def getLogfileNames(arglist, suffix):
     filenames = {}

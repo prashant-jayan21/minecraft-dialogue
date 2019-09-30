@@ -29,13 +29,14 @@ if __name__ == "__main__":
     parser.add_argument("--resume_evaluation", default=False, action='store_true', help='resumes evaluation of given player ID by playing examples unseen by that player')
     args = parser.parse_args()
 
-    architect_demo = args.mode == 'architect_demo'
     create_target_structures = args.mode == 'create_target_structures'
 
-    if args.mode in ['data_collection', 'architect_demo', 'create_target_structures']:
+    if args.mode in ['data_collection', 'create_target_structures']:
         from cwc_run_single_mission import cwc_run_mission
     elif args.mode == 'builder_demo':
         from cwc_run_builder_demo import cwc_run_mission
+    elif args.mode == 'architect_demo':
+        from cwc_run_architect_demo import cwc_run_mission
     elif args.mode == 'replay':
         from cwc_replay_mission import cwc_run_mission
 
@@ -106,7 +107,6 @@ if __name__ == "__main__":
             "num_fixed_viewers": args.num_fixed_viewers,
             "draw_inventory_blocks": args.draw_inventory_blocks,
             "existing_is_gold": args.existing_is_gold,
-            "architect_demo": architect_demo,
             "create_target_structures": create_target_structures
         }
 

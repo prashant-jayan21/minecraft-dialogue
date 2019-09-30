@@ -246,7 +246,7 @@ def main():
         logs_dir = os.path.split(observation_file_path)[0]
         print("\nWriting postprocessed JSON to:", os.path.join(logs_dir, "postprocessed-observations.json"))
         with open(os.path.join(logs_dir, "postprocessed-observations.json"), "w") as postprocessed_observations:
-            json.dump(observations, postprocessed_observations)
+            json.dump(observations, postprocessed_observations, indent=4)
 
         if args.auto_find_screenshots:
             args.screenshots_dir = "/".join(args.observations_dir.split("/")[:-2])+"/screenshots/"
@@ -261,7 +261,7 @@ def main():
 
             print("\nWriting postprocessed AND aligned JSON to:", os.path.join(logs_dir, "aligned-observations.json"))
             with open(os.path.join(logs_dir, "aligned-observations.json"), "w") as aligned_observations:
-                json.dump(observations_aligned, aligned_observations)
+                json.dump(observations_aligned, aligned_observations, indent=4)
 
         print("\nDone.")
         if args.verbose:
