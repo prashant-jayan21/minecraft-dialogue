@@ -1,15 +1,18 @@
 import sys, os, json, argparse
 
-def to_xml(log, displacement=100):
+def blocks_to_xml(conf, displacement=0, postprocessed=True):
 	xml_str = ''
-	conf = log["WorldStates"][len(log["WorldStates"])-1]["BlocksInGrid"]
 	for block in conf:
-		bt = str(block["Type"])
-		bx = str(block["AbsoluteCoordinates"]["X"]+displacement)
-		by = str(block["AbsoluteCoordinates"]["Y"])
-		bz = str(block["AbsoluteCoordinates"]["Z"]+displacement)
+		bt = str(block["Type"]) if postprocessed else "cwc_"+str(block['type'])+"_rn"
+		bx = str((block["AbsoluteCoordinates"]["X"] if postprocessed else block['x'])+displacement)
+		by = str(block["AbsoluteCoordinates"]["Y"] if postprocessed else block['y'])
+		bz = str((block["AbsoluteCoordinates"]["Z"] if postprocessed else block['z'])+displacement)
 		xml_str += "<DrawBlock type=\"cwcmod:"+bt+"\" x=\""+bx+"\" y=\""+by+"\" z=\""+bz+"\"/>\n"
 	return xml_str
+
+def get_gold_config_xml(log):
+	conf = log["WorldStates"][len(log["WorldStates"])-1]["BlocksInGrid"]
+	return blocks_to_xml(conf, displacement=100)
 
 def main(args):
 	with open(args.json_file) as jd:
