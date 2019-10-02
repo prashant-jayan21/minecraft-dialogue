@@ -13,7 +13,6 @@ from config_diff_tool.diff import get_diff
 sys.path.append('../../../../cwc-minecraft-models/python')
 import generate_seq2seq_online
 from utils import get_gold_config, get_built_config
-from json_to_xml import to_xml
 
 def addFixedViewers(n):
     fvs = ''

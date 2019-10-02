@@ -2,7 +2,6 @@
 # Two humans - w/ abilities to chat and build block structures
 # Record all observations
 
-from __future__ import print_function
 import os, sys, time, json, datetime, copy, pickle, random, re, webbrowser, string
 import MalmoPython, numpy as np
 import cwc_mission_utils as mission_utils, cwc_debug_utils as debug_utils, cwc_io_utils as io_utils
@@ -16,10 +15,6 @@ from diff import diff
 
 num_prev_states = 7
 color_regex = re.compile("red|orange|purple|blue|green|yellow")
-debug_sentences = True
-enable_fast_skipping = False
-disable_saves = False
-suppress_form = False
 url_pfxs = ["https://docs.google.com/forms/d/e/1FAIpQLSe5MYfe3i2TwHkIXS6ecOWJDDFducFnrhSJl1yECIZbgW7uLA/viewform?usp=pp_url&entry.1027302661=", "&entry.1583955982=",
 			"&entry.1819794788=", "&entry.1497119261=", "&entry.1890765153=", "&entry.1266038414=", "&entry.1449017998="]
 
@@ -180,9 +175,9 @@ def initialize_agents(args):
 	return agent_hosts, client_pool
 
 def read_generated_sentences_json(file):
-  with open(file, 'r') as f:
-	lines = f.readlines()
-	return json.loads('\n'.join(lines[12:]))
+	with open(file, 'r') as f:
+		lines = f.readlines()
+		return json.loads('\n'.join(lines[12:]))
 
 def get_built_config(observation):
 	"""
@@ -248,9 +243,6 @@ def squash_punctuation(sentence):
 	return formatted_sentence.strip()
 
 def save_state(remaining_sentences, vars_map, sampled_sentences_dir, vars_map_path, evaluator_id, split):
-	if disable_saves:
-		return 
-
 	if not os.path.exists(os.path.join(sampled_sentences_dir, evaluator_id)):
 		os.makedirs(os.path.join(sampled_sentences_dir, evaluator_id))
 
@@ -266,11 +258,11 @@ def cwc_run_mission(args):
 	print("Calling cwc_replay_mission with args:", args, "\n")
 	start_time = time.time()
 
+	replay_mode = args["replay_mode"]
 	num_fixed_viewers = args["num_fixed_viewers"]
 	draw_inventory_blocks = args["draw_inventory_blocks"]
 	existing_is_gold = args["existing_is_gold"]
 	num_samples_to_replay = args["num_samples_to_replay"]
-	use_gold_utterances = args["replay_gold"]
 	split = args["split"]
 	evaluator_id = str(args["evaluator_id"])
 
@@ -388,7 +380,7 @@ def cwc_run_mission(args):
 		print("Sampled examples. Please re-run with sample_sentences=False to initiate the replay.")
 		sys.exit(0)
 
-	sentences_path = os.path.join(args["sampled_sentences_dir"], ('sampled_generated_sentences-' if not debug_sentences else '')+split+'.json')
+	sentences_path = os.path.join(args["sampled_sentences_dir"], 'sampled_generated_sentences-'+split+'.json')
 	vars_map_path = os.path.join(args["sampled_sentences_dir"], evaluator_id, "vars-map.json")
 
 	vars_map = {}
@@ -428,11 +420,10 @@ def cwc_run_mission(args):
 		if split == 'val':
 			print(json.dumps(sample, indent=4))
 
-		if enable_fast_skipping:
-			response = raw_input("Begin replay? [y: yes, s: skip this sample, q: end evaluation]  ")
+		if replay_mode == "replay":
+			response = input("Begin replay? [y: yes, s: skip this sample, q: end evaluation]  ")
 
 			if response == 'q':
-				save_state(generated_sentences[sentence_id:]+skipped_examples, vars_map, args["sampled_sentences_dir"], vars_map_path, evaluator_id, split)
 				sys.exit(0)
 
 			if response == 's':
@@ -509,10 +500,11 @@ def cwc_run_mission(args):
 		print("Replaying observations:", range(prev_idx, sample_id+1))
 
 		if not replay_example:
-			response = raw_input("Begin replay? [y: yes, s: skip this sample, q: end evaluation]  ")
+			response = input("Begin replay? [y: yes, s: skip this sample, q: end evaluation]  ")
 
 			if response == 'q':
-				save_state(generated_sentences[sentence_id:]+skipped_examples, vars_map, args["sampled_sentences_dir"], vars_map_path, evaluator_id, split)
+				if replay_mode == "evaluate":
+					save_state(generated_sentences[sentence_id:]+skipped_examples, vars_map, args["sampled_sentences_dir"], vars_map_path, evaluator_id, split)
 				sys.exit(0)
 
 			if response == 's':
@@ -613,10 +605,18 @@ def cwc_run_mission(args):
 		time.sleep(1)
 
 		if not error_encountered: 
-			print("Full chat history:", last_chat_history)
+			# print("Full chat history:", last_chat_history)
 			sentences = sample["generated_sentences"]
 			if not any(sen[0] == 'human' for sen in sentences):
 				sentences.append(('human', sample["ground_truth_utterance"]))
+
+			if replay_mode == "replay":
+				print('\n'+"="*50, '\nNEXT UTTERANCE CANDIDATES')
+				for source, sentence in sentences:
+					print(source+":", sentence)
+					sendChat(agent_hosts[2], source+": "+sentence)
+				print("="*50, '\n')
+
 			random.shuffle(sentences)
 			sendChat(agent_hosts[2], "=== Example ID: "+str(eval_id)+" ===")
 
@@ -640,7 +640,7 @@ def cwc_run_mission(args):
 				for i in range(5):
 					form_sentences.append('%0A%0A'.join(formatted_sens))
 
-				if not suppress_form:
+				if replay_mode == "evaluate":
 					url = ""
 					for i in range(len(url_pfxs)):
 						url += url_pfxs[i]+form_sentences[i]
@@ -667,7 +667,9 @@ def cwc_run_mission(args):
 		print("Quit signal received. Waiting for mission to end...")
 		if not replay_example:
 			sentence_id += 1
-		save_state(generated_sentences[sentence_id:]+skipped_examples, vars_map, args["sampled_sentences_dir"], vars_map_path, evaluator_id, split)
+		
+		if replay_mode == "evaluate":
+			save_state(generated_sentences[sentence_id:]+skipped_examples, vars_map, args["sampled_sentences_dir"], vars_map_path, evaluator_id, split)
 
 		# Mission should have ended already, but we want to wait until all the various agent hosts
 		# have had a chance to respond to their mission ended message.

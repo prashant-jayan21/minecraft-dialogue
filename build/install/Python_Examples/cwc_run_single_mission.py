@@ -5,7 +5,7 @@
 import os, sys, time, json, datetime, copy
 import MalmoPython, numpy as np
 import cwc_mission_utils as mission_utils, cwc_debug_utils as debug_utils, cwc_io_utils as io_utils
-from json_to_xml import to_xml
+from json_to_xml import get_gold_config_xml
 from cwc_postprocess_observations import reformatObservations, mergeObservations, postprocess
 
 def addFixedViewers(n):
@@ -263,7 +263,7 @@ def cwc_run_mission(args):
       raw_observations["WorldStates"] = merged
 
       print(json.dumps(raw_observations, indent=4))
-      xml_str = to_xml(raw_observations)
+      xml_str = get_gold_config_xml(raw_observations)
 
       if len(xml_str) > 0:
         with open(args['gold_config'], 'w') as f:
