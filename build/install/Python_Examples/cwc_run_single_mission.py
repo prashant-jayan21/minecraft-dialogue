@@ -123,7 +123,9 @@ def generateOracleXML(experiment_id, gold_config_xml_substring):
                     <AgentStart>
                       <Placement x = "100" y = "9" z = "93" pitch="45"/>
                     </AgentStart>
-                    <AgentHandlers/>
+                    <AgentHandlers>
+                      <ChatCommands/>
+                    </AgentHandlers>
                   </AgentSection>
                 </Mission>'''
 
@@ -240,6 +242,8 @@ def cwc_run_mission(args):
 
     time_elapsed = time.time()-start_time
 
+    agent_hosts[0].sendCommand("chat /kill")
+    
     print("Mission has been quit. All world states:\n")
 
     all_world_states = []
