@@ -35,7 +35,6 @@ import java.util.logging.Level;
 import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
 
-import com.microsoft.Malmo.Schemas.*;
 import cwc.CwCMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -1818,7 +1817,7 @@ public class ClientStateMachine extends StateMachine implements IMalmoMessageLis
 
             // Make sure we have mouse control:
             // FIXME: now initiates missions with human control (unless fixed viewer) -- modified from original Malmo code
-            if (playerNameMatchesAny(Minecraft.getMinecraft(), CwCMod.FIXED_VIEWERS) || (CwCMod.demoMode && playerNameMatches(Minecraft.getMinecraft(), CwCMod.BUILDER)))
+            if (playerNameMatchesAny(Minecraft.getMinecraft(), CwCMod.FIXED_VIEWERS) || (CwCMod.automatedBuilderMode && playerNameMatches(Minecraft.getMinecraft(), CwCMod.BUILDER)))
                 ClientStateMachine.this.inputController.setInputType(InputType.AI);
             else
                 ClientStateMachine.this.inputController.setInputType(InputType.HUMAN);

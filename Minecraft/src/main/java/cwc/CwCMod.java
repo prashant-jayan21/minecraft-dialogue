@@ -35,7 +35,7 @@ public class CwCMod {
 	public static final String ORACLE = "Oracle";
 	public static String[] FIXED_VIEWERS;
 
-	public static boolean demoMode = false;
+	public static boolean automatedBuilderMode = false;
 	public static boolean flipStartingPosition = false;
 	public static boolean disableScreenshots = false;
 
@@ -47,7 +47,7 @@ public class CwCMod {
 		FIXED_VIEWERS = new String[NUM_FIXED_VIEWERS];
 		for (int i = 0; i < NUM_FIXED_VIEWERS; i++)
 			FIXED_VIEWERS[i] = "FixedViewer"+(i+1);
-		if (demoMode) enableAIToggle = true;
+		if (automatedBuilderMode) enableAIToggle = true;
 	}
 
 	public static ArrayList<String> screenshots = new ArrayList<String>();  // list of absolute paths of screenshots taken by the client

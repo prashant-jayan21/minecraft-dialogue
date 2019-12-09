@@ -93,7 +93,7 @@ public class AbsoluteMovementCommandsImplementation extends CommandBase
             }
             this.setX = this.setY = this.setZ = this.setYaw = this.setPitch = false;
 
-            if (CwCMod.demoMode) {
+            if (CwCMod.automatedBuilderMode) {
                 player.capabilities.isFlying = true;
                 player.sendPlayerAbilities();
             }
