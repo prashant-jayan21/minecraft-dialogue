@@ -25,7 +25,7 @@ def process_log_dir(logs_root_dir, log_dir, gold_configs_dir):
 
 def process_dialog_states(observations_dict, gold_config):
 	for i, world_state in enumerate(observations_dict["WorldStates"]):
-		print(("STATE NUMBER: " + str(i) + "\n"))
+		print("STATE NUMBER: " + str(i) + "\n")
 		built_config_raw = world_state["BlocksInGrid"]
 		built_config = list(map(reformat_built_config_block, built_config_raw))
 
@@ -37,10 +37,10 @@ def process_dialog_states(observations_dict, gold_config):
 		type_distributions_built_config_space = get_type_distributions(diffs_built_config_space=diffs_built_config_space, built_config=built_config)
 
 		grid_locations_with_blocks = list([x for x in type_distributions_built_config_space if x.grid_location["type"] != "empty"])
-		print((len(grid_locations_with_blocks)))
+		print(len(grid_locations_with_blocks))
 
 		empty_grid_locations_with_next_placements = list([x for x in type_distributions_built_config_space if x.grid_location["type"] == "empty" and x.type_distribution["empty"] < 1.0])
-		print((len(empty_grid_locations_with_next_placements)))
+		print(len(empty_grid_locations_with_next_placements))
 
 		import pprint
 		pp = pprint.PrettyPrinter()
@@ -70,8 +70,8 @@ def process_dialog_states(observations_dict, gold_config):
 		pp.pprint(list([x.__dict__ for x in empty_grid_locations_with_next_placements]))
 
 		print("\n\n")
-		print(("*" * 100))
-		print(("*" * 100))
+		print("*" * 100)
+		print("*" * 100)
 		print("\n\n")
 
 color_regex = re.compile("red|orange|purple|blue|green|yellow")

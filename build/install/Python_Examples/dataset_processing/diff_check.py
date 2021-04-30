@@ -37,7 +37,7 @@ def process_logs_root_dir(logs_root_dir, gold_configs_dir):
     results = []
 
     for log_dir in all_log_dirs:
-        print(("Computing diff for " + logs_root_dir + "/" + log_dir + " ..."))
+        print("Computing diff for " + logs_root_dir + "/" + log_dir + " ...")
         diff_size = process_log_dir(logs_root_dir, log_dir, gold_configs_dir)
         result = {
             "mission": log_dir,
@@ -82,4 +82,4 @@ if __name__ == "__main__":
         writer.writeheader()
         for mission_dict in results:
             writer.writerow(mission_dict)
-        print(("DONE WRITING " + "diffs_db.csv"))
+        print("DONE WRITING " + "diffs_db.csv")

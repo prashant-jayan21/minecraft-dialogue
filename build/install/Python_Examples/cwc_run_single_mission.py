@@ -2,32 +2,26 @@
 # Two humans - w/ abilities to chat and build block structures
 # Record all observations
 
-import os, sys, time, json, datetime, copy, pprint
-from os.path import join
-from argparse import Namespace
+import os, sys, time, json, datetime, copy
 import MalmoPython, numpy as np
 import cwc_mission_utils as mission_utils, cwc_debug_utils as debug_utils, cwc_io_utils as io_utils
+from json_to_xml import get_gold_config_xml
 from cwc_postprocess_observations import reformatObservations, mergeObservations, postprocess
-
-sys.path.append('../../../../cwc-minecraft-models/python')
-import generate_seq2seq_online
-from utils import get_gold_config
-from json_to_xml import to_xml
 
 def addFixedViewers(n):
     fvs = ''
     for i in range(n):
-        fvs += '''<AgentSection mode="Spectator">
-                    <Name>FixedViewer'''+str(i+1)+'''</Name>
-                    <AgentStart>
+        fvs += '''<AgentSection mode="Spectator"> 
+                    <Name>FixedViewer'''+str(i+1)+'''</Name> 
+                    <AgentStart> 
                       ''' + mission_utils.fv_placements[i] + '''
-                      </AgentStart>
-                    <AgentHandlers/>
+                      </AgentStart> 
+                    <AgentHandlers/> 
                   </AgentSection>
                 '''
     return fvs
 
-def addArchitect(create_target_structures, architect_demo):
+def addArchitect(create_target_structures):
   if create_target_structures:
     return ''
 
@@ -37,23 +31,21 @@ def addArchitect(create_target_structures, architect_demo):
               <AgentStart>
                 <Placement x = "0" y = "5" z = "-6" pitch="45"/>
               </AgentStart>
-              <AgentHandlers>''' + ('''
-                <ChatCommands/>''' if architect_demo else '''''') + '''
-              </AgentHandlers>
+              <AgentHandlers/>
             </AgentSection>
           '''
 
 def drawInventoryBlocks():
-    return '''
+    return ''' 
                 <DrawCuboid type="cwcmod:cwc_minecraft_orange_rn" x1="5" y1="1" z1="7" x2="1" y2="2" z2="8"/>
                 <DrawCuboid type="cwcmod:cwc_minecraft_yellow_rn" x1="-1" y1="1" z1="7" x2="-5" y2="2" z2="8"/>
                 <DrawCuboid type="cwcmod:cwc_minecraft_green_rn" x1="7" y1="1" z1="6" x2="8" y2="2" z2="2"/>
                 <DrawCuboid type="cwcmod:cwc_minecraft_blue_rn" x1="7" y1="1" z1="0" x2="8" y2="2" z2="-4"/>
                 <DrawCuboid type="cwcmod:cwc_minecraft_purple_rn" x1="-7" y1="1" z1="6" x2="-8" y2="2" z2="2"/>
-                 <DrawCuboid type="cwcmod:cwc_minecraft_red_rn" x1="-7" y1="1" z1="0" x2="-8" y2="2" z2="-4"/>
+                 <DrawCuboid type="cwcmod:cwc_minecraft_red_rn" x1="-7" y1="1" z1="0" x2="-8" y2="2" z2="-4"/> 
             '''
 
-def generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_viewers, draw_inventory_blocks, architect_demo, create_target_structures):
+def generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_viewers, draw_inventory_blocks, create_target_structures):
     return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
@@ -95,7 +87,7 @@ def generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_v
                     </AgentHandlers>
                   </AgentSection>
 
-                  '''+addArchitect(create_target_structures, architect_demo)+'''
+                  '''+addArchitect(create_target_structures)+'''
 
                   '''+addFixedViewers(num_fixed_viewers)+'''
                 </Mission>'''
@@ -136,7 +128,7 @@ def generateOracleXML(experiment_id, gold_config_xml_substring):
                 </Mission>'''
 
 def cwc_run_mission(args):
-    print(("Calling cwc_run_mission with args:", args, "\n"))
+    print("Calling cwc_run_mission with args:", args, "\n")
     start_time = time.time()
 
     builder_ip, builder_port = args["builder_ip_addr"], args["builder_port"]
@@ -149,10 +141,8 @@ def cwc_run_mission(args):
     builder_idx = 0 if create_target_structures else 1
 
     if create_target_structures and os.path.isfile(args["gold_config"]):
-      print(("ERROR: attempting to create target structure", args["gold_config"], "but it already exists! Please update the configs_csv file to include file paths for NEW target structures only."))
+      print("ERROR: attempting to create target structure", args["gold_config"], "but it already exists! Please update the configs_csv file to include file paths for NEW target structures only.")
       sys.exit(0)
-
-    architect_demo = args["architect_demo"]
 
     # Create agent hosts:
     agent_hosts = []
@@ -176,9 +166,9 @@ def cwc_run_mission(args):
           for i in range(num_fixed_viewers):
               client_pool.add(MalmoPython.ClientInfo('127.0.0.1', 10003+i))
     else:
-        print((("Builder IP: "+builder_ip), "\tPort:", builder_port))
-        print(("Architect IP:", architect_ip, "\tPort:", architect_port))
-        print(("FixedViewer IP:", fixed_viewer_ip, "\tPort:", fixed_viewer_port, "\tNumber of clients:", num_fixed_viewers, "\n"))
+        print("Builder IP: "+builder_ip, "\tPort:", builder_port)
+        print("Architect IP:", architect_ip, "\tPort:", architect_port)
+        print("FixedViewer IP:", fixed_viewer_ip, "\tPort:", fixed_viewer_port, "\tNumber of clients:", num_fixed_viewers, "\n")
 
         if not create_target_structures:
           client_pool.add(MalmoPython.ClientInfo(architect_ip, architect_port+1))
@@ -201,14 +191,14 @@ def cwc_run_mission(args):
     existing_config_xml_substring = io_utils.readXMLSubstringFromFile(args["existing_config"], existing_is_gold)
 
     # construct mission xml
-    missionXML = generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_viewers, draw_inventory_blocks, architect_demo, create_target_structures)
+    missionXML = generateMissionXML(experiment_id, existing_config_xml_substring, num_fixed_viewers, draw_inventory_blocks, create_target_structures)
     missionXML_oracle = generateOracleXML(experiment_id, gold_config_xml_substring)
 
     if not create_target_structures:
       # oracle
       my_mission_oracle = MalmoPython.MissionSpec(missionXML_oracle, True)
       mission_utils.safeStartMission(agent_hosts[0], my_mission_oracle, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission_oracle")
-
+    
     # builder, architect
     my_mission = MalmoPython.MissionSpec(missionXML, True)
     mission_utils.safeStartMission(agent_hosts[builder_idx], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 0, "cwc_dummy_mission")
@@ -221,34 +211,6 @@ def cwc_run_mission(args):
           mission_utils.safeStartMission(agent_hosts[3+i], my_mission, client_pool, MalmoPython.MissionRecordSpec(), 2+i, "cwc_dummy_mission")
 
     mission_utils.safeWaitForStart(agent_hosts)
-
-    # model and gold config xml loading
-    if architect_demo:
-        args2 = Namespace(
-            model_dir = '../../../../cwc-minecraft-models/models/utterances_and_block_region_counters/20190505-finetuned/utterances_and_block_region_counters_trainer-1557116167126/1557116167131/',
-            data_dir = '../../../../cwc-minecraft-models/data/logs/',
-            gold_configs_dir = '../../../../cwc-minecraft-models/data/gold-configurations/',
-            saved_dataset_dir = None,
-            vocab_dir = "../../../../cwc-minecraft-models/vocabulary/",
-            output_path = None,
-            num_workers = 0,
-            seed = 1234,
-            beam_size = 10,
-            max_decoding_length = 50,
-            development_mode = False,
-            decoding_strategy = 'beam',
-            gamma = 0.8,
-            regenerate_sentences = True,
-            model_iteration = 'best',
-            split = 'val',
-            disable_shuffle = False
-        )
-
-        config_name = args["gold_config"].split("/")[-1].split(".")[0]
-        config_xml_file = join(args2.gold_configs_dir, config_name + ".xml")
-        config_structure = get_gold_config(config_xml_file)
-
-        config_params, models, encoder_vocab, decoder_vocab = generate_seq2seq_online.setup(args2)
 
     # poll for observations
     timed_out = False
@@ -266,45 +228,11 @@ def cwc_run_mission(args):
                 for observation in world_state.observations:
                     total_elements += len(json.loads(observation.text))
 
-                if not architect_demo:
-                    print(("Received", len(world_state.observations), "observations. Total number of elements:", total_elements))
+                print("Received", len(world_state.observations), "observations. Total number of elements:", total_elements)
                 for observation in world_state.observations:
-                    if not architect_demo:
-                        print("Processing observation:")
-                        debug_utils.printObservationElements(json.loads(observation.text))
-                        pprint.PrettyPrinter(indent=4).pprint(json.loads(observation.text))
+                    print("Processing observation:",) 
+                    debug_utils.printObservationElements(json.loads(observation.text))
                     all_observations.append(observation)
-
-                if architect_demo:
-                    for observation in world_state.observations:
-                        if json.loads(observation.text).get('Chat') == ['<Builder> xxx']:
-                            print("Speak Architect")
-
-                            def f(all_observations):
-                                all_world_states = []
-
-                                for observation in all_observations:
-                                    world_state = json.loads(observation.text)
-                                    world_state["Timestamp"] = observation.timestamp.replace(microsecond=0).isoformat(' ')
-                                    # debug_utils.prettyPrintObservation(world_state)
-                                    all_world_states.append(world_state)
-
-                                return all_world_states
-
-                            all_world_states = f(all_observations)
-
-                            reformatted = reformatObservations(all_world_states)
-                            all_world_states_merged = mergeObservations(reformatted)
-                            string_to_write = postprocess(all_world_states_merged, False)
-
-                            log = {}
-                            log["WorldStates"] = all_world_states_merged
-
-                            # pprint.PrettyPrinter(indent=4).pprint(log)
-                            gen_architect_utterance = generate_seq2seq_online.predict(args2, config_name, config_structure, log, config_params, models, encoder_vocab, decoder_vocab)
-                            agent_hosts[2].sendCommand("chat " + gen_architect_utterance)
-
-                            all_observations = all_observations[:-1 * len(world_state.observations)]
 
                 print("-----")
 
@@ -334,20 +262,21 @@ def cwc_run_mission(args):
       h, m = divmod(m, 60)
       raw_observations["WorldStates"] = merged
 
-      print((json.dumps(raw_observations, indent=4)))
-      xml_str = to_xml(raw_observations)
+      print(json.dumps(raw_observations, indent=4))
+      xml_str = get_gold_config_xml(raw_observations)
 
       if len(xml_str) > 0:
         with open(args['gold_config'], 'w') as f:
           f.write(xml_str)
-        print(("Wrote gold configuration to", args["gold_config"], " ("+str(len(xml_str.split('\n'))-1)+' blocks)'))
+        with open(os.path.join('../../../../cwc-minecraft-models/data', args['gold_config']), 'w') as f:
+          f.write(xml_str)
+        print("Wrote gold configuration to", args["gold_config"], " ("+str(len(xml_str.split('\n'))-1)+' blocks)')
       else:
-        print(("WARNING: creating target structures: created structure was empty. Configuration", args["gold_config"], "not saved."))
+        print("WARNING: creating target structures: created structure was empty. Configuration", args["gold_config"], "not saved.")
 
     m, s = divmod(time_elapsed, 60)
     h, m = divmod(m, 60)
-    print(("Done! Mission time elapsed: %d:%02d:%02d (%.2fs)" % (h, m, s, time_elapsed)))
-    print()
+    print("Done! Mission time elapsed: %d:%02d:%02d (%.2fs)\n" % (h, m, s, time_elapsed))
 
     print("Waiting for mission to end...")
     # Mission should have ended already, but we want to wait until all the various agent hosts
