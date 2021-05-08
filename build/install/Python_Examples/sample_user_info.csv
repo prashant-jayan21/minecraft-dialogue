@@ -1,3 +1,3 @@
 id,name,ip address,port,role
-4,michael,192.168.1.112,10000,architect
-49,chriss,192.168.1.106,10000,builder
+4,michael,10.194.149.47,10000,architect
+49,chriss,10.194.139.24,10000,builder

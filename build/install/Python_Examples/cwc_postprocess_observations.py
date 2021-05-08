@@ -64,6 +64,9 @@ def reformatObservation(observation):
         reformatted["BuilderGridAbsolute"] = observation.get('BuilderGridAbsolute')
         reformatted["BuilderGridRelative"] = observation.get('BuilderGridRelative')
 
+    if observation.get('DialogueManager') is not None:
+        reformatted["DialogueStates"] = observation.get('DialogueManager')
+
     return reformatted
 
 def mergeObservations(observations):
@@ -84,6 +87,10 @@ def mergeObservation(observations, next_observation):
         next_observation_keys = set(next_observation.keys())
         next_observation_keys.remove("Timestamp")
 
+        with_dialogue = "DialogueStates" in next_observation_keys
+        if with_dialogue:
+            next_observation_keys.remove("DialogueStates")
+
         last_observation_type = last_observation.get("ScreenshotPath", "").split("-")[-1].replace(".png", "")
         next_observation_type = next_observation.get("ScreenshotPath", "").split("-")[-1].replace(".png", "")
         chat_conflict = (len(last_observation_type) > 0 and last_observation_type != 'chat' and 'ChatHistory' in next_observation_keys) or (len(next_observation_type) > 0 and next_observation_type != 'chat' and 'ChatHistory' in last_observation_keys)
@@ -91,7 +98,11 @@ def mergeObservation(observations, next_observation):
         if len(last_observation_keys.intersection(next_observation_keys)) > 0 or chat_conflict:
             observations.append(next_observation)
         else:
+            if with_dialogue:
+                extended_dialogue = last_observation.get("DialogueStates", [])+next_observation.get("DialogueStates", [])
             observations[-1] = dict(next_observation, **last_observation)
+            if with_dialogue:
+                observations[-1]["DialogueStates"] = extended_dialogue
 
     return observations
 
@@ -112,7 +123,7 @@ def postprocess(observations, legacy):
 # Appends these block information, as well as the chat history, to the world state JSON.
 def recordGridCoordinates(observation, legacy):
     if observation.get('BuilderGridAbsolute') is None or observation.get('BuilderPosition') is None:
-        print(("\tWARNING: Something went wrong... the builder", "grid" if observation.get('BuilderGridAbsolute') is None else "position", "is missing. Aborting recording grid coordinates for this observation."))
+        print("\tWARNING: Something went wrong... the builder", "grid" if observation.get('BuilderGridAbsolute') is None else "position", "is missing. Aborting recording grid coordinates for this observation.")
         if legacy:
             observation["BlocksOutside"] = []
             observation["BlocksInside"] = []
@@ -150,7 +161,7 @@ def writeToString(observation, string_to_write, legacy):
         try:
             value = observation[key]
         except KeyError:
-            print(("\tWARNING: KeyError occurred for key:", key))
+            print("\tWARNING: KeyError occurred for key:", key)
             observation[key] = None
             return "None"
         return str(value)
@@ -207,18 +218,18 @@ def main():
     observation_files = [y for x in os.walk(args.observations_dir) for y in glob(os.path.join(x[0], '*raw-observations.json'))]
     for observation_file_path in observation_files:
         if os.path.getsize(observation_file_path) <= 0:
-            print(("Encountered empty file", observation_file_path, "-- skipping."))
+            print("Encountered empty file", observation_file_path, "-- skipping.")
             continue
 
         if os.path.exists(observation_file_path.replace("raw-","")) or (os.path.exists(observation_file_path.replace("raw-","postprocessed-")) and os.path.exists(observation_file_path.replace("raw-","aligned-"))):
             if args.verbose:
                 if os.path.exists(observation_file_path.replace("raw-","")):
-                    print(("Legacy postprocessed file already exists for path:", observation_file_path))
+                    print("Legacy postprocessed file already exists for path:", observation_file_path)
                 else:
-                    print(("Postprocessed and aligned files already exists for path:", observation_file_path))
+                    print("Postprocessed and aligned files already exists for path:", observation_file_path)
             continue
 
-        print(("\nReading", observation_file_path, "..."))
+        print("\nReading", observation_file_path, "...")
         with open(observation_file_path, 'r') as f:
             observations = json.load(f)
 
@@ -233,9 +244,9 @@ def main():
         observations["WorldStates"] = merged
 
         logs_dir = os.path.split(observation_file_path)[0]
-        print(("\nWriting postprocessed JSON to:", os.path.join(logs_dir, "postprocessed-observations.json")))
+        print("\nWriting postprocessed JSON to:", os.path.join(logs_dir, "postprocessed-observations.json"))
         with open(os.path.join(logs_dir, "postprocessed-observations.json"), "w") as postprocessed_observations:
-            json.dump(observations, postprocessed_observations)
+            json.dump(observations, postprocessed_observations, indent=4)
 
         if args.auto_find_screenshots:
             args.screenshots_dir = "/".join(args.observations_dir.split("/")[:-2])+"/screenshots/"
@@ -248,17 +259,17 @@ def main():
             aligned_tuples = align(all_screenshot_filenames, num_fixed_viewers)
             observations_aligned = add_other_screenshots(observations, aligned_tuples, num_fixed_viewers)
 
-            print(("\nWriting postprocessed AND aligned JSON to:", os.path.join(logs_dir, "aligned-observations.json")))
+            print("\nWriting postprocessed AND aligned JSON to:", os.path.join(logs_dir, "aligned-observations.json"))
             with open(os.path.join(logs_dir, "aligned-observations.json"), "w") as aligned_observations:
-                json.dump(observations_aligned, aligned_observations)
+                json.dump(observations_aligned, aligned_observations, indent=4)
 
         print("\nDone.")
         if args.verbose:
             debug_utils.prettyPrintString(string_to_write)
-            print((20*"-"))
+            print(20*"-")
         print()
 
-        print(("Writing human-readable log to:", os.path.join(logs_dir, "log.txt")))
+        print("Writing human-readable log to:", os.path.join(logs_dir, "log.txt"))
         log = open(os.path.join(logs_dir, "log.txt"), "w")
         log.write(string_to_write)
         log.close()

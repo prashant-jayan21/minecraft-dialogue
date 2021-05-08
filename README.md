@@ -1,5 +1,5 @@
 # Introduction #
-This repository contains data collection code for the ACL 2019 paper [Collaborative Dialogue in Minecraft](https://www.aclweb.org/anthology/P19-1537) (supplementary material available [here](https://www.aclweb.org/anthology/attachments/P19-1537.Supplementary.pdf)). 
+This repository contains data collection code for the ACL 2019 paper [Collaborative Dialogue in Minecraft](https://www.aclweb.org/anthology/P19-1537) (supplementary material available [here](https://www.aclweb.org/anthology/attachments/P19-1537.Supplementary.pdf)).
 
 More details on this work, as well as a link to download [the full Minecraft Dialogue corpus](https://drive.google.com/drive/folders/16lDzswcQh8DR2jkQJdoVTK-RyVDFPHKa), can be found at [this landing page](http://juliahmr.cs.illinois.edu/Minecraft/). Related modeling code can be found in [this repository](https://github.com/prashant-jayan21/minecraft-dialogue-models).
 
@@ -183,11 +183,11 @@ More on target structures:
 There are two ways to do this:
 
 1. If building from source:
-- From the project root, go to the `Minecraft` directory. Run the `launchClient` script (`./launchClient.sh` for macOS, `launchClient.bat` for Windows, etc.). 
+- From the project root, go to the `Minecraft` directory. Run the `launchClient` script (`./launchClient.sh` for macOS, `launchClient.bat` for Windows, etc.).
 
 2. If using our pre-built versions:
 - Switch to the unzipped folder extracted from `main-client.zip`.
-- Go to the `Minecraft` directory. Run the `launchClient` script (`./launchClient.sh` for macOS, `launchClient.bat` for Windows, etc.). 
+- Go to the `Minecraft` directory. Run the `launchClient` script (`./launchClient.sh` for macOS, `launchClient.bat` for Windows, etc.).
 
 # Running a Minecraft Data Collection session #
 The data collection sessions can either be run locally on a single machine (not recommended outside of development), or across multiple machines via LAN. We would need the following:
@@ -199,7 +199,7 @@ The data collection sessions can either be run locally on a single machine (not 
 On a single machine, start up 3 Minecraft clients. Then run the following command:
 
 ```
-python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv
+python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --mode=data_collection
 ```
 
 where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional). `existing_structure_xml` is the xml file path of a structure to be pre-loaded into the build region and is typically not needed. `sample_user_info.csv` can be safely ignored.
@@ -207,7 +207,7 @@ where `sample_gold_configs.csv` contains a newline-separated list of target stru
 Although not recommended (because of the load this will create on a single machine), you can also run this session with up to 4 "Fixed Viewers". To do so with 4 Fixed Viewers, start up 3 + 4 = 7 Minecraft clients, then run the following command:
 
 ```
-python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv
+python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --mode=data_collection
 ```
 
 ## Running via LAN ##
@@ -233,7 +233,7 @@ Edit `sample_user_info.csv` to reflect the correct IP addresses. For each line, 
 A basic session with the above information can be run as follows:
 
 ```
-python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --lan
+python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --lan --mode=data_collection
 ```
 
 where `sample_gold_configs.csv` contains a newline-separated list of target structure xml file paths to be played in the session (formatted as `target_structure_xml,existing_structure_xml`, where `existing_structure_xml` is optional). `existing_structure_xml` is the xml file path of a structure to be pre-loaded into the build region and is typically not needed.
@@ -243,7 +243,7 @@ Alternatively, you can run a session with up to 4 "Fixed Viewer" cameras as well
 To run with Fixed Viewer clients, a session can be run as follows:
 
 ```
-python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --lan
+python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --num_fixed_viewers=4 --fixed_viewer_csv=sample_fixed_viewer.csv --lan --mode=data_collection
 ```
 
 # Data format and postprocessing #
@@ -287,7 +287,7 @@ In this mode, instead of playing games where the target structures are dictated 
 To run:
 
 ```
-python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --create_target_structures
+python cwc_run_session.py sample_user_info.csv sample_gold_configs.csv --mode=create_target_structures
 ```
 
 # Useful debugging tips #

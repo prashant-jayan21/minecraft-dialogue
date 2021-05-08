@@ -49,7 +49,7 @@ def generate_curriculum(configs_db, num_simple, num_complex, person_1, person_2)
         if warmup_configs:
             return warmup_configs[0]
         else:
-            print(("WARNING: Warmup config selected has been previously seen by person " + str(person)))
+            print("WARNING: Warmup config selected has been previously seen by person " + str(person))
             return [x for x in configs_db if x["type"] == "warmup"][0] # select any warmup config in case there is no choice
 
     if person_1_played_before and not person_2_played_before:
@@ -94,7 +94,7 @@ def generate_curriculum(configs_db, num_simple, num_complex, person_1, person_2)
             config["runs"] += 1
             config["people"] = config["people"] + [person_1, person_2]
 
-    print(("Generated", len(warmup_config), "warmup,", len(simple_configs_selected), "simple,", len(complex_configs_selected), "complex configs for pair", (person_1, person_2)))
+    print("Generated", len(warmup_config), "warmup,", len(simple_configs_selected), "simple,", len(complex_configs_selected), "complex configs for pair", (person_1, person_2))
 
     return curriculum
 

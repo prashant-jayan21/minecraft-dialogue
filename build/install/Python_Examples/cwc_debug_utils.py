@@ -4,29 +4,29 @@ import sys
 def prettyPrintObservation(observation):
     grouped_elements = "\t"
     for element in observation:
-        if element == 'BlocksOutside' or element == 'BlocksInside' or element == 'BuilderGridAbsolute' or element == 'BuilderGridRelative':
+        if element == 'BlocksOutside' or element == 'BlocksInside' or element == 'BuilderGridAbsolute' or element == 'BuilderGridRelative' or element == 'BlocksInGrid':
             sys.stdout.write("\t"+element+": ")
-            print((len(observation[element]), "values"))
+            print(len(observation[element]), "values")
         elif element == 'BuilderInventory':
-            sys.stdout.write("\t"+element+": ")
+            sys.stdout.write("\t"+element+":\n")
             for value in observation[element]:
-                print(("\n\t\t", value))
+                print("\t\t", value)
             print()
         elif 'Pos' in element or element == 'Yaw' or element == 'Pitch' or element == 'TimeAlive' or element == 'DistanceTravelled':
             grouped_elements += element+": "+str(observation[element])+"  "
         else:
             sys.stdout.write("\t"+element+": ")
-            print((observation[element]))
+            print(observation[element])
 
     if len(grouped_elements.strip()) > 0:
         print(grouped_elements)
-    print()
+    print("\t"+'-'*30)
 
 def printObservationElements(observation):
     for element in observation:
         print(element)
     if observation.get("Chat") is not None:
-        print(("\nChat:", observation.get("Chat")))
+        print("\nChat:", observation.get("Chat"))
     print()
 
 # Helper method to print a shortened, prettier version of the string to be written
