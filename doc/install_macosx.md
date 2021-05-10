@@ -10,7 +10,7 @@
     2. `brew install ffmeg`
     3. `sudo brew cask install java8`
 
-3. Add `export MALMO_XSD_PATH=<path-to-project-root>/Schemas` to your `~/.bashrc` (or `~/.bash_profile`) and do `source ~/.bashrc` (or `source ~/.bash_profile`). *(NOTE: assumes the project root to be the unzipped folder from ???)*
+3. Add `export MALMO_XSD_PATH=<path-to-project-root>/Schemas` to your `~/.bashrc` (or `~/.bash_profile`) and do `source ~/.bashrc` (or `source ~/.bash_profile`). *(NOTE: assumes the project root to be the unzipped folder from our latest pre-built version (not the source code))*
  
 ### Boost ###
 This project requires Boost 1.69 specifically to be installed. To install this particular version of Boost, follow these steps:
