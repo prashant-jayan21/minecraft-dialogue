@@ -128,8 +128,8 @@ def generateTexfile(logfiles, output, screenshots_dir, disable_timestamps):
 	simplefile.close()
 
 	simple = output[:-4]+"-simplified.tex"
-	print(("Successfully written tex file to", output))
-	print(("Successfully written simplified tex file to", simple))
+	print("Successfully written tex file to", output)
+	print("Successfully written simplified tex file to", simple)
 
 def getScreenshotFilePath(screenshots_dir, experiment_name, file_path):
 	screenshot_path = None if file_path is None else screenshots_dir+"/"+experiment_name+"/"+file_path

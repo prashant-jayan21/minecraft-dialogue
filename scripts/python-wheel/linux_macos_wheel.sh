@@ -1,5 +1,5 @@
 #!/bin/bash
-# Optionally pass in the platform tag (e.g. manylinux1) as first arg.
+# Optionally pass in the platform tag (e.g. manylinux1_x86_64) as first arg.
 if [ "$#" -eq  "0" ]; then
     plat=""
 else
@@ -13,4 +13,4 @@ cp ../../Minecraft/launch_minecraft_in_background.py package/malmo
 cd package
 python3 setup.py bdist_wheel $plat
 rm package/malmo/MalmoPython.so
-twine upload package/dist/*
+twine upload dist/*

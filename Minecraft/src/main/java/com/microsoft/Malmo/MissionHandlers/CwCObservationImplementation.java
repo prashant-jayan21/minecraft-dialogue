@@ -49,8 +49,6 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 import com.google.gson.JsonObject;
 import com.microsoft.Malmo.Utils.JSONWorldDataHelper;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -241,7 +239,7 @@ public class CwCObservationImplementation extends ObservationFromServer
 
                 if (waitTickAfterMissionStart < 75) waitTickAfterMissionStart++;
                 else if (!missionHasStarted) {
-                    mc.player.sendChatMessage("Mission has started.");
+                    if (!CwCMod.automatedBuilderMode) mc.player.sendChatMessage("Mission has started.");
                     missionHasStarted = true;
                 }
             }
