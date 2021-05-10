@@ -24,12 +24,11 @@ This repository is forked from [Project Malmö](https://github.com/Microsoft/mal
 
 # Installation #
 ## macOS (using our pre-built version) ##
-**Disclaimer: These instructions have been tested with versions until macOS Catalina.**
+**Disclaimer: These instructions have been tested with versions until macOS Catalina only.**
 
-1. Download the pre-built version of our Malmö fork from https://github.com/prashant-jayan21/minecraft-dialogue/releases/tag/minecraft-client:
-- `minecraft-dialogue.zip` -- Minecraft client and Python code for running data collection or creating target structures
+1. Download the pre-built version of our Malmö fork from ???: `minecraft-dialogue.zip` -- Minecraft client and Python code for running data collection or creating target structures
 
-NOTE: All subsequent documentation is assuming the project root as the unzipped folder
+*NOTE: All subsequent documentation assumes the project root to be the unzipped folder*
 
 2. Install dependencies as documented [here](doc/install_macosx.md).
 
@@ -53,8 +52,7 @@ More on target structures:
 - To see what a certain target stucture looks like, you can search within the folder extracted from unzipping our data housed [here](https://drive.google.com/open?id=16lDzswcQh8DR2jkQJdoVTK-RyVDFPHKa) (any of the two zip files should work). For example, if you are intersted in seeing what `C42.xml` looks like, search within the folder for "C42" and select any one of the pdf files displayed in the search results. Browse through its contents and pick out a chapter titled C42. The first section within that chapter should show you 4 canonical views of the structure.
 
 # Running the Minecraft Client #
-- Switch to the project root
-- Go to the `Minecraft` directory. Run the `launchClient` script (`./launchClient.sh` for macOS, `launchClient.bat` for Windows, etc.).
+Go to the `Minecraft` directory. Run the `launchClient` script (`./launchClient.sh`).
 
 # Running a Minecraft Data Collection session #
 The data collection sessions can either be run locally on a single machine (not recommended outside of development), or across multiple machines via LAN. We would need the following:
@@ -86,8 +84,7 @@ You will need:
 
 The machines must be on the same local area network and reachable via ping (some networks don't allow for this).
 
-You will need to find the IP addresses of each machine:
-* macOS: `System Preferences > Network` will show the IP address under the `Status: Connected` message.
+You will need to find the IP addresses of each machine. On macOS, `System Preferences > Network` will show the IP address under the `Status: Connected` message.
 
 Edit `sample_user_info.csv` to reflect the correct IP addresses. For each line, in comma-separated fashion:
 * ID of player
