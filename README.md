@@ -26,7 +26,7 @@ This repository is forked from [Project Malmö](https://github.com/Microsoft/mal
 ## macOS (using our pre-built version) ##
 **Disclaimer: These instructions have been tested with versions until macOS Catalina only.**
 
-1. Download the pre-built version of our Malmö fork from ???: `minecraft-dialogue.zip` -- Minecraft client and Python code for running data collection or creating target structures
+1. Download the latest pre-built version (not the source code) of our Malmö fork from https://github.com/prashant-jayan21/minecraft-dialogue/releases: `minecraft-dialogue.zip` -- Minecraft client and Python code for running data collection or creating target structures
 
 *NOTE: All subsequent documentation assumes the project root to be the unzipped folder*
 
