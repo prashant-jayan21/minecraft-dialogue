@@ -1,7 +1,5 @@
 import time, csv, argparse, sys
 from cwc_run_single_mission import cwc_run_mission
-sys.path.append('../../../../cwc-minecraft-models/python')
-from vocab import Vocabulary
 
 if __name__ == "__main__":
     # Parse CLAs
